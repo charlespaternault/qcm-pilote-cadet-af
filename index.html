@@ -1,0 +1,483 @@
+In<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>QCM Pilote Cadet AF</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="QCM Cadet AF" />
+<meta name="theme-color" content="#0b1220" />
+<style>
+  :root {
+    --bg: #0b1220;
+    --bg2: #131c2e;
+    --card: #1a2438;
+    --card2: #212d45;
+    --line: #2c3a57;
+    --txt: #e8eef9;
+    --muted: #9fb0cc;
+    --accent: #2f6df6;
+    --accent2: #38bdf8;
+    --good: #1faf6c;
+    --good-bg: #123a2c;
+    --bad: #e5484d;
+    --bad-bg: #3a1518;
+    --gold: #d9a441;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1b2c4d 0%, transparent 60%), var(--bg);
+    color: var(--txt);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    padding: calc(28px + env(safe-area-inset-top)) 20px 10px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(22px, 4vw, 32px);
+    letter-spacing: .3px;
+  }
+  header p { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 16px 18px 80px; }
+
+  .panel {
+    background: linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-bottom: 14px; }
+  select, button {
+    font: inherit;
+    color: var(--txt);
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: .15s;
+  }
+  select:hover, button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #4a82ff; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  .topbar { display:flex; justify-content: space-between; align-items:center; gap:12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chip { font-size: 12px; color: var(--muted); background: var(--card2); border:1px solid var(--line); padding:5px 12px; border-radius: 999px; }
+  .chip b { color: var(--accent2); }
+  .cat-tag { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--gold); font-weight: 700; }
+
+  .progress { height: 8px; background: var(--card2); border-radius: 999px; overflow: hidden; margin-bottom: 18px; border:1px solid var(--line); }
+  .progress > i { display:block; height:100%; width:0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .3s; }
+
+  .question { font-size: clamp(17px, 2.4vw, 20px); font-weight: 600; margin: 6px 0 16px; }
+  .num { color: var(--muted); font-weight: 600; margin-right: 6px; }
+
+  .choices { display: grid; gap: 10px; }
+  .choice {
+    display:flex; align-items:center; gap: 12px;
+    background: var(--card2);
+    border: 1.5px solid var(--line);
+    border-radius: 13px;
+    padding: 13px 15px;
+    cursor: pointer;
+    transition: .12s;
+    text-align: left;
+    width: 100%;
+    color: var(--txt);
+    font-size: 16px;
+  }
+  .choice:hover:not(.locked) { border-color: var(--accent); transform: translateY(-1px); }
+  .choice .key {
+    flex: 0 0 28px; height: 28px; border-radius: 8px;
+    display:grid; place-items:center; font-weight:700; font-size:14px;
+    background: #0e1626; border:1px solid var(--line); color: var(--muted);
+  }
+  .choice.correct { border-color: var(--good); background: var(--good-bg); }
+  .choice.correct .key { background: var(--good); color:#fff; border-color: var(--good); }
+  .choice.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .choice.wrong .key { background: var(--bad); color:#fff; border-color: var(--bad); }
+  .choice.locked { cursor: default; }
+
+  .explain {
+    margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+    background: #0e1626; border:1px solid var(--line); font-size: 14px; color: var(--muted);
+    display: none;
+  }
+  .explain.show { display:block; }
+  .explain b { color: var(--accent2); }
+
+  .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; }
+
+  .result { text-align:center; }
+  .result .big { font-size: 54px; font-weight: 800; margin: 6px 0; }
+  .result .sub { color: var(--muted); margin-bottom: 18px; }
+  .scorebar { height: 12px; background: var(--card2); border-radius:999px; overflow:hidden; border:1px solid var(--line); margin: 14px 0; }
+  .scorebar > i { display:block; height:100%; background: linear-gradient(90deg, var(--bad), var(--gold), var(--good)); }
+
+  .hide { display:none !important; }
+  footer { text-align:center; color:#5d6b88; font-size:12px; padding: 0 0 30px; }
+  kbd { background:#0e1626; border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:1px 7px; font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈️ QCM Pilote Cadet — Air France</h1>
+  <p>Sélection AF/AFKLM · Connaissances aéronautiques, compagnie, géo, météo, navigation</p>
+</header>
+
+<div class="wrap">
+  <!-- START SCREEN -->
+  <div id="start" class="panel">
+    <div class="topbar">
+      <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
+      <span class="chip">Toutes les questions des retours d'expérience</span>
+    </div>
+    <div class="controls">
+      <select id="catSelect"><option value="all">Toutes les catégories</option></select>
+      <select id="countSelect">
+        <option value="0">Toutes les questions</option>
+        <option value="15">15 questions</option>
+        <option value="25">25 questions</option>
+        <option value="40">40 questions</option>
+      </select>
+      <label class="chip" style="cursor:pointer"><input type="checkbox" id="shuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
+    </div>
+    <div style="text-align:center; margin-top:8px;">
+      <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Commencer ▶</button>
+    </div>
+    <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
+      Astuce : touches <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>→</kbd> pour suivant.
+    </p>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz" class="panel hide">
+    <div class="topbar">
+      <span class="cat-tag" id="qCat">—</span>
+      <span class="chip">Score : <b id="liveScore">0</b></span>
+    </div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
+    <div class="choices" id="choices"></div>
+    <div class="explain" id="explain"></div>
+    <div class="nav">
+      <button id="quitBtn">✕ Quitter</button>
+      <button class="primary" id="nextBtn" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result" class="panel result hide">
+    <div class="cat-tag">Résultat</div>
+    <div class="big" id="finalScore">0 / 0</div>
+    <div class="scorebar"><i id="finalBar"></i></div>
+    <div class="sub" id="finalMsg"></div>
+    <div class="controls">
+      <button class="primary" id="restartBtn">↻ Recommencer</button>
+      <button id="reviewWrongBtn">Revoir mes erreurs</button>
+      <button id="homeBtn">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.</footer>
+
+<script>
+/* ===========================================================
+   BANQUE DE QUESTIONS
+   Chaque question : { c: catégorie, q: énoncé, o: [options], a: index correct, e: explication }
+   =========================================================== */
+const QUESTIONS = [
+  /* ---------- COMPAGNIE / AF-KLM ---------- */
+  {c:"Compagnie",q:"Que signifie PNC ?",o:["Personnel Navigant Commercial","Pilote Non Certifié","Personnel Navigant Cabine","Poste Navigation Centrale"],a:0,e:"PNC = Personnel Navigant Commercial (hôtesses et stewards). Ils peuvent être CCP : Chef de Cabine Principal."},
+  {c:"Compagnie",q:"Qui est la Directrice Générale d'Air France (la compagnie, pas le groupe) ?",o:["Anne Rigail","Christine Ourmières","Marjan Rintel","Anne-Marie Couderc"],a:0,e:"Anne Rigail dirige Air France. Attention : Ben Smith dirige le groupe Air France-KLM."},
+  {c:"Compagnie",q:"Qui est le Directeur Général du groupe Air France-KLM ?",o:["Ben Smith","Anne Rigail","Marjan Rintel","Pieter Elbers"],a:0,e:"Ben Smith est le CEO du groupe Air France-KLM depuis 2018."},
+  {c:"Compagnie",q:"En quelle année a été créé le groupe Air France-KLM (fusion) ?",o:["2004","2000","1996","2010"],a:0,e:"La fusion Air France–KLM date de 2004."},
+  {c:"Compagnie",q:"À quelle alliance appartient Air France ?",o:["SkyTeam","Star Alliance","Oneworld","Vanilla Alliance"],a:0,e:"Air France est membre fondateur de SkyTeam."},
+  {c:"Compagnie",q:"Combien de compagnies composent l'alliance SkyTeam (réponse de la sélection) ?",o:["19","12","26","8"],a:0,e:"La réponse attendue au QCM était 19 (le nombre réel évolue, ~18-19)."},
+  {c:"Compagnie",q:"Quelle est l'activité de Servair ?",o:["Restauration aérienne (catering)","Maintenance moteurs","Assistance bagages","Formation pilotes"],a:0,e:"Servair est la filiale de restauration aérienne (catering) du groupe."},
+  {c:"Compagnie",q:"Que représente le logo « la crevette » d'Air France ?",o:["Un hippocampe ailé","Une crevette stylisée","Un goéland","Une comète"],a:0,e:"Le surnom « la crevette » désigne l'hippocampe ailé, emblème historique d'Air France."},
+  {c:"Compagnie",q:"En été 2023, Air France a ouvert une ligne vers quelle ville canadienne ?",o:["Ottawa","Calgary","Winnipeg","Halifax"],a:0,e:"Ouverture d'une ligne vers Ottawa en 2023."},
+  {c:"Compagnie",q:"Air France a ouvert une ligne vers Zanzibar : dans quel pays ?",o:["Tanzanie","Kenya","Mozambique","Madagascar"],a:0,e:"Zanzibar est un archipel de Tanzanie."},
+  {c:"Compagnie",q:"Quelles sont les bases de Transavia France ?",o:["Orly (ORY) et Nantes (NTE)","Roissy et Lyon","Marseille et Nice","Orly uniquement"],a:0,e:"Transavia France opère notamment depuis Orly et Nantes."},
+  {c:"Compagnie",q:"Combien de pilotes Air France compte-t-elle (hors Transavia, ordre de grandeur) ?",o:["≈ 4000","≈ 1500","≈ 9000","≈ 600"],a:0,e:"Environ 4000 pilotes (chiffre indicatif donné en sélection)."},
+  {c:"Compagnie",q:"Combien de places compte l'A380 d'Air France (ordre de grandeur) ?",o:["≈ 500","≈ 250","≈ 850","≈ 350"],a:0,e:"Environ 500 places (516 en configuration AF). L'A380 a depuis été retiré de la flotte AF."},
+  {c:"Compagnie",q:"Que signifie le « yield » en transport aérien ?",o:["Recette moyenne par passager-kilomètre","Le taux de remplissage","La marge nette","Le nombre de sièges vendus"],a:0,e:"Le yield est la recette unitaire moyenne par passager-kilomètre transporté."},
+  {c:"Compagnie",q:"Combien de galons porte un Commandant de Bord (CDB) ?",o:["4 galons","3 galons","5 galons","2 galons"],a:0,e:"4 galons pour le CDB, 3 pour l'OPL (copilote)."},
+  {c:"Compagnie",q:"Que signifie ATO en formation aéronautique ?",o:["Approved Training Organisation (organisme agréé)","Air Traffic Officer","Automatic Take Off","Aircraft Type Operator"],a:0,e:"ATO = Approved Training Organisation, organisme de formation agréé par l'autorité."},
+  {c:"Compagnie",q:"Que fait principalement Air France Industries (base de maintenance) ?",o:["Maintenance/entretien des avions","Catering","Formation des cadets","Gestion des bagages"],a:0,e:"AF Industries (KLM E&M) assure la maintenance, basée notamment à Orly et Roissy."},
+  {c:"Compagnie",q:"Qu'est-ce qu'un vol charter ?",o:["Un vol à la demande / non régulier","Un vol cargo","Un vol d'essai","Un vol de convoyage"],a:0,e:"Un charter est un vol affrété, non régulier (à la demande), par opposition aux lignes régulières."},
+  {c:"Compagnie",q:"Vrai ou faux : Air France et Transavia n'exploitent plus aucun quadriréacteur.",o:["Vrai","Faux"],a:0,e:"Vrai : avec le retrait du 747 puis de l'A380, plus de quadriréacteurs en service."},
+
+  /* ---------- HISTOIRE DE L'AVIATION ---------- */
+  {c:"Histoire",q:"En quelle année eut lieu le premier vol motorisé des frères Wright ?",o:["1903","1909","1890","1919"],a:0,e:"Le Flyer des frères Wright vola le 17 décembre 1903."},
+  {c:"Histoire",q:"Qui a réalisé la première traversée de la Manche en avion ?",o:["Louis Blériot","Roland Garros","Henri Farman","Clément Ader"],a:0,e:"Louis Blériot traverse la Manche le 25 juillet 1909."},
+  {c:"Histoire",q:"Quel exploit Roland Garros a-t-il réalisé en 1913 ?",o:["Première traversée de la Méditerranée en avion","Traversée de la Manche","Tour du monde","Mur du son"],a:0,e:"Roland Garros traverse la Méditerranée en 1913."},
+  {c:"Histoire",q:"Quel est le premier avion à avoir franchi le mur du son (en palier) ?",o:["Bell X-1","Concorde","Mirage III","Messerschmitt Me 262"],a:0,e:"Le Bell X-1 franchit le mur du son le 14 octobre 1947."},
+  {c:"Histoire",q:"Qui est le premier homme à avoir franchi le mur du son ?",o:["Chuck Yeager","Charles Lindbergh","Yuri Gagarine","André Turcat"],a:0,e:"Chuck Yeager, en 1947, aux commandes du Bell X-1."},
+  {c:"Histoire",q:"Qui fut la première femme brevetée pilote au monde ?",o:["Raymonde de Laroche (Élise Léontine Deroche)","Amelia Earhart","Adrienne Bolland","Hélène Boucher"],a:0,e:"Raymonde de Laroche (de son vrai nom Élise Léontine Deroche) obtient son brevet en 1910."},
+  {c:"Histoire",q:"Quelle aviatrice a traversé la cordillère des Andes en 1921 ?",o:["Adrienne Bolland","Amelia Earhart","Hélène Boucher","Jacqueline Auriol"],a:0,e:"Adrienne Bolland franchit la cordillère des Andes en 1921."},
+  {c:"Histoire",q:"Qui réalisa la première traversée solo féminine de l'Atlantique Nord (1932) ?",o:["Amelia Earhart","Adrienne Bolland","Jacqueline Cochran","Hélène Boucher"],a:0,e:"Amelia Earhart traverse l'Atlantique Nord en solitaire en 1932."},
+  {c:"Histoire",q:"Qui fut la première femme à aller dans l'espace ?",o:["Valentina Terechkova","Sally Ride","Claudie Haigneré","Valentina Goubareva"],a:0,e:"La cosmonaute soviétique Valentina Terechkova, en 1963."},
+  {c:"Histoire",q:"Qui est la première spationaute française ?",o:["Claudie Haigneré","Sophie Adenot","Valentina Terechkova","Hélène Boucher"],a:0,e:"Claudie Haigneré, première Française dans l'espace (1996)."},
+  {c:"Histoire",q:"Qui était aux commandes du premier vol du Concorde ?",o:["André Turcat","Henri Ziegler","Jean Franchi","Brian Trubshaw"],a:0,e:"André Turcat pilote le premier vol du Concorde 001 à Toulouse, le 2 mars 1969."},
+  {c:"Histoire",q:"En quelle année eut lieu le premier vol du Concorde ?",o:["1969","1976","1962","1971"],a:0,e:"Premier vol en 1969 ; mise en service commercial en 1976."},
+  {c:"Histoire",q:"Quelle est la vitesse de croisière du Concorde ?",o:["Mach 2","Mach 1","Mach 3","Mach 0,85"],a:0,e:"Le Concorde croisait à environ Mach 2 (~2180 km/h)."},
+  {c:"Histoire",q:"Le Concorde est le fruit de quelle coopération ?",o:["Franco-britannique","Franco-allemande","Franco-américaine","Européenne (Airbus)"],a:0,e:"Coopération franco-britannique (Sud-Aviation/Aérospatiale et BAC)."},
+  {c:"Histoire",q:"Quel pilote de l'Aéropostale est réputé pour les lignes courrier d'Amérique du Sud ?",o:["Jean Mermoz","Antoine de Saint-Exupéry","Henri Guillaumet","Didier Daurat"],a:0,e:"Jean Mermoz, notamment 1ère traversée de l'Atlantique Sud postal. Guillaumet est lié au crash des Andes."},
+  {c:"Histoire",q:"Quel pilote a prononcé « Ce que j'ai fait, aucune bête ne l'aurait fait » après son crash dans les Andes ?",o:["Henri Guillaumet","Jean Mermoz","Antoine de Saint-Exupéry","Roland Garros"],a:0,e:"Henri Guillaumet, après s'être écrasé dans la cordillère des Andes (1930)."},
+  {c:"Histoire",q:"Dans quel avion Antoine de Saint-Exupéry a-t-il disparu en 1944 ?",o:["Lockheed P-38 Lightning","Spitfire","Caudron Simoun","Bréguet 14"],a:0,e:"Il disparaît aux commandes d'un P-38 Lightning de reconnaissance."},
+  {c:"Histoire",q:"Qu'a inventé Raoul Badin (instrument qui porte son nom) ?",o:["L'anémomètre (indicateur de vitesse)","L'altimètre","Le variomètre","Le compas"],a:0,e:"Le « badin » est l'anémomètre, indicateur de vitesse air."},
+  {c:"Histoire",q:"Qui est Kelly Johnson ?",o:["Ingénieur Lockheed (U-2, SR-71)","Fondateur de Boeing","Pilote du Concorde","Inventeur du radar"],a:0,e:"Clarence « Kelly » Johnson, génie de la Skunk Works de Lockheed (U-2, SR-71 Blackbird)."},
+  {c:"Histoire",q:"Quel constructeur a conçu le Mirage III ?",o:["Dassault","Boeing","Lockheed","Sud-Aviation"],a:0,e:"Le Mirage III est un avion de Dassault Aviation."},
+
+  /* ---------- GEOGRAPHIE ---------- */
+  {c:"Géographie",q:"Quel est le code OACI de l'aéroport de Londres-Heathrow ?",o:["EGLL","LHR","KJFK","LFPG"],a:0,e:"EGLL (OACI). LHR est le code IATA."},
+  {c:"Géographie",q:"Quel est le code OACI de l'aéroport de Los Angeles ?",o:["KLAX","LAX","KLAS","KSFO"],a:0,e:"KLAX (OACI). LAX est le code IATA."},
+  {c:"Géographie",q:"Dans quel pays se trouve Zanzibar ?",o:["Tanzanie","Kenya","Oman","Mozambique"],a:0,e:"Zanzibar est un archipel de Tanzanie, dans l'océan Indien."},
+  {c:"Géographie",q:"Conakry est la capitale de quel pays ?",o:["Guinée","Ghana","Sénégal","Mali"],a:0,e:"Conakry est la capitale de la Guinée."},
+  {c:"Géographie",q:"Où se situe Djibouti ?",o:["Dans la Corne de l'Afrique","En Afrique de l'Ouest","Au Maghreb","En Afrique australe"],a:0,e:"Djibouti se trouve dans la Corne de l'Afrique, sur le golfe d'Aden."},
+  {c:"Géographie",q:"Quelle est la capitale de la Géorgie ?",o:["Tbilissi","Erevan","Bakou","Tachkent"],a:0,e:"Tbilissi est la capitale de la Géorgie (Caucase)."},
+  {c:"Géographie",q:"Quelle est la capitale des Comores ?",o:["Moroni","Mamoudzou","Victoria","Antananarivo"],a:0,e:"Moroni est la capitale de l'Union des Comores."},
+  {c:"Géographie",q:"Quelle est la capitale de la République centrafricaine ?",o:["Bangui","Brazzaville","Yaoundé","N'Djamena"],a:0,e:"Bangui est la capitale de la Centrafrique."},
+  {c:"Géographie",q:"Quel grand fleuve traverse le Zimbabwe (et forme les chutes Victoria) ?",o:["Le Zambèze","Le Limpopo","Le Congo","Le Niger"],a:0,e:"Le Zambèze ; les chutes Victoria sont sur ce fleuve."},
+  {c:"Géographie",q:"Les chutes Victoria se trouvent entre quels pays ?",o:["Zambie et Zimbabwe","Tanzanie et Kenya","Angola et Namibie","Mozambique et Malawi"],a:0,e:"Elles marquent la frontière Zambie/Zimbabwe sur le Zambèze."},
+  {c:"Géographie",q:"Depuis quels pays peut-on voir les chutes d'Iguazú ?",o:["Argentine et Brésil","Chili et Argentine","Brésil et Paraguay","Pérou et Bolivie"],a:0,e:"Les chutes d'Iguazú sont à la frontière Argentine/Brésil (le tripoint touche aussi le Paraguay)."},
+  {c:"Géographie",q:"Parmi celles-ci, laquelle n'est PAS une capitale de l'Afrique du Sud ?",o:["Johannesburg","Pretoria","Le Cap","Bloemfontein"],a:0,e:"L'Afrique du Sud a 3 capitales (Pretoria, Le Cap, Bloemfontein). Johannesburg est la plus grande ville mais pas capitale."},
+  {c:"Géographie",q:"Quel est le grand aéroport hub d'Asie du Sud-Est cité en référence ?",o:["Singapour Changi","Bangkok Don Muang","Manille","Jakarta"],a:0,e:"Singapour Changi est l'un des principaux hubs d'Asie du Sud-Est."},
+  {c:"Géographie",q:"Comment s'appelle le grand aéroport international du Qatar (Doha) ?",o:["Hamad International","Dubai International","King Khalid","Sheikh Zayed"],a:0,e:"L'aéroport international Hamad de Doha."},
+  {c:"Géographie",q:"Dans quel État américain se trouvent les usines historiques de Boeing (assemblage gros-porteurs) ?",o:["Washington (Seattle/Everett)","Californie","Texas","Oregon"],a:0,e:"L'État de Washington (Everett, Renton), berceau de Boeing."},
+  {c:"Géographie",q:"Quelle est approximativement la longitude de Paris / CDG ?",o:["≈ 2° Est","≈ 5° Ouest","≈ 0°","≈ 10° Est"],a:0,e:"Paris est à environ 2° de longitude Est."},
+  {c:"Géographie",q:"Quel est le décalage horaire entre Québec et Paris ?",o:["6 heures (Paris en avance)","3 heures","9 heures","1 heure"],a:0,e:"Paris a 6 heures d'avance sur le Québec."},
+  {c:"Géographie",q:"À quelle latitude approximative se situent les tropiques ?",o:["≈ 23°","≈ 45°","≈ 66°","≈ 10°"],a:0,e:"Les tropiques sont à environ 23,4° de latitude (Nord = Cancer, Sud = Capricorne)."},
+  {c:"Géographie",q:"Quel pays est traversé par le tropique du Cancer ?",o:["Le Mexique","La France","Le Brésil","L'Afrique du Sud"],a:0,e:"Le tropique du Cancer traverse le Mexique, l'Algérie, l'Égypte, l'Inde, la Chine… (pas l'Europe ni l'hémisphère Sud)."},
+  {c:"Géographie",q:"Parmi ces pays, lequel n'est PAS frontalier du Togo ?",o:["Nigeria","Ghana","Bénin","Burkina Faso"],a:0,e:"Le Togo est bordé par le Ghana, le Bénin et le Burkina Faso, mais pas par le Nigeria."},
+  {c:"Géographie",q:"Par rapport à quel repère définit-on la latitude d'un point ?",o:["L'équateur","Le méridien de Greenwich","Le pôle Nord","Le tropique du Cancer"],a:0,e:"La latitude se mesure depuis l'équateur (0°) vers les pôles (90°)."},
+
+  /* ---------- MÉTÉOROLOGIE ---------- */
+  {c:"Météo",q:"Qu'est-ce qu'un jet-stream ?",o:["Un courant d'air très rapide en haute altitude","Un orage tropical","Une brise de mer","Un vent catabatique"],a:0,e:"Le jet-stream est un courant d'air rapide (souvent >200 km/h) dans la haute troposphère."},
+  {c:"Météo",q:"Quelle est l'influence d'un jet-stream sur un vol ?",o:["Il peut modifier fortement le temps de vol (vent arrière/face)","Il n'a aucun effet","Il diminue la pression cabine","Il augmente la portance"],a:0,e:"Bien utilisé, il raccourcit le vol (vent arrière) ; de face il l'allonge fortement."},
+  {c:"Météo",q:"Quelle est la différence entre un METAR et un TAF ?",o:["METAR = observation, TAF = prévision","METAR = prévision, TAF = observation","Les deux sont des prévisions","Les deux sont des observations"],a:0,e:"Le METAR décrit la météo observée ; le TAF est une prévision d'aérodrome."},
+  {c:"Météo",q:"Qu'est-ce que l'ATIS ?",o:["Un message d'information automatique de terrain","Un radar météo","Un système anticollision","Une carte d'approche"],a:0,e:"ATIS = service automatique d'information de région terminale (météo + infos piste)."},
+  {c:"Météo",q:"Au niveau de la mer, une pression de 985 hPa correspond à…",o:["Une dépression","Un anticyclone","La pression standard","Une dorsale"],a:0,e:"985 hPa (< 1013) caractérise une zone de basses pressions (dépression)."},
+  {c:"Météo",q:"Au niveau de la mer, une pression de 1040 hPa correspond à…",o:["Un anticyclone","Une dépression","Un thalweg","Un front froid"],a:0,e:"1040 hPa (> 1013) caractérise une zone de hautes pressions (anticyclone)."},
+  {c:"Météo",q:"Comment appelle-t-on une ligne / axe de hautes pressions ?",o:["Une dorsale","Un thalweg","Un front","Un col"],a:0,e:"Une dorsale est un prolongement de hautes pressions ; à l'inverse le thalweg est un axe de basses pressions."},
+  {c:"Météo",q:"Qu'est-ce qu'un thalweg en météorologie ?",o:["Un axe de basses pressions","Un axe de hautes pressions","Un type de nuage","Un vent de surface"],a:0,e:"Le thalweg (vallée dépressionnaire) est l'axe d'une zone de basses pressions."},
+  {c:"Météo",q:"Dans l'hémisphère Nord, dans quel sens tourne le vent autour d'une dépression ?",o:["Sens anti-horaire (cyclonique)","Sens horaire","Il ne tourne pas","Toujours du nord"],a:0,e:"Autour d'une dépression dans l'hémisphère Nord, le vent tourne dans le sens anti-horaire."},
+  {c:"Météo",q:"Qu'appelle-t-on une inversion de température ?",o:["La température augmente avec l'altitude","La température diminue brutalement","Un changement de vent","Une chute de pression"],a:0,e:"En cas d'inversion, contrairement au cas normal, la température croît avec l'altitude."},
+  {c:"Météo",q:"Selon le modèle ISA, quel est le gradient vertical de température dans la troposphère ?",o:["≈ -2 °C / 1000 ft","≈ -10 °C / 1000 ft","+2 °C / 1000 ft","0 °C / 1000 ft"],a:0,e:"≈ -2 °C / 1000 ft (soit -6,5 °C / 1000 m). Température au sol ISA : 15 °C."},
+  {c:"Météo",q:"Comment appelle-t-on la turbulence/onde provoquée par le relief ?",o:["Onde orographique","Onde de gravité interne","Cisaillement frontal","Turbulence de sillage"],a:0,e:"Le relief génère des ondes orographiques (turbulence de relief) côté sous le vent."},
+  {c:"Météo",q:"Que traduit un point de rosée proche de la température de l'air (écart faible) ?",o:["Air proche de la saturation → risque de brouillard/nuages bas","Air très sec","Forte turbulence","Hautes pressions"],a:0,e:"Quand le point de rosée est proche de la température, l'air est presque saturé : condensation, brouillard, stratus."},
+  {c:"Météo",q:"Que se passe-t-il au passage d'un front froid ?",o:["L'air froid s'engouffre sous l'air chaud et le soulève","L'air chaud glisse au-dessus de l'air froid","Il n'y a pas de mouvement vertical","La pression monte fortement"],a:0,e:"Le front froid : l'air froid, plus dense, soulève vigoureusement l'air chaud (cumulonimbus, averses)."},
+  {c:"Météo",q:"Quel nuage est typiquement annonciateur d'un front chaud ?",o:["Nimbostratus (couche, pluie continue)","Cumulonimbus","Cumulus de beau temps","Lenticulaire"],a:0,e:"Le front chaud donne des nuages stratiformes étendus (cirrus → altostratus → nimbostratus, pluie continue)."},
+
+  /* ---------- NAVIGATION / INSTRUMENTS ---------- */
+  {c:"Navigation",q:"Qu'est-ce qu'un VOR ?",o:["Un radiophare omnidirectionnel VHF (aide radio à la navigation)","Un radar primaire","Un GPS embarqué","Un altimètre radio"],a:0,e:"VOR = VHF Omnidirectional Range, dispositif radioélectrique au sol donnant un relèvement (radiales)."},
+  {c:"Navigation",q:"Que mesure un variomètre ?",o:["La vitesse verticale","La vitesse air","L'altitude","Le cap"],a:0,e:"Le variomètre indique la vitesse verticale (montée/descente, en ft/min)."},
+  {c:"Navigation",q:"Sur quel principe fonctionne l'altimètre ?",o:["Mesure de la pression comparée à l'atmosphère standard","Mesure GPS","Onde radar vers le sol","Accéléromètre"],a:0,e:"L'altimètre est un baromètre : il convertit la pression statique en altitude selon l'atmosphère standard."},
+  {c:"Navigation",q:"À quoi sert le gyroscope dans un avion ?",o:["Maintenir une référence d'orientation spatiale stable","Mesurer la vitesse","Détecter le givrage","Réguler la pressurisation"],a:0,e:"Le gyroscope conserve son axe : il sert d'horizon artificiel, conservateur de cap, etc."},
+  {c:"Navigation",q:"Que signifie GPWS ?",o:["Ground Proximity Warning System (alerte proximité du sol)","Global Positioning Weather System","General Power Warning Switch","Ground Pressure Wind Sensor"],a:0,e:"Le GPWS alerte l'équipage d'un risque de collision avec le sol (CFIT)."},
+  {c:"Navigation",q:"Que signifie TCAS ?",o:["Système anticollision de trafic","Système de contrôle d'altitude","Calculateur de carburant","Pilote automatique"],a:0,e:"TCAS = Traffic Collision Avoidance System, évite les collisions en vol entre aéronefs."},
+  {c:"Navigation",q:"Que désigne l'EFIS dans un cockpit moderne ?",o:["Les écrans (instruments de vol électroniques)","Les moteurs","Le train d'atterrissage","Le système hydraulique"],a:0,e:"EFIS = Electronic Flight Instrument System : les écrans (PFD, ND…) du « glass cockpit »."},
+  {c:"Navigation",q:"Qu'est-ce qu'une FIR ?",o:["Une région d'information de vol","Une zone interdite","Une route directe","Une fréquence d'urgence"],a:0,e:"FIR = Flight Information Region, espace aérien où sont fournis les services d'information de vol et d'alerte."},
+  {c:"Navigation",q:"Que désigne une zone « R » sur une carte aéronautique ?",o:["Une zone réglementée (Restricted)","Une zone interdite (Prohibited)","Une zone dangereuse","Une zone radar"],a:0,e:"Zone R = Restricted (réglementée), pénétration soumise à conditions, souvent militaire."},
+  {c:"Navigation",q:"Que désigne une carte VAC ?",o:["Une carte d'approche et d'atterrissage à vue","Une carte météo","Une carte des vents","Une carte IFR en route"],a:0,e:"VAC = carte d'Approche À Vue (Visual Approach Chart) d'un aérodrome."},
+  {c:"Navigation",q:"En montée, l'altimètre calé au QNH : à partir de quel niveau passe-t-on au calage standard (1013) ?",o:["À l'altitude de transition","Au niveau de transition","À l'altitude de sécurité","Au FL 100 toujours"],a:0,e:"En montée on passe au standard à l'altitude de transition (et on revient au QNH au niveau de transition en descente)."},
+  {c:"Navigation",q:"Qu'est-ce que le VASIS (ancêtre d'un dispositif actuel) ?",o:["L'ancêtre du PAPI (indicateur visuel de plan d'approche)","Un radar d'approche","Un balisage de piste de nuit","Un anémomètre"],a:0,e:"Le VASIS (Visual Approach Slope Indicator System) a précédé le PAPI."},
+  {c:"Navigation",q:"À partir de quels moyens trace-t-on classiquement une voie aérienne (airway) ?",o:["Des balises / points VOR","Des phares maritimes","Des frontières d'États","Des lignes de chemin de fer"],a:0,e:"Les voies aériennes relient classiquement des balises VOR (et aujourd'hui des points GPS)."},
+  {c:"Navigation",q:"Que comprend l'« aire de mouvement » d'un aéroport ?",o:["L'aire de manœuvre + les aires de trafic","Uniquement les pistes","Uniquement les parkings","Uniquement les taxiways"],a:0,e:"Aire de mouvement = aire de manœuvre (pistes + voies de circulation) + aires de trafic. L'aire de manœuvre seule = circulation, décollage, atterrissage."},
+  {c:"Navigation",q:"Pourquoi un pilote doit-il tenir compte de la déclinaison magnétique ?",o:["Pour corriger l'écart entre nord magnétique et nord vrai","Pour régler l'altimètre","Pour calculer le carburant","Pour estimer la pression"],a:0,e:"La déclinaison est l'angle entre nord magnétique et nord géographique : indispensable pour convertir caps vrais/magnétiques."},
+  {c:"Navigation",q:"Lequel de ces termes ne désigne PAS une échelle/heure de temps ?",o:["FIR","UTC","UT","Z (Zulu)"],a:0,e:"UTC, UT et Z (Zulu) désignent tous le temps universel. FIR est un espace aérien."},
+
+  /* ---------- CALCULS / MENTAL ---------- */
+  {c:"Calculs",q:"À 200 kt, quelle distance parcourt-on en 15 minutes ?",o:["50 NM","30 NM","75 NM","100 NM"],a:0,e:"200 kt = 200 NM/h ; en 15 min (¼ h) → 50 NM."},
+  {c:"Calculs",q:"À 240 kt, quelle distance parcourt-on en 15 minutes ?",o:["60 NM","40 NM","80 NM","30 NM"],a:0,e:"240 NM/h × 0,25 h = 60 NM."},
+  {c:"Calculs",q:"À 240 kt, quelle distance parcourt-on en 20 minutes ?",o:["80 NM","60 NM","48 NM","120 NM"],a:0,e:"240 NM/h × (20/60) h = 80 NM."},
+  {c:"Calculs",q:"À 260 kt, quelle distance parcourt-on en 15 minutes ?",o:["65 NM","43 NM","87 NM","52 NM"],a:0,e:"260 NM/h × 0,25 h = 65 NM."},
+  {c:"Calculs",q:"Vous voulez suivre une route au Nord à 200 km/h avec un vent d'Est de 70 km/h : quel cap tenir approximativement ?",o:["≈ 020 (cap décalé vers l'Est, face au vent)","≈ 340","≈ 090","≈ 180"],a:0,e:"On corrige en orientant le nez vers le vent (vers l'Est) : cap ≈ 020° pour une route au Nord."},
+  {c:"Calculs",q:"Vous êtes au cap 360 et voulez rejoindre le cap 170 : par où virer le plus court ?",o:["Par la droite","Par la gauche","Indifférent","Demi-tour interdit"],a:0,e:"De 360 vers 170, le virage à droite (sens horaire) couvre 170°, plus court que 190° à gauche."},
+  {c:"Calculs",q:"Au cap 030, quel est le virage le plus rapide pour mettre le cap au Sud (180) ?",o:["Virage à droite","Virage à gauche","Indifférent","Tout droit"],a:0,e:"De 030 à 180 : à droite = 150°, à gauche = 210°. Le plus court est à droite."},
+  {c:"Calculs",q:"Au cap 300, vous visez le cap 100 : quel virage est le plus rapide ?",o:["Virage à droite","Virage à gauche","Indifférent","Aucun"],a:0,e:"De 300 à 100 : à droite = 160°, à gauche = 200°. Le plus court est à droite."},
+  {c:"Calculs",q:"Cap Ouest (270) avec un vent du Nord : comment se compare le cap à la route ?",o:["Le nez est décalé vers le Nord par rapport à la route (dérive vers le Sud)","Aucun écart","Le cap est plein Sud","La route est plein Nord"],a:0,e:"Vent du Nord pousse l'avion vers le Sud : on incline le cap vers le Nord pour maintenir la route à l'Ouest."},
+
+  /* ---------- TECHNIQUE / AÉRODYNAMIQUE ---------- */
+  {c:"Technique",q:"Quels moteurs équipent classiquement l'Airbus A320 (famille) ?",o:["CFM56 ou IAE V2500","Rolls-Royce Trent","GE90","Pratt & Whitney JT8D"],a:0,e:"L'A320ceo est motorisé par CFM56 ou IAE V2500 (et LEAP/PW1100G sur les neo)."},
+  {c:"Technique",q:"Comment évolue la vitesse de décrochage avec le facteur de charge ?",o:["Elle augmente (proportionnelle à la racine du facteur de charge)","Elle diminue","Elle reste constante","Elle s'annule"],a:0,e:"Vs croît avec √n : en virage serré (n > 1), l'avion décroche à une vitesse plus élevée."},
+  {c:"Technique",q:"Quelle est une conséquence de l'effet de sol à l'atterrissage ?",o:["L'avion a tendance à « flotter » (arrondi plus délicat)","Il décroche brutalement","Il perd toute portance","Il pique vers le sol"],a:0,e:"Près du sol la traînée induite chute et la portance augmente : l'avion flotte, l'arrondi/atterrissage est plus difficile à doser."},
+  {c:"Technique",q:"Que provoque la sortie des volets (becs/volets) ?",o:["Plus de portance et de traînée, finesse réduite","Moins de portance","Aucun effet aérodynamique","Plus de finesse"],a:0,e:"Les volets augmentent portance et traînée et diminuent la finesse : utiles pour voler lentement à l'atterrissage."},
+  {c:"Technique",q:"L'incidence (angle d'attaque) est l'angle entre…",o:["La corde du profil et le vent relatif","L'aile et l'horizon","Le fuselage et la piste","La corde et la trajectoire sol"],a:0,e:"L'incidence est l'angle entre la corde de l'aile et le vent relatif."},
+  {c:"Technique",q:"Que provoque le braquage des ailerons (effet secondaire indésirable) ?",o:["Le lacet inverse","Le tangage à cabrer","Une perte de pressurisation","Une augmentation de portance globale"],a:0,e:"L'aileron baissé crée plus de traînée → l'avion lace du côté opposé au virage : c'est le lacet inverse."},
+  {c:"Technique",q:"Quel est l'effet d'un vent de face sur la distance de décollage ?",o:["Il la diminue","Il l'augmente","Aucun effet","Il l'annule"],a:0,e:"Le vent de face augmente la vitesse air à vitesse sol réduite : la distance de décollage diminue."},
+  {c:"Technique",q:"Quel est l'effet d'une hausse de température sur les performances des réacteurs ?",o:["Les performances diminuent (air moins dense)","Elles augmentent","Aucun effet","Elles doublent"],a:0,e:"Plus il fait chaud, moins l'air est dense : poussée et performances diminuent."},
+  {c:"Technique",q:"Qu'est-ce que l'angle de calage de l'aile ?",o:["L'angle entre la corde de l'aile et l'axe de référence du fuselage","L'angle entre l'aile et le vent relatif","L'angle de la dérive","L'angle de montée"],a:0,e:"L'angle de calage est fixe : il définit l'orientation de l'aile par rapport à l'axe longitudinal de l'avion."},
+  {c:"Technique",q:"Quel est le but de la pressurisation cabine en altitude ?",o:["Maintenir une pression cabine vivable (équiv. ~ 2000-2400 m)","Refroidir les moteurs","Augmenter la vitesse","Réduire la traînée"],a:0,e:"La pressurisation maintient une altitude cabine d'environ 6000-8000 ft pour le confort et la sécurité des occupants."},
+  {c:"Technique",q:"Quel avion est surnommé le « Dreamliner » ?",o:["Boeing 787","Airbus A350","Boeing 747","Airbus A380"],a:0,e:"Le Boeing 787 Dreamliner."},
+
+  /* ---------- RÉGLEMENTATION / FORMATION ---------- */
+  {c:"Réglementation",q:"Quel est le rôle de l'OACI ?",o:["Édicter des règles/normes aéronautiques internationales","Vendre des billets","Construire des avions","Gérer un seul aéroport"],a:0,e:"L'OACI (ICAO) est l'agence de l'ONU qui fixe les normes de l'aviation civile internationale."},
+  {c:"Réglementation",q:"Que désigne l'IATA ?",o:["L'association internationale du transport aérien (compagnies)","L'autorité de sécurité européenne","Le contrôle aérien mondial","Un syndicat de pilotes"],a:0,e:"IATA = association commerciale regroupant les compagnies aériennes (codes 3 lettres, tarifs…)."},
+  {c:"Réglementation",q:"Quel est l'organisme de régulation de la sécurité aérienne européen ?",o:["EASA","FAA","OACI","Eurocontrol"],a:0,e:"EASA = Agence de l'Union européenne pour la sécurité aérienne."},
+  {c:"Réglementation",q:"Qu'est-ce que le BIA ?",o:["Le Brevet d'Initiation Aéronautique (diplôme de l'État)","Une licence professionnelle","Une qualification de vol aux instruments","Un type d'avion"],a:0,e:"Le BIA est un diplôme de l'Éducation nationale qui initie à l'aéronautique."},
+  {c:"Réglementation",q:"Quel est l'âge minimum pour passer le BIA ?",o:["13 ans","16 ans","18 ans","11 ans"],a:0,e:"Le BIA est accessible dès 13 ans."},
+  {c:"Réglementation",q:"Quelle licence minimale faut-il pour exercer comme pilote professionnel (transport rémunéré) ?",o:["La CPL (puis l'ATPL pour le transport public)","La PPL","Le BIA","La LAPL"],a:0,e:"La CPL (licence de pilote professionnel) ; l'ATPL est requise pour commander en transport public."},
+  {c:"Réglementation",q:"L'ATPL théorique peut se préparer…",o:["En cursus intégré OU modulaire","Uniquement en intégré","Uniquement en modulaire","Uniquement à l'ENAC"],a:0,e:"L'ATPL théorique se prépare aussi bien en formation intégrée qu'en modulaire."},
+  {c:"Réglementation",q:"La formation des cadets Air France est de type…",o:["Intégrée","Modulaire","Par correspondance","Uniquement en simulateur"],a:0,e:"Le cursus cadet AF est une formation intégrée ab initio."},
+  {c:"Réglementation",q:"« L'IR est à l'IFR ce que … est au VFR. »",o:["Le PPL","La CPL","L'ATPL","Le BIA"],a:0,e:"Analogie : l'IR (qualif. vol aux instruments) permet l'IFR, comme le PPL permet le VFR (privé)."},
+  {c:"Réglementation",q:"Quel module de formation se déroule en travail d'équipage (en groupe) ?",o:["Le MCC (Multi Crew Cooperation)","Le PPL","L'IR","Le BIA"],a:0,e:"Le MCC entraîne au travail en équipage à plusieurs (coopération en cockpit)."},
+  {c:"Réglementation",q:"Que peut devenir un PNC en évoluant dans la hiérarchie cabine ?",o:["CCP (Chef de Cabine Principal)","CDB","OPL","Instructeur sol"],a:0,e:"Un PNC peut devenir Chef de Cabine, puis Chef de Cabine Principal (CCP)."},
+  {c:"Réglementation",q:"Quel est l'ordre logique des étapes de formation vers le long-courrier ?",o:["PPL → CPL → IR → MCC → ATPL","ATPL → CPL → PPL","BIA → ATPL → PPL","IR → PPL → CPL"],a:0,e:"On progresse du PPL (privé) vers CPL, IR, MCC, jusqu'à l'ATPL (transport public)."},
+  {c:"Réglementation",q:"Comment se nomme la lettre « O » dans l'alphabet aéronautique ?",o:["Oscar","Omega","Otto","Oxford"],a:0,e:"O = Oscar (alphabet phonétique OACI)."},
+  {c:"Réglementation",q:"Comment se nomme la lettre « W » dans l'alphabet aéronautique ?",o:["Whiskey","Whisky-Bravo","Wilson","Wagner"],a:0,e:"W = Whiskey."},
+  {c:"Réglementation",q:"Comment se nomme la lettre « I » dans l'alphabet aéronautique ?",o:["India","Italy","Igloo","Indigo"],a:0,e:"I = India."},
+  {c:"Réglementation",q:"Quel marquage indique une piste fermée / atterrissage interdit ?",o:["Une grande croix jaune","Un rond rouge","Un T blanc","Des flèches vertes"],a:0,e:"Une croix jaune (X) marque une piste fermée ; un signal de croix indique atterrissage interdit."},
+  {c:"Réglementation",q:"Combien de QFU (sens d'utilisation de piste) compte CDG ?",o:["8 (4 pistes × 2 sens)","2","4","6"],a:0,e:"CDG a 4 pistes parallèles, chacune utilisable dans 2 sens → 8 QFU."},
+  {c:"Réglementation",q:"Combien de pistes compte l'aéroport de Paris-Orly ?",o:["3","1","2","4"],a:0,e:"Orly dispose de 3 pistes."},
+];
+
+/* ===========================================================
+   LOGIQUE DU QUIZ
+   =========================================================== */
+const $ = id => document.getElementById(id);
+let pool = [], idx = 0, score = 0, answered = false, wrongList = [];
+
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+function initStart(){
+  $("totalCount").textContent = QUESTIONS.length;
+  const cats = [...new Set(QUESTIONS.map(q=>q.c))];
+  const sel = $("catSelect");
+  cats.forEach(c=>{
+    const n = QUESTIONS.filter(q=>q.c===c).length;
+    const o = document.createElement("option");
+    o.value = c; o.textContent = `${c} (${n})`;
+    sel.appendChild(o);
+  });
+}
+
+function buildPool(){
+  const cat = $("catSelect").value;
+  let arr = QUESTIONS.map((q,i)=>({...q,_id:i}));
+  if(cat!=="all") arr = arr.filter(q=>q.c===cat);
+  if($("shuffleChk").checked) shuffle(arr);
+  const n = parseInt($("countSelect").value,10);
+  if(n>0) arr = arr.slice(0,n);
+  return arr;
+}
+
+function start(){
+  pool = buildPool();
+  if(!pool.length) return;
+  idx=0; score=0; wrongList=[];
+  $("start").classList.add("hide");
+  $("result").classList.add("hide");
+  $("quiz").classList.remove("hide");
+  render();
+}
+
+function render(){
+  answered=false;
+  const q = pool[idx];
+  $("qCat").textContent = q.c;
+  $("liveScore").textContent = score;
+  $("qNum").textContent = `Q${idx+1}/${pool.length}`;
+  $("qText").textContent = q.q;
+  $("bar").style.width = `${(idx/pool.length)*100}%`;
+  $("explain").classList.remove("show");
+  $("explain").innerHTML="";
+  $("nextBtn").disabled = true;
+  $("nextBtn").textContent = (idx===pool.length-1) ? "Voir le résultat ✓" : "Suivant →";
+
+  const box = $("choices"); box.innerHTML="";
+  const keys = ["A","B","C","D","E"];
+  const order = shuffle(q.o.map((opt,i)=>({opt,correct:i===q.a})));
+  q._correctIdx = order.findIndex(o=>o.correct);
+  order.forEach((item,i)=>{
+    const b = document.createElement("button");
+    b.className="choice";
+    b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
+    b.onclick = ()=>choose(i,b);
+    box.appendChild(b);
+  });
+}
+
+function choose(i,btn){
+  if(answered) return;
+  answered=true;
+  const q = pool[idx];
+  const all = [...document.querySelectorAll(".choice")];
+  all.forEach((c,k)=>{ c.classList.add("locked"); if(k===q._correctIdx) c.classList.add("correct"); });
+  if(i===q._correctIdx){ score++; }
+  else { btn.classList.add("wrong"); wrongList.push(q); }
+  $("liveScore").textContent = score;
+  $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}`;
+  $("explain").classList.add("show");
+  $("nextBtn").disabled=false;
+}
+
+function next(){
+  if(!answered) return;
+  if(idx<pool.length-1){ idx++; render(); }
+  else finish();
+}
+
+function finish(){
+  $("quiz").classList.add("hide");
+  $("result").classList.remove("hide");
+  const pct = Math.round((score/pool.length)*100);
+  $("finalScore").textContent = `${score} / ${pool.length}`;
+  $("finalBar").style.width = `${pct}%`;
+  let msg;
+  if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+  else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
+  else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
+  else msg = "📚 Reprends les fiches et recommence.";
+  $("finalMsg").textContent = `${pct}% — ${msg}`;
+  $("reviewWrongBtn").style.display = wrongList.length ? "" : "none";
+}
+
+function reviewWrong(){
+  if(!wrongList.length) return;
+  pool = wrongList.slice();
+  idx=0; score=0; wrongList=[];
+  $("result").classList.add("hide");
+  $("quiz").classList.remove("hide");
+  render();
+}
+
+function home(){
+  $("quiz").classList.add("hide");
+  $("result").classList.add("hide");
+  $("start").classList.remove("hide");
+}
+
+$("startBtn").onclick = start;
+$("nextBtn").onclick = next;
+$("quitBtn").onclick = home;
+$("restartBtn").onclick = start;
+$("reviewWrongBtn").onclick = reviewWrong;
+$("homeBtn").onclick = home;
+
+document.addEventListener("keydown", e=>{
+  if($("quiz").classList.contains("hide")) return;
+  if(["1","2","3","4","5"].includes(e.key)){
+    const i = parseInt(e.key,10)-1;
+    const all = [...document.querySelectorAll(".choice")];
+    if(all[i] && !answered) all[i].click();
+  } else if(e.key==="Enter" || e.key==="ArrowRight"){
+    if(!$("nextBtn").disabled) next();
+  }
+});
+
+initStart();
+</script>
+</body>
+</html>
