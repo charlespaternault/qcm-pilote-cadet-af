@@ -188,7 +188,7 @@
   <div id="start" class="panel">
     <div class="topbar">
       <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-      <span class="chip">Retours candidats + tests Pilotest 2018/2019</span>
+      <span class="chip">Retours candidats · Pilotest 2018/2019 · chiffres clés 2024/2025</span>
     </div>
     <div class="controls">
       <select id="catSelect"><option value="all">Toutes les catégories</option></select>
@@ -465,6 +465,44 @@ const QUESTIONS = [
   {c:"Calculs",q:"Quelle est la température standard (ISA) à 15 000 ft ?",o:["-15 °C","0 °C","15 °C","-30 °C"],a:0,e:"On part de 15 °C et on retire 2 °C/1000 ft : 15 − (15 × 2) = -15 °C."},
   {c:"Calculs",q:"Vous décollez piste 03 avec un vent d'ouest. De quel type de vent s'agit-il ?",o:["Un vent arrière de travers (par la gauche)","Un vent de face","Un vent de travers pur","Un vent arrière pur"],a:0,e:"Piste 03 ≈ cap 030°. Un vent d'ouest (270°) vient de l'arrière-gauche : c'est un vent arrière et de travers."},
   {c:"Calculs",q:"Si l'on tourne à gauche, les caps augmentent-ils ou diminuent-ils ?",o:["Ils diminuent","Ils augmentent","Ils restent constants","Cela dépend de l'altitude"],a:0,e:"Vers la gauche (sens anti-horaire), les caps décroissent ; vers la droite, ils croissent."},
+
+  /* ===================================================================
+     30 QUESTIONS « CHIFFRES CLÉS » (Air France 2024/2025 & Transavia)
+     Sources : corporate.airfrance.com, corporate.transavia.com, factsheet Transavia
+     =================================================================== */
+  /* --- Air France / groupe AF-KLM --- */
+  {c:"Chiffres clés",q:"Combien de passagers le groupe Air France-KLM a-t-il transportés en 2024 ?",o:["≈ 98 millions","≈ 50 millions","≈ 150 millions","≈ 75 millions"],a:0,e:"Air France, KLM et Transavia ont transporté près de 98 millions de passagers en 2024 (+4,7 %)."},
+  {c:"Chiffres clés",q:"Combien de destinations le groupe Air France-KLM dessert-il dans le monde ?",o:["Environ 320","Environ 120","Environ 600","Environ 80"],a:0,e:"Le groupe AF-KLM dessert environ 320 destinations à travers le monde."},
+  {c:"Chiffres clés",q:"Combien d'avions le groupe Air France-KLM exploitait-il fin 2024 ?",o:["564","300","420","780"],a:0,e:"La flotte du groupe comptait 564 avions en exploitation au 31 décembre 2024."},
+  {c:"Chiffres clés",q:"Combien d'avions compte la flotte d'Air France (HOP inclus) fin 2025 ?",o:["268","564","150","420"],a:0,e:"268 avions Air France (incluant HOP) au 31 décembre 2025."},
+  {c:"Chiffres clés",q:"Combien de passagers Air France a-t-elle transportés en 2025 ?",o:["Plus de 42 millions","Plus de 98 millions","Environ 20 millions","Environ 70 millions"],a:0,e:"Air France a transporté plus de 42 millions de passagers en 2025 (98 M pour l'ensemble du groupe AF-KLM)."},
+  {c:"Chiffres clés",q:"Combien de salariés compte Air France ?",o:["Plus de 37 000","Environ 10 000","Plus de 90 000","Environ 5 000"],a:0,e:"Plus de 37 000 salariés se mobilisent chaque jour chez Air France."},
+  {c:"Chiffres clés",q:"Combien d'avions-cargos Air France exploite-t-elle ?",o:["6","0","20","50"],a:0,e:"Air France exploite 6 avions tout-cargo (au sein d'AF-KLM-Martinair Cargo)."},
+  {c:"Chiffres clés",q:"Combien de tonnes de fret AF-KLM-Martinair Cargo a-t-il transportées en 2025 ?",o:["≈ 917 000 tonnes","≈ 100 000 tonnes","≈ 3 millions de tonnes","≈ 450 000 tonnes"],a:0,e:"Environ 917 000 tonnes de fret transportées en 2025."},
+  {c:"Chiffres clés",q:"Combien d'avions AFI KLM E&M maintient-il chaque année (environ 200 compagnies clientes) ?",o:["Plus de 3 000","Environ 500","Environ 100","Plus de 10 000"],a:0,e:"AFI KLM E&M maintient plus de 3 000 avions par an pour environ 200 compagnies clientes."},
+  {c:"Chiffres clés",q:"Combien de membres compte le programme de fidélité Flying Blue ?",o:["Plus de 30 millions","Environ 5 millions","Plus de 100 millions","Environ 1 million"],a:0,e:"Flying Blue compte plus de 30 millions de membres."},
+  {c:"Chiffres clés",q:"Autour de quel hub principal s'organise le réseau d'Air France ?",o:["Paris-Charles de Gaulle","Paris-Orly","Lyon-Saint-Exupéry","Amsterdam-Schiphol"],a:0,e:"Le réseau d'Air France est structuré essentiellement autour de son hub de Paris-Charles de Gaulle."},
+  {c:"Chiffres clés",q:"De combien un avion de dernière génération comme l'A350 réduit-il ses émissions de CO₂ en moyenne ?",o:["≈ 25 %","≈ 5 %","≈ 50 %","≈ 70 %"],a:0,e:"Environ -25 % d'émissions de CO₂ en moyenne pour un avion de dernière génération comme l'A350."},
+  {c:"Chiffres clés",q:"Combien de repas sont servis chaque année à bord des vols Air France ?",o:["≈ 55 millions","≈ 5 millions","≈ 200 millions","≈ 12 millions"],a:0,e:"Environ 55 millions de repas servis chaque année à bord des vols Air France."},
+  {c:"Chiffres clés",q:"Par quel appareil Air France remplace-t-elle ses Airbus A320 en moyen-courrier ?",o:["L'Airbus A220-300","Le Boeing 737 MAX","L'Airbus A380","L'Embraer E195"],a:0,e:"En moyen-courrier, Air France retire des A320 et reçoit des Airbus A220-300 (et des A320neo)."},
+  {c:"Chiffres clés",q:"Quel long-courrier de nouvelle génération Air France a-t-elle reçu pour renouveler sa flotte ?",o:["L'Airbus A350-900","Le Boeing 747-8","L'Airbus A340-600","Le Boeing 757"],a:0,e:"En long-courrier, Air France reçoit des Airbus A350-900 (en remplacement notamment des A330 et A380)."},
+  {c:"Chiffres clés",q:"Combien de destinations l'alliance SkyTeam dessert-elle au total (ordre de grandeur) ?",o:["Plus de 1 000","Environ 300","Environ 500","Environ 100"],a:0,e:"SkyTeam dessert plus de 1 000 destinations dans plus de 160 pays."},
+
+  /* --- Transavia --- */
+  {c:"Chiffres clés",q:"À quel groupe appartient la compagnie Transavia ?",o:["Air France-KLM","Lufthansa Group","IAG","easyJet"],a:0,e:"Transavia est une compagnie du groupe Air France-KLM."},
+  {c:"Chiffres clés",q:"Quel est le positionnement de Transavia aux Pays-Bas ?",o:["2ᵉ compagnie du pays (n°1 du low-cost)","1ʳᵉ compagnie du pays","3ᵉ compagnie du pays","Compagnie régionale uniquement"],a:0,e:"Transavia est la 1ʳᵉ compagnie low-cost et la 2ᵉ plus grande compagnie des Pays-Bas."},
+  {c:"Chiffres clés",q:"En quelle année Transavia a-t-elle été fondée ?",o:["1965","1933","1985","2004"],a:0,e:"Transavia a été fondée en 1965 (et vole depuis les Pays-Bas depuis 1966)."},
+  {c:"Chiffres clés",q:"Quelles sont les bases néerlandaises de Transavia ?",o:["Amsterdam, Rotterdam et Eindhoven","Amsterdam, La Haye et Utrecht","Rotterdam, Groningue et Maastricht","Amsterdam uniquement"],a:0,e:"Bases aux Pays-Bas : Amsterdam-Schiphol, Rotterdam-La Haye et Eindhoven."},
+  {c:"Chiffres clés",q:"Depuis quelle ville Transavia opère-t-elle également depuis 2022 ?",o:["Bruxelles","Genève","Lisbonne","Vienne"],a:0,e:"Transavia opère depuis Bruxelles depuis 2022."},
+  {c:"Chiffres clés",q:"Combien de passagers Transavia (Pays-Bas) transporte-t-elle environ chaque année ?",o:["≈ 9 millions","≈ 2 millions","≈ 25 millions","≈ 40 millions"],a:0,e:"Transavia transporte environ 9 millions de passagers par an."},
+  {c:"Chiffres clés",q:"En quelle année Transavia France a-t-elle commencé ses opérations ?",o:["2007","1995","2015","2020"],a:0,e:"Transavia France (fondée en 2006) a démarré ses opérations en 2007 (1ère destination : Porto)."},
+  {c:"Chiffres clés",q:"Quelles sont les bases de Transavia France ?",o:["Paris-Orly, Nantes, Lyon et Montpellier","Paris-CDG, Marseille, Nice et Toulouse","Paris-Orly et Lyon uniquement","Bordeaux, Lille, Strasbourg et Nantes"],a:0,e:"Transavia France dispose de 4 bases : Paris-Orly, Nantes, Lyon et Montpellier."},
+  {c:"Chiffres clés",q:"Combien de passagers Transavia France a-t-elle transportés en 2024 ?",o:["≈ 9,5 millions","≈ 3 millions","≈ 20 millions","≈ 1 million"],a:0,e:"Transavia France a transporté environ 9,5 millions de passagers en 2024."},
+  {c:"Chiffres clés",q:"Combien de bases (home bases) Transavia compte-t-elle au total (Pays-Bas + France) ?",o:["6","3","10","2"],a:0,e:"Transavia compte 6 bases au total, réparties aux Pays-Bas (3) et en France."},
+  {c:"Chiffres clés",q:"Quel avion constitue historiquement la flotte principale de Transavia ?",o:["Le Boeing 737-800","L'Airbus A320","Le Boeing 787","L'Embraer E190"],a:0,e:"Transavia exploite une flotte de Boeing 737-800 (189 sièges)."},
+  {c:"Chiffres clés",q:"Par quel constructeur Transavia remplace-t-elle progressivement ses Boeing 737 ?",o:["Airbus (A321neo)","Boeing (737 MAX)","Embraer","Bombardier"],a:0,e:"Transavia remplace ses Boeing 737 par des Airbus (A321neo) : 1er vol en A321neo le 5 janvier 2024."},
+  {c:"Chiffres clés",q:"Combien de passagers peut transporter un Boeing 737-800 de Transavia ?",o:["189","120","232","300"],a:0,e:"Le Boeing 737-800 de Transavia est configuré pour 189 passagers."},
+  {c:"Chiffres clés",q:"Combien de passagers peut transporter un Airbus A321neo de Transavia ?",o:["232","189","150","350"],a:0,e:"L'Airbus A321neo de Transavia est configuré pour 232 passagers."},
 ];
 
 /* ===========================================================
