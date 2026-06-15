@@ -1,4 +1,4 @@
-In<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
@@ -44,7 +44,8 @@ In<!DOCTYPE html>
     letter-spacing: .3px;
   }
   header p { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 16px 18px 80px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 16px 18px 80px; }
+  #start, #result { max-width: 720px; margin-left:auto; margin-right:auto; }
 
   .panel {
     background: linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
@@ -117,6 +118,54 @@ In<!DOCTYPE html>
 
   .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; }
 
+  /* ----- Layout quiz + overlay de navigation ----- */
+  .quiz-layout { display:flex; gap:18px; align-items:flex-start; }
+  .quiz-main { flex:1 1 auto; min-width:0; }
+  .navgrid {
+    flex:0 0 248px; position:sticky; top:16px;
+    max-height: calc(100vh - 32px); overflow:auto;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .navgrid h3 { margin:0; font-size:14px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .navgrid h3 span { font-size:11px; color:var(--muted); font-weight:600; }
+  .grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:7px; }
+  .cell {
+    aspect-ratio:1/1; border-radius:8px; border:1.5px solid var(--line);
+    background:var(--card2); color:var(--txt); font:inherit; font-weight:600; font-size:13px;
+    display:grid; place-items:center; cursor:pointer; padding:0; transition:.1s;
+  }
+  .cell:hover { border-color:var(--accent); }
+  .cell.correct { background:var(--good); border-color:var(--good); color:#fff; }
+  .cell.wrong { background:var(--bad); border-color:var(--bad); color:#fff; }
+  .cell.current { outline:3px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+  .legend { display:flex; flex-wrap:wrap; gap:10px 14px; font-size:11px; color:var(--muted); }
+  .legend i { display:inline-block; width:12px; height:12px; border-radius:4px; margin-right:5px; vertical-align:-1px; border:1px solid var(--line); }
+  .legend .lg-ok { background:var(--good); border-color:var(--good); }
+  .legend .lg-ko { background:var(--bad); border-color:var(--bad); }
+  .legend .lg-cur { background:var(--card2); outline:2px solid var(--accent); }
+  .navgrid-close { display:none; }
+
+  .navToggle {
+    display:none; position:fixed; right:14px; bottom:calc(16px + env(safe-area-inset-bottom));
+    z-index:60; background:var(--accent); border-color:var(--accent); color:#fff;
+    border-radius:999px; padding:12px 16px; font-weight:600; box-shadow:0 8px 22px rgba(0,0,0,.4);
+  }
+  .navToggle b { background:rgba(255,255,255,.25); border-radius:999px; padding:1px 8px; margin-left:6px; }
+  .scrim { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:55; }
+  .scrim.open { display:block; }
+
+  @media (max-width: 860px) {
+    .navgrid {
+      position:fixed; top:0; right:0; height:100vh; width:min(82vw, 330px);
+      max-height:none; border-radius:0; z-index:60;
+      transform:translateX(105%); transition:transform .25s ease;
+      padding-top:calc(20px + env(safe-area-inset-top));
+    }
+    .navgrid.open { transform:translateX(0); }
+    .navgrid-close { display:inline-flex; align-self:flex-end; padding:6px 12px; }
+    .navToggle { display:inline-flex; }
+  }
+
   .result { text-align:center; }
   .result .big { font-size: 54px; font-weight: 800; margin: 6px 0; }
   .result .sub { color: var(--muted); margin-bottom: 18px; }
@@ -139,7 +188,7 @@ In<!DOCTYPE html>
   <div id="start" class="panel">
     <div class="topbar">
       <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-      <span class="chip">Toutes les questions des retours d'expérience</span>
+      <span class="chip">Retours candidats + tests Pilotest 2018/2019</span>
     </div>
     <div class="controls">
       <select id="catSelect"><option value="all">Toutes les catégories</option></select>
@@ -155,25 +204,43 @@ In<!DOCTYPE html>
       <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Commencer ▶</button>
     </div>
     <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
-      Astuce : touches <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>→</kbd> pour suivant.
+      Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
     </p>
   </div>
 
   <!-- QUIZ SCREEN -->
-  <div id="quiz" class="panel hide">
-    <div class="topbar">
-      <span class="cat-tag" id="qCat">—</span>
-      <span class="chip">Score : <b id="liveScore">0</b></span>
+  <div id="quiz" class="quiz-layout hide">
+    <div class="panel quiz-main">
+      <div class="topbar">
+        <span class="cat-tag" id="qCat">—</span>
+        <span class="chip">Score : <b id="liveScore">0</b></span>
+      </div>
+      <div class="progress"><i id="bar"></i></div>
+      <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
+      <div class="choices" id="choices"></div>
+      <div class="explain" id="explain"></div>
+      <div class="nav">
+        <button id="prevBtn">← Précédent</button>
+        <button id="quitBtn">✕ Quitter</button>
+        <button class="primary" id="nextBtn">Suivant →</button>
+      </div>
     </div>
-    <div class="progress"><i id="bar"></i></div>
-    <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
-    <div class="choices" id="choices"></div>
-    <div class="explain" id="explain"></div>
-    <div class="nav">
-      <button id="quitBtn">✕ Quitter</button>
-      <button class="primary" id="nextBtn" disabled>Suivant →</button>
-    </div>
+
+    <aside class="panel navgrid" id="navGrid">
+      <button class="navgrid-close" id="navClose">✕ Fermer</button>
+      <h3>Progression <span id="navStats">0/0</span></h3>
+      <div class="grid" id="gridCells"></div>
+      <div class="legend">
+        <span><i class="lg-ok"></i>Correct</span>
+        <span><i class="lg-ko"></i>Faux</span>
+        <span><i class="lg-cur"></i>Question en cours</span>
+      </div>
+      <button class="primary" id="finishBtn">Voir le résultat ✓</button>
+    </aside>
   </div>
+
+  <button class="navToggle" id="navToggle">Questions<b id="toggleStat">0/0</b></button>
+  <div class="scrim" id="scrim"></div>
 
   <!-- RESULT SCREEN -->
   <div id="result" class="panel result hide">
@@ -340,14 +407,71 @@ const QUESTIONS = [
   {c:"Réglementation",q:"Comment se nomme la lettre « I » dans l'alphabet aéronautique ?",o:["India","Italy","Igloo","Indigo"],a:0,e:"I = India."},
   {c:"Réglementation",q:"Quel marquage indique une piste fermée / atterrissage interdit ?",o:["Une grande croix jaune","Un rond rouge","Un T blanc","Des flèches vertes"],a:0,e:"Une croix jaune (X) marque une piste fermée ; un signal de croix indique atterrissage interdit."},
   {c:"Réglementation",q:"Combien de QFU (sens d'utilisation de piste) compte CDG ?",o:["8 (4 pistes × 2 sens)","2","4","6"],a:0,e:"CDG a 4 pistes parallèles, chacune utilisable dans 2 sens → 8 QFU."},
-  {c:"Réglementation",q:"Combien de pistes compte l'aéroport de Paris-Orly ?",o:["3","1","2","4"],a:0,e:"Orly dispose de 3 pistes."},
+  {c:"Réglementation",q:"Combien de pistes compte l'aéroport de Paris-Orly ?",o:["3","1","2","4"],a:0,e:"Orly dispose de 3 pistes (06/24, 08/26 et 02/20)."},
+
+  /* ===================================================================
+     40 QUESTIONS ISSUES DES TESTS PILOTEST (Mars 2018 & Janvier 2019)
+     =================================================================== */
+  /* --- Compagnie --- */
+  {c:"Compagnie",q:"En quelle année l'Airbus A320 a-t-il effectué son premier vol chez Air France ?",o:["1988","1995","1982","2001"],a:0,e:"Premier vol de l'A320 chez Air France le 18 avril 1988 (l'A320 est exploité depuis ~30 ans en 2019)."},
+  {c:"Compagnie",q:"Quel type d'avion compose la flotte de Transavia ?",o:["Le Boeing 737-800","L'Airbus A320","Le Boeing 787","L'Airbus A220"],a:0,e:"Transavia exploite exclusivement des Boeing 737-800."},
+  {c:"Compagnie",q:"En quelle année la compagnie Air France a-t-elle été créée ?",o:["1933","1945","1919","1948"],a:0,e:"Air France est née en 1933 (fusion d'Air Orient, Air Union, CIDNA et des Lignes Farman), Pierre Cot étant ministre de l'Air."},
+  {c:"Compagnie",q:"Combien d'A380 Air France exploite-t-elle aujourd'hui ?",o:["0 (retirés en 2020)","10","6","12"],a:0,e:"Air France a exploité jusqu'à 10 A380, tous retirés en 2020 (anticipé avec la crise Covid). Réponse actuelle : aucun."},
+  {c:"Compagnie",q:"De quelle nationalité est le constructeur Bombardier ?",o:["Canadienne","Brésilienne","Américaine","Suédoise"],a:0,e:"Bombardier est une entreprise canadienne (trains et avions, dont les CRJ)."},
+
+  /* --- Histoire --- */
+  {c:"Histoire",q:"En quelle année l'Airbus A320 a-t-il effectué son tout premier vol (programme) ?",o:["1987","1981","1990","1994"],a:0,e:"Premier vol du programme A320 le 22 février 1987."},
+  {c:"Histoire",q:"Sur quel avion Jean Mermoz a-t-il disparu en décembre 1936 ?",o:["Le Latécoère 300 « Croix du Sud »","Le Bréguet 14","Le Latécoère 28","Le Potez 25"],a:0,e:"Mermoz disparaît le 7 décembre 1936 sur l'hydravion Latécoère 300 « Croix du Sud » (message : « Coupons moteur arrière droit »)."},
+  {c:"Histoire",q:"Qui fut le premier spationaute français ?",o:["Jean-Loup Chrétien","Thomas Pesquet","Claudie Haigneré","Patrick Baudry"],a:0,e:"Jean-Loup Chrétien, premier Français et premier Européen de l'Ouest dans l'espace, en 1982."},
+  {c:"Histoire",q:"Quel fut le premier avion à réaction exploité par Air France ?",o:["Le De Havilland Comet","La Caravelle","Le Boeing 707","Le Concorde"],a:0,e:"Le De Havilland Comet, en 1953 (vite retiré après des accidents structurels), avant l'exploitation intensive de la Caravelle dès 1959."},
+  {c:"Histoire",q:"Qui tenta la traversée de l'Atlantique Nord (sens est→ouest) peu avant la réussite de Lindbergh ?",o:["Nungesser & Coli (L'Oiseau Blanc)","Mermoz","Alcock & Brown","Saint-Exupéry"],a:0,e:"Nungesser et Coli, à bord de « L'Oiseau Blanc », disparaissent lors de cette tentative quelques jours avant la traversée réussie par Lindbergh."},
+  {c:"Histoire",q:"Quel chasseur américain de la Seconde Guerre mondiale était surnommé « Mustang » ?",o:["Le P-51","Le P-38","Le Spitfire","Le P-47"],a:0,e:"Le North American P-51 était surnommé « Mustang »."},
+
+  /* --- Géographie --- */
+  {c:"Géographie",q:"Luanda est la capitale de quel pays ?",o:["L'Angola","Le Mozambique","Le Cameroun","La Zambie"],a:0,e:"Luanda est la capitale de l'Angola."},
+  {c:"Géographie",q:"Ouagadougou est la capitale de quel pays ?",o:["Le Burkina Faso","Le Mali","Le Niger","Le Tchad"],a:0,e:"Ouagadougou est la capitale du Burkina Faso."},
+  {c:"Géographie",q:"Parmi Manille, Tunis et Nairobi, quelle ville est la plus proche de l'équateur ?",o:["Nairobi","Manille","Tunis","Elles sont équidistantes"],a:0,e:"Nairobi est quasiment sur l'équateur (latitude ≈ 1,3° Sud)."},
+  {c:"Géographie",q:"L'aéroport O'Hare se trouve dans quelle ville ?",o:["Chicago","New York","Boston","Détroit"],a:0,e:"O'Hare est le grand aéroport de Chicago (« O'Hare est à Chicago ce que CDG est à Paris »)."},
+  {c:"Géographie",q:"Quel est le premier aéroport mondial en trafic passagers (référence du test) ?",o:["Atlanta (Hartsfield-Jackson)","Dubaï","Pékin","Londres-Heathrow"],a:0,e:"Atlanta Hartsfield-Jackson, hub majeur de Delta Air Lines, régulièrement 1er mondial en passagers."},
+  {c:"Géographie",q:"Lorsqu'il est 12h00 à Paris, quelle heure est-il à Tokyo ?",o:["20h00","16h00","06h00","23h00"],a:0,e:"Paris est en UTC+1 et Tokyo en UTC+9, soit 8h d'écart : il est 20h00 à Tokyo (hors heure d'été)."},
+  {c:"Géographie",q:"Parmi Moscou, Saint-Pétersbourg, Montréal et Varsovie, quelle ville est la plus au nord ?",o:["Saint-Pétersbourg","Moscou","Montréal","Varsovie"],a:0,e:"Saint-Pétersbourg (≈ 59°56' N), presque sur le cercle polaire (nuits blanches le 21 juin)."},
+
+  /* --- Météo --- */
+  {c:"Météo",q:"Quelle grandeur physique est exprimée en hectopascals (hPa) ?",o:["La pression","La température","L'altitude","La vitesse du vent"],a:0,e:"L'hectopascal est une unité de pression (1013,25 hPa au niveau de la mer ≈ 1 bar ≈ 29,92 inHg)."},
+  {c:"Météo",q:"Quelle est la pression standard (ISA) au niveau de la mer ?",o:["1013,25 hPa","1000 hPa","1050 hPa","980 hPa"],a:0,e:"1013,25 hPa (soit ≈ 29,92 pouces de mercure), pour une température de 15 °C."},
+  {c:"Météo",q:"Dans quel sens tourne un anticyclone dans l'hémisphère Nord ?",o:["Sens horaire","Sens anti-horaire","Il ne tourne pas","Toujours vers l'est"],a:0,e:"Dans l'hémisphère Nord, l'anticyclone tourne dans le sens des aiguilles d'une montre (et la dépression dans le sens inverse)."},
+  {c:"Météo",q:"Quel type de nuage blanc apparaît typiquement lors d'une belle journée ?",o:["Le cumulus","Le nimbostratus","Le stratus","Le cirrostratus"],a:0,e:"Les cumulus de beau temps, qui se dissipent souvent en fin d'après-midi (sauf passage à l'orage)."},
+  {c:"Météo",q:"Quel est le nuage le plus dangereux en aéronautique ?",o:["Le cumulonimbus","Le stratus","Le cumulus","Le nimbostratus"],a:0,e:"Le cumulonimbus : orages, grêle, fortes turbulences. Il ne se traverse pas, même en avion de ligne."},
+  {c:"Météo",q:"Parmi stratus, altocumulus et cirrostratus, quel nuage se trouve le plus haut ?",o:["Le cirrostratus","L'altocumulus","Le stratus","Ils sont à la même altitude"],a:0,e:"Règle : cirro-/cirrus > alto- > X. Le cirrostratus est le plus élevé (seul le cumulonimbus peut monter aussi haut)."},
+  {c:"Météo",q:"En cas de risque de givrage, comment se situe la température de l'air sec (T) par rapport au point de rosée (Td) ?",o:["T est inférieure ou égale à Td","T est très supérieure à Td","T = Td + 20 °C","Aucun rapport"],a:0,e:"Le risque de givrage apparaît lorsque T ≤ Td (air saturé et températures basses)."},
+
+  /* --- Navigation / Instruments --- */
+  {c:"Navigation",q:"À quel niveau de vol croise généralement un avion de ligne ?",o:["Entre le FL350 et le FL430","Entre le FL050 et le FL100","Au-dessus du FL600","Au FL200 maximum"],a:0,e:"La plupart du temps entre 35 000 et 43 000 ft (11 à 13 km), dans la troposphère sous la tropopause."},
+  {c:"Navigation",q:"Quelle procédure d'approche aux instruments est la plus précise ?",o:["L'ILS","Le NDB","Le VOR","Le VOR/DME"],a:0,e:"L'ILS est le plus précis et permet, selon sa catégorie, de descendre très bas sans visibilité (jusqu'au sol en CAT III)."},
+  {c:"Navigation",q:"Que signifie mettre l'altimètre au calage standard ?",o:["Prendre 1013 hPa comme référence","Prendre le QNH du terrain","Régler l'altimètre à zéro","Prendre la pression locale"],a:0,e:"Le calage standard = 1013 hPa, utilisé en croisière pour que tous les avions volent par rapport à la même référence (niveaux de vol)."},
+  {c:"Navigation",q:"Avec quel instrument/indicateur contrôle-t-on la symétrie du vol ?",o:["La bille (que l'on centre au palonnier)","L'altimètre","Le badin","Le variomètre"],a:0,e:"On garde la bille centrée en agissant sur le palonnier (les avions de ligne utilisent un Yaw Damper)."},
+  {c:"Navigation",q:"À quoi sert une radiosonde (radioaltimètre) à bord d'un avion de ligne ?",o:["Donner la hauteur instantanée par rapport au sol","Mesurer la vitesse air","Indiquer le cap magnétique","Mesurer la pression cabine"],a:0,e:"Elle donne la distance/hauteur instantanée par rapport au sol, utile par exemple à l'arrondi par faible visibilité."},
+
+  /* --- Technique / Aérodynamique --- */
+  {c:"Technique",q:"Quel type de vent est le plus limitatif (défavorable) au décollage ?",o:["Le vent arrière","Le vent de face","Le vent de travers","Le vent nul"],a:0,e:"Le vent arrière allonge la distance de roulage, dégrade le freinage et réduit la pente de montée. Le vent de face est le plus favorable."},
+  {c:"Technique",q:"Si l'on tire sur le manche, que devient le facteur de charge ?",o:["Il augmente","Il diminue","Il reste nul","Il devient négatif"],a:0,e:"Tirer sur le manche (cabrer/virer) augmente les « G » : on est plaqué dans le siège. Pousser diminue le facteur de charge."},
+  {c:"Technique",q:"À quoi servent les spoilers (aérofreins) ?",o:["Dégrader la portance et augmenter la traînée","Augmenter la portance","Réduire la traînée","Produire la poussée"],a:0,e:"Ils cassent la portance et augmentent la traînée : utiles en descente, au freinage à l'atterrissage, ou en aide au gauchissement."},
+  {c:"Technique",q:"À quoi servent les becs de bord d'attaque (slats) ?",o:["Augmenter l'incidence max et diminuer la vitesse de décrochage","Augmenter fortement la traînée seule","Réduire la portance","Inverser la poussée"],a:0,e:"Les slats augmentent l'incidence maximale donc abaissent la vitesse de décrochage, en augmentant peu la traînée."},
+  {c:"Technique",q:"Dans un réacteur, quel est l'ordre de passage de l'air ?",o:["Compresseur → chambre de combustion → turbine → tuyère","Turbine → compresseur → tuyère → combustion","Tuyère → turbine → compresseur → combustion","Combustion → compresseur → turbine → tuyère"],a:0,e:"L'air est comprimé, brûlé dans la chambre de combustion, détend la turbine (qui entraîne le compresseur), puis est éjecté par la tuyère."},
+  {c:"Technique",q:"À quoi servent les inverseurs de poussée (reverses) ?",o:["Inverser le sens de poussée pour freiner après l'atterrissage","Augmenter la poussée au décollage","Faire tourner l'avion au sol","Réduire le bruit moteur"],a:0,e:"Les reverses redirigent la poussée vers l'avant pour aider au freinage une fois l'avion posé."},
+  {c:"Technique",q:"Combien de moteurs possède un Airbus A330 ?",o:["2 (biréacteur)","3","4","1"],a:0,e:"L'A330 est un biréacteur (2 moteurs à réaction) moyen/long-courrier ; chez Air France, 2 CF6."},
+
+  /* --- Calculs / Mental --- */
+  {c:"Calculs",q:"Quelle est la température standard (ISA) à 15 000 ft ?",o:["-15 °C","0 °C","15 °C","-30 °C"],a:0,e:"On part de 15 °C et on retire 2 °C/1000 ft : 15 − (15 × 2) = -15 °C."},
+  {c:"Calculs",q:"Vous décollez piste 03 avec un vent d'ouest. De quel type de vent s'agit-il ?",o:["Un vent arrière de travers (par la gauche)","Un vent de face","Un vent de travers pur","Un vent arrière pur"],a:0,e:"Piste 03 ≈ cap 030°. Un vent d'ouest (270°) vient de l'arrière-gauche : c'est un vent arrière et de travers."},
+  {c:"Calculs",q:"Si l'on tourne à gauche, les caps augmentent-ils ou diminuent-ils ?",o:["Ils diminuent","Ils augmentent","Ils restent constants","Cela dépend de l'altitude"],a:0,e:"Vers la gauche (sens anti-horaire), les caps décroissent ; vers la droite, ils croissent."},
 ];
 
 /* ===========================================================
    LOGIQUE DU QUIZ
    =========================================================== */
 const $ = id => document.getElementById(id);
-let pool = [], idx = 0, score = 0, answered = false, wrongList = [];
+let pool = [], idx = 0;
 
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 
@@ -370,90 +494,145 @@ function buildPool(){
   if($("shuffleChk").checked) shuffle(arr);
   const n = parseInt($("countSelect").value,10);
   if(n>0) arr = arr.slice(0,n);
-  return arr;
+  // Réinitialise l'état de chaque question
+  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null}));
 }
+
+const nCorrect = () => pool.filter(q=>q._chosen!=null && q._chosen===q._correctIdx).length;
+const nAnswered = () => pool.filter(q=>q._chosen!=null).length;
 
 function start(){
   pool = buildPool();
   if(!pool.length) return;
-  idx=0; score=0; wrongList=[];
+  idx=0;
   $("start").classList.add("hide");
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
+  buildGrid();
   render();
 }
 
+function prepare(q){
+  if(q._order) return;
+  q._order = shuffle(q.o.map((opt,i)=>({opt,correct:i===q.a})));
+  q._correctIdx = q._order.findIndex(o=>o.correct);
+}
+
 function render(){
-  answered=false;
   const q = pool[idx];
+  prepare(q);
+  const locked = q._chosen!=null;
   $("qCat").textContent = q.c;
-  $("liveScore").textContent = score;
+  $("liveScore").textContent = nCorrect();
   $("qNum").textContent = `Q${idx+1}/${pool.length}`;
   $("qText").textContent = q.q;
-  $("bar").style.width = `${(idx/pool.length)*100}%`;
-  $("explain").classList.remove("show");
-  $("explain").innerHTML="";
-  $("nextBtn").disabled = true;
-  $("nextBtn").textContent = (idx===pool.length-1) ? "Voir le résultat ✓" : "Suivant →";
+  $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
+  $("prevBtn").disabled = (idx===0);
+  $("nextBtn").disabled = (idx===pool.length-1);
+  $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
 
   const box = $("choices"); box.innerHTML="";
   const keys = ["A","B","C","D","E"];
-  const order = shuffle(q.o.map((opt,i)=>({opt,correct:i===q.a})));
-  q._correctIdx = order.findIndex(o=>o.correct);
-  order.forEach((item,i)=>{
+  q._order.forEach((item,i)=>{
     const b = document.createElement("button");
     b.className="choice";
     b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
-    b.onclick = ()=>choose(i,b);
+    if(locked){
+      b.classList.add("locked");
+      if(i===q._correctIdx) b.classList.add("correct");
+      else if(i===q._chosen) b.classList.add("wrong");
+    } else {
+      b.onclick = ()=>choose(i);
+    }
     box.appendChild(b);
+  });
+
+  if(locked){
+    $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}`;
+    $("explain").classList.add("show");
+  } else {
+    $("explain").classList.remove("show");
+    $("explain").innerHTML="";
+  }
+  updateGrid();
+}
+
+function choose(i){
+  const q = pool[idx];
+  if(q._chosen!=null) return;
+  q._chosen = i;
+  render();
+}
+
+/* ---------- Grille de navigation ---------- */
+function buildGrid(){
+  const g = $("gridCells"); g.innerHTML="";
+  pool.forEach((q,i)=>{
+    const c = document.createElement("button");
+    c.className="cell"; c.textContent=i+1;
+    c.onclick = ()=>gotoQ(i);
+    g.appendChild(c);
   });
 }
 
-function choose(i,btn){
-  if(answered) return;
-  answered=true;
-  const q = pool[idx];
-  const all = [...document.querySelectorAll(".choice")];
-  all.forEach((c,k)=>{ c.classList.add("locked"); if(k===q._correctIdx) c.classList.add("correct"); });
-  if(i===q._correctIdx){ score++; }
-  else { btn.classList.add("wrong"); wrongList.push(q); }
-  $("liveScore").textContent = score;
-  $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}`;
-  $("explain").classList.add("show");
-  $("nextBtn").disabled=false;
+function updateGrid(){
+  const cells = $("gridCells").children;
+  pool.forEach((q,i)=>{
+    const c = cells[i]; if(!c) return;
+    c.classList.remove("correct","wrong","current");
+    if(q._chosen!=null) c.classList.add(q._chosen===q._correctIdx ? "correct" : "wrong");
+    if(i===idx) c.classList.add("current");
+  });
+  const stat = `${nAnswered()}/${pool.length}`;
+  $("navStats").textContent = stat;
+  $("toggleStat").textContent = stat;
 }
 
-function next(){
-  if(!answered) return;
-  if(idx<pool.length-1){ idx++; render(); }
-  else finish();
+function gotoQ(i){
+  idx = Math.max(0, Math.min(pool.length-1, i));
+  render();
+  closeNav();
 }
+
+function next(){ if(idx<pool.length-1){ idx++; render(); } }
+function prev(){ if(idx>0){ idx--; render(); } }
+
+function openNav(){ $("navGrid").classList.add("open"); $("scrim").classList.add("open"); }
+function closeNav(){ $("navGrid").classList.remove("open"); $("scrim").classList.remove("open"); }
 
 function finish(){
+  closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.remove("hide");
-  const pct = Math.round((score/pool.length)*100);
-  $("finalScore").textContent = `${score} / ${pool.length}`;
+  const correct = nCorrect();
+  const answered = nAnswered();
+  const pct = Math.round((correct/pool.length)*100);
+  $("finalScore").textContent = `${correct} / ${pool.length}`;
   $("finalBar").style.width = `${pct}%`;
   let msg;
   if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
   else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
   else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
   else msg = "📚 Reprends les fiches et recommence.";
-  $("finalMsg").textContent = `${pct}% — ${msg}`;
-  $("reviewWrongBtn").style.display = wrongList.length ? "" : "none";
+  const reste = pool.length - answered;
+  const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
+  $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+  $("reviewWrongBtn").style.display = pool.some(q=>q._chosen!=null && q._chosen!==q._correctIdx) ? "" : "none";
 }
 
 function reviewWrong(){
-  if(!wrongList.length) return;
-  pool = wrongList.slice();
-  idx=0; score=0; wrongList=[];
+  const wrong = pool.filter(q=>q._chosen!=null && q._chosen!==q._correctIdx);
+  if(!wrong.length) return;
+  pool = wrong.map(q=>({...q,_order:null,_correctIdx:0,_chosen:null}));
+  idx=0;
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
+  buildGrid();
   render();
 }
 
 function home(){
+  closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
@@ -461,20 +640,24 @@ function home(){
 
 $("startBtn").onclick = start;
 $("nextBtn").onclick = next;
+$("prevBtn").onclick = prev;
 $("quitBtn").onclick = home;
+$("finishBtn").onclick = finish;
 $("restartBtn").onclick = start;
 $("reviewWrongBtn").onclick = reviewWrong;
 $("homeBtn").onclick = home;
+$("navToggle").onclick = openNav;
+$("navClose").onclick = closeNav;
+$("scrim").onclick = closeNav;
 
 document.addEventListener("keydown", e=>{
   if($("quiz").classList.contains("hide")) return;
   if(["1","2","3","4","5"].includes(e.key)){
     const i = parseInt(e.key,10)-1;
     const all = [...document.querySelectorAll(".choice")];
-    if(all[i] && !answered) all[i].click();
-  } else if(e.key==="Enter" || e.key==="ArrowRight"){
-    if(!$("nextBtn").disabled) next();
-  }
+    if(all[i] && pool[idx]._chosen==null) all[i].click();
+  } else if(e.key==="ArrowRight"){ next(); }
+  else if(e.key==="ArrowLeft"){ prev(); }
 });
 
 initStart();
