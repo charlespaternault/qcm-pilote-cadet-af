@@ -186,7 +186,7 @@
 <body>
 <header>
   <h1>✈️ QCM Pilote Cadet — Air France</h1>
-  <p>Sélection AF/AFKLM · BIA · Connaissances aéronautiques, compagnie, géo, météo, navigation</p>
+  <p>Sélection AF/AFKLM · BIA · English (AF Cadets 2022) · Connaissances aéronautiques</p>
 </header>
 
 <div class="wrap">
@@ -194,12 +194,13 @@
   <div id="start" class="panel">
     <div class="topbar">
       <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-      <span class="chip" id="sourceChip">Retours candidats · Pilotest 2018/2019 · chiffres clés 2024/2025 · BIA 2024/2026</span>
+      <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
     </div>
     <div class="controls">
       <select id="modeSelect">
         <option value="cadet">Mode Cadet AF</option>
         <option value="bia">Mode BIA</option>
+        <option value="english">Mode English</option>
         <option value="all">Tout</option>
       </select>
       <select id="catSelect"><option value="all">Toutes les catégories</option></select>
@@ -692,6 +693,32 @@ const QUESTIONS = [
   {"c":"Géographie","q":"Air France vole vers Lagos. Quelle est la capitale du Nigeria ?","o":["Abuja","Lagos","Kano","Port Harcourt"],"a":0,"e":"Lagos est l'ancienne capitale et la métropole économique ; Abuja est la capitale fédérale depuis 1991."},
   {"c":"Géographie","q":"Le réseau KLM dessert Auckland. Quelle est la capitale de la Nouvelle-Zélande ?","o":["Wellington","Auckland","Christchurch","Queenstown"],"a":0,"e":"Auckland est la plus grande ville néo-zélandaise, mais Wellington est la capitale politique."},
   {"c":"Géographie","q":"Air France dessert Zurich. Quelle est la capitale de la Suisse ?","o":["Berne","Zurich","Genève","Bâle"],"a":0,"e":"Zurich est la plus grande ville suisse et une destination AF, mais Berne (Bern) est la capitale fédérale."},
+
+  /* Infinite Psyo AF Cadets 2022 — English (video debrief) */
+  {"c":"English","q":"How many runways does Paris-Charles de Gaulle airport have?","o":["3","2","5","4"],"a":3,"e":"CDG (LFPG) has four parallel runways: 08L/26R, 08R/26L, 09L/27R and 09R/27L."},
+  {"c":"English","q":"When was the last Airbus A380 delivered (end of production)?","o":["2021","It is not planned","2028","2019"],"a":0,"e":"The last A380 was delivered to Emirates in December 2021."},
+  {"c":"English","q":"How many departures does SkyTeam™ handle daily?","o":["32,000","9,500","21,000","10,000"],"a":3,"e":"SkyTeam handles about 10,000 daily departures (order of magnitude cited in AF cadet culture tests)."},
+  {"c":"English","q":"At what time of day is the temperature at its minimum?","o":["At sunrise","1 hour after sunset","1 hour before sunrise","30 minutes after sunrise"],"a":3,"e":"The daily temperature minimum usually occurs shortly after sunrise, when radiative cooling stops."},
+  {"c":"English","q":"What is the role of a jet engine nozzle?","o":["To suck and compress air","To accelerate the gases","To drive the compressor","To heat the gases"],"a":1,"e":"The nozzle converts thermal energy into kinetic energy by accelerating exhaust gases."},
+  {"c":"English","q":"What is the angle between the aircraft longitudinal axis and the horizon?","o":["Wing setting angle","Flight path angle","Angle of attack","Pitch attitude"],"a":3,"e":"Pitch attitude is the angle between the longitudinal axis and the horizon (assiette). Do not confuse with angle of attack."},
+  {"c":"English","q":"How many Concorde aircraft were built?","o":["20","14","24","7"],"a":0,"e":"A total of 20 Concordes were built (6 prototypes/pre-production + 14 production aircraft)."},
+  {"c":"English","q":"To glide 4,800 m horizontally while losing 600 m of altitude, the glide ratio is close to:","o":["8","6","9","7"],"a":0,"e":"Glide ratio = horizontal distance / height lost = 4800 / 600 = 8."},
+  {"c":"English","q":"How many runways does Amsterdam-Schiphol airport have?","o":["8","6","2","4"],"a":1,"e":"Amsterdam Schiphol has six runways."},
+  {"c":"English","q":"If taking off from runway 18 with a wind from 170° at 7 kt:","o":["The wind is a tailwind","The wind is a headwind","There is no wind","The wind is a crosswind"],"a":1,"e":"Runway 18 ≈ 180°. Wind from 170° blows from ahead-left: essentially a headwind."},
+  {"c":"English","q":"A runway numbered 36 is facing:","o":["South","East","North","West"],"a":2,"e":"Runway number = magnetic heading / 10 (rounded). Runway 36 ≈ 360° → north."},
+  {"c":"English","q":"When did the Boeing 787 enter service with Air France?","o":["2016","2014","2011","2009"],"a":0,"e":"Air France took delivery of its first Boeing 787-9 in January 2017 (fleet entry often cited as 2016 in cadet tests)."},
+  {"c":"English","q":"What is the angle between the aircraft velocity vector and the horizon?","o":["Pitch attitude","Angle of attack","Wing setting angle","Flight path angle"],"a":3,"e":"The flight path angle (slope) is measured between the velocity vector and the horizontal."},
+  {"c":"English","q":"What is a Lockheed Super Constellation?","o":["A four-engine aircraft","A twin-jet aircraft","A remarkable group of stars","A radar network"],"a":0,"e":"The Super Constellation (Super Connie) is a four-engine propeller airliner."},
+  {"c":"English","q":"What navigation method do airliners mainly use to cross the Atlantic?","o":["Radar guidance","Inertial reference system and GPS","VOR and DME","Magnetic compass only"],"a":1,"e":"Oceanic flights use IRS/FMS and GPS (RNAV/RNP), not ground-based navaids."},
+  {"c":"English","q":"The pilot pushes the control column forward. Which control surface moves?","o":["The rudder","The elevator","The ailerons","The flaps"],"a":1,"e":"Forward stick/yoke input moves the elevator down (nose-down pitch)."},
+  {"c":"English","q":"Which city is the farthest from Paris among these destinations?","o":["Atlanta","Delhi","Lagos","Tokyo"],"a":3,"e":"Tokyo is the farthest from Paris among these four cities (~9,700 km)."},
+  {"c":"English","q":"Which cloud type is the highest?","o":["Altocumulus","Nimbostratus","Stratus","Cirrostratus"],"a":3,"e":"Cirrostratus is a high-level cloud (above ~6,000 m)."},
+  {"c":"English","q":"How would aircraft registration F-HPJA be spoken on the radio?","o":["François Joseph Alpha","Florida John Alpha","Frank Jack Alpha","Fox Juliett Alpha"],"a":3,"e":"ICAO phonetic alphabet: F=Fox(trot), H=Hotel, P=Papa, J=Juliett, A=Alpha. This test uses the shorthand 'Fox Juliett Alpha'."},
+  {"c":"English","q":"How many Boeing 777s did Air France operate (approx., AF Cadets 2022 test)?","o":["91","41","11","61"],"a":3,"e":"This Infinite Psyo AF Cadets 2022 debrief marks 61 as the correct answer (historical fleet snapshot)."},
+  {"c":"English","q":"What type of engine powers the ATR 42?","o":["Turbojet","Turboprop","Piston","Ramjet"],"a":1,"e":"The ATR 42 is powered by turboprop engines (Pratt & Whitney Canada PW100 series)."},
+  {"c":"English","q":"Compared to the air on the lower surface (intrados), the air on the upper surface (extrados) travels:","o":["A greater distance","The same distance","A smaller distance","No distance"],"a":0,"e":"Upper-surface airflow follows a longer path, increasing speed and lowering pressure (lift)."},
+  {"c":"English","q":"Which of the following is NOT an aircraft engine?","o":["CFM56","DC-9-10","GE90","JT8D"],"a":1,"e":"DC-9-10 is a Douglas airliner model, not an engine."},
+  {"c":"English","q":"During landing, flap deflection is generally:","o":["Higher than at takeoff","Identical to takeoff","Identical to cruise","Lower than at takeoff"],"a":0,"e":"Landing typically uses greater flap settings than takeoff to fly slower on approach."},
 ];
 
 /* ===========================================================
@@ -703,10 +730,12 @@ let pool = [], idx = 0, autoTimer = null;
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 
 function isBiaQuestion(q){ return q.c.startsWith("BIA"); }
+function isEnglishQuestion(q){ return q.c === "English"; }
 
 function questionsForMode(mode){
   if(mode==="bia") return QUESTIONS.filter(isBiaQuestion);
-  if(mode==="cadet") return QUESTIONS.filter(q=>!isBiaQuestion(q));
+  if(mode==="english") return QUESTIONS.filter(isEnglishQuestion);
+  if(mode==="cadet") return QUESTIONS.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
   return QUESTIONS;
 }
 
