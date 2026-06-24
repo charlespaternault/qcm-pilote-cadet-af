@@ -226,14 +226,34 @@
   .modal h2 { margin:0 0 16px; font-size:18px; }
   .form-field { margin-bottom:12px; }
   .form-field label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:600; }
-  .form-field input, .form-field textarea, .form-field select {
+  .form-field input:not([type=radio]):not([type=checkbox]),
+  .form-field textarea,
+  .form-field select {
     width:100%; font:inherit; color:var(--txt); background:var(--card2);
     border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    box-sizing:border-box;
   }
   .form-field textarea { min-height:72px; resize:vertical; }
-  .opt-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-  .opt-row input[type=radio] { accent-color:var(--accent); flex:0 0 auto; }
-  .opt-row input[type=text] { flex:1; }
+  .opt-list { display:grid; gap:8px; }
+  .opt-row {
+    display:flex; gap:10px; align-items:center;
+    background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+  }
+  .opt-row input[type=radio] {
+    accent-color:var(--accent); flex:0 0 18px; width:18px; height:18px;
+    margin:0; padding:0; border:none; background:transparent; cursor:pointer;
+  }
+  .opt-row .opt-key {
+    flex:0 0 24px; height:24px; border-radius:6px; display:grid; place-items:center;
+    font-size:12px; font-weight:700; color:var(--muted); background:#0e1626; border:1px solid var(--line);
+  }
+  .opt-row input[type=text] {
+    flex:1 1 auto; min-width:0; width:0;
+    font:inherit; color:var(--txt); background:transparent;
+    border:none; border-radius:0; padding:6px 4px; outline:none;
+  }
+  .opt-row input[type=text]:focus { box-shadow:none; }
+  .opt-row:has(input[type=radio]:checked) { border-color:var(--accent); }
   .modal-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:16px; }
   .annexe-box {
     margin:0 0 14px; padding:12px 14px; border-radius:12px;
@@ -374,10 +394,12 @@
     </div>
     <div class="form-field">
       <label>Réponses (coche la bonne)</label>
-      <div class="opt-row"><input type="radio" name="editA" value="0" id="editA0"><input type="text" id="editO0" placeholder="A"></div>
-      <div class="opt-row"><input type="radio" name="editA" value="1" id="editA1"><input type="text" id="editO1" placeholder="B"></div>
-      <div class="opt-row"><input type="radio" name="editA" value="2" id="editA2"><input type="text" id="editO2" placeholder="C"></div>
-      <div class="opt-row"><input type="radio" name="editA" value="3" id="editA3"><input type="text" id="editO3" placeholder="D"></div>
+      <div class="opt-list">
+        <div class="opt-row"><input type="radio" name="editA" value="0" id="editA0"><span class="opt-key">A</span><input type="text" id="editO0" placeholder="Réponse A"></div>
+        <div class="opt-row"><input type="radio" name="editA" value="1" id="editA1"><span class="opt-key">B</span><input type="text" id="editO1" placeholder="Réponse B"></div>
+        <div class="opt-row"><input type="radio" name="editA" value="2" id="editA2"><span class="opt-key">C</span><input type="text" id="editO2" placeholder="Réponse C"></div>
+        <div class="opt-row"><input type="radio" name="editA" value="3" id="editA3"><span class="opt-key">D</span><input type="text" id="editO3" placeholder="Réponse D"></div>
+      </div>
     </div>
     <div class="form-field">
       <label for="editE">Explication</label>
