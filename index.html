@@ -123,6 +123,12 @@
   .explain b { color: var(--accent2); }
 
   .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; flex-wrap: wrap; }
+  .nav .nav-left, .nav .nav-right { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  button.chatgpt-btn {
+    background:linear-gradient(135deg, #10a37f 0%, #0d8a6a 100%);
+    border-color:#10a37f; color:#fff; font-weight:600;
+  }
+  button.chatgpt-btn:hover { background:#12b88f; border-color:#12b88f; }
 
   /* ----- Layout quiz + overlay de navigation ----- */
   .quiz-layout { display:flex; gap:18px; align-items:flex-start; }
@@ -348,10 +354,15 @@
       <div class="explain" id="explain"></div>
       <div class="annexe-box hide" id="annexeBox"><b>Annexe</b><div id="annexeText"></div></div>
       <div class="nav">
-        <button id="prevBtn">← Précédent</button>
-        <button id="editBtn">✎ Modifier</button>
-        <button id="quitBtn">✕ Quitter</button>
-        <button class="primary" id="nextBtn">Suivant →</button>
+        <div class="nav-left">
+          <button id="prevBtn">← Précédent</button>
+          <button id="editBtn">✎ Modifier</button>
+          <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
+        </div>
+        <div class="nav-right">
+          <button id="quitBtn">✕ Quitter</button>
+          <button class="primary" id="nextBtn">Suivant →</button>
+        </div>
       </div>
     </div>
 
@@ -848,6 +859,13 @@ const QUESTIONS = [
   {"c":"Géographie","q":"Air France vole vers Lagos. Quelle est la capitale du Nigeria ?","o":["Abuja","Lagos","Kano","Port Harcourt"],"a":0,"e":"Lagos est l'ancienne capitale et la métropole économique ; Abuja est la capitale fédérale depuis 1991."},
   {"c":"Géographie","q":"Le réseau KLM dessert Auckland. Quelle est la capitale de la Nouvelle-Zélande ?","o":["Wellington","Auckland","Christchurch","Queenstown"],"a":0,"e":"Auckland est la plus grande ville néo-zélandaise, mais Wellington est la capitale politique."},
   {"c":"Géographie","q":"Air France dessert Zurich. Quelle est la capitale de la Suisse ?","o":["Berne","Zurich","Genève","Bâle"],"a":0,"e":"Zurich est la plus grande ville suisse et une destination AF, mais Berne (Bern) est la capitale fédérale."},
+  {"c":"Géographie","q":"Air France dessert São Paulo. Où se situe Montevideo (capitale de l'Uruguay) par rapport à São Paulo ?","o":["Plus au nord et plus à l'est","Plus au sud et plus à l'ouest","Plus au nord et plus à l'ouest","Plus au sud et plus à l'est"],"a":1,"e":"Montevideo (~35° S, 56° O) est au sud-ouest de São Paulo (~24° S, 47° O) : plus au sud (latitude) et plus à l'ouest (longitude)."},
+  {"c":"Géographie","q":"Sur le réseau long-courrier, où se situe Buenos Aires par rapport à Santiago du Chili ?","o":["Plus au nord et plus à l'est","Plus au sud et plus à l'est","Plus au nord et plus à l'ouest","Plus au sud et plus à l'ouest"],"a":1,"e":"Buenos Aires (~35° S, 58° O) est légèrement plus au sud et nettement plus à l'est que Santiago (~33° S, 71° O)."},
+  {"c":"Géographie","q":"Où se situe Casablanca par rapport à Dakar (deux escales AF en Afrique de l'Ouest) ?","o":["Plus au nord et plus à l'est","Plus au sud et plus à l'ouest","Plus au nord et plus à l'ouest","Plus au sud et plus à l'est"],"a":0,"e":"Casablanca (~34° N, 8° O) est au nord-est de Dakar (~15° N, 17° O) : plus au nord et plus à l'est."},
+  {"c":"Géographie","q":"Où se situe Séoul par rapport à Tokyo (deux grandes destinations AF en Asie) ?","o":["Plus au nord et plus à l'ouest","Plus au sud et plus à l'est","Plus au nord et plus à l'est","Plus au sud et plus à l'ouest"],"a":0,"e":"Séoul (~38° N, 127° E) est au nord-ouest de Tokyo (~36° N, 140° E)."},
+  {"c":"Géographie","q":"Où se situe Mexico par rapport à Miami (hub transatlantique courant depuis l'Amérique latine) ?","o":["Plus au nord et plus à l'est","Plus au sud et plus à l'ouest","Plus au nord et plus à l'ouest","Plus au sud et plus à l'est"],"a":1,"e":"Mexico (~19° N, 99° O) est au sud-ouest de Miami (~26° N, 80° O)."},
+  {"c":"Géographie","q":"Où se situe Le Caire par rapport à Jeddah (porte d'entrée de la péninsule arabique) ?","o":["Plus au nord et plus à l'ouest","Plus au sud et plus à l'est","Plus au nord et plus à l'est","Plus au sud et plus à l'ouest"],"a":0,"e":"Le Caire (~30° N, 31° E) est au nord-ouest de Jeddah (~22° N, 39° E)."},
+  {"c":"Géographie","q":"Où se situe Bangkok par rapport à Singapour (hub majeur du sud-est asiatique) ?","o":["Plus au nord et plus à l'ouest","Plus au sud et plus à l'est","Plus au nord et plus à l'est","Plus au sud et plus à l'ouest"],"a":0,"e":"Bangkok (~14° N, 100° E) est au nord-ouest de Singapour (~1° N, 104° E)."},
 
 
 
@@ -1506,6 +1524,27 @@ function closeEditModal(){
   $("editModal").classList.remove("open");
 }
 
+function buildChatGPTPrompt(q){
+  const keys = ["A","B","C","D"];
+  const opts = q.o.map((opt,i)=>`${keys[i]}) ${opt}`).join("\n");
+  let prompt = `Explique-moi cette question de QCM (préparation pilote / culture aéronautique Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`;
+  if(q.annexe) prompt += `\n\nAnnexe : ${q.annexe}`;
+  if(q._chosen!=null){
+    const chosen = q._order?.[q._chosen]?.opt;
+    const correct = q.o[q.a];
+    prompt += `\n\nMa réponse : ${chosen || "—"}\nBonne réponse attendue : ${correct}`;
+  }
+  prompt += "\n\nRéponds en français, de façon pédagogique et concise.";
+  return prompt;
+}
+
+function askChatGPT(){
+  if(!pool[idx]) return;
+  const prompt = buildChatGPTPrompt(pool[idx]);
+  const url = "https://chatgpt.com/?q=" + encodeURIComponent(prompt);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 function saveQuestionEdit(){
   if(editingBankId == null) return;
   const id = editingBankId;
@@ -1647,6 +1686,7 @@ $("navToggle").onclick = openNav;
 $("navClose").onclick = closeNav;
 $("scrim").onclick = closeNav;
 $("editBtn").onclick = openEditCurrent;
+$("chatgptBtn").onclick = askChatGPT;
 $("editSaveBtn").onclick = saveQuestionEdit;
 $("editCancelBtn").onclick = closeEditModal;
 $("editResetBtn").onclick = resetQuestionEdit;
