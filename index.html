@@ -1355,13 +1355,13 @@ let quizMode = "cadet";
 
 function questionsForMode(mode){
   const base = activeQuestions();
-  if(mode==="bia") return base.filter(isBiaQuestion);
-  if(mode==="english") return base.filter(isEnglishQuestion);
   if(mode==="math") return base.filter(isMathQuestion);
-  if(mode==="review") return base.filter(q=>isInReviewPool(q));
-  if(mode==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q) && !isMathQuestion(q));
-  if(mode==="all") return base.filter(q=>!isMathQuestion(q));
-  return base;
+  const withoutMath = base.filter(q=>!isMathQuestion(q));
+  if(mode==="bia") return withoutMath.filter(isBiaQuestion);
+  if(mode==="english") return withoutMath.filter(isEnglishQuestion);
+  if(mode==="review") return withoutMath.filter(q=>isInReviewPool(q));
+  if(mode==="cadet") return withoutMath.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
+  return withoutMath;
 }
 
 function initStart(){
@@ -1413,7 +1413,7 @@ function rebuildCatSelect(){
 }
 
 function buildPool(){
-  const mode = quizMode || $("modeSelect").value;
+  const mode = $("modeSelect").value;
   const cat = $("catSelect").value;
   let arr = questionsForMode(mode).map((q,i)=>({...q,_id:i}));
   if(cat!=="all") arr = arr.filter(q=>q.c===cat);
