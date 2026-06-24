@@ -279,6 +279,7 @@
   <div id="start" class="panel">
     <div class="start-tabs">
       <button type="button" class="tab-btn active" data-tab="quiz">QCM</button>
+      <button type="button" class="tab-btn" data-tab="math">Problèmes mathématiques</button>
       <button type="button" class="tab-btn" data-tab="shortcuts">Raccourcis web</button>
       <button type="button" class="tab-btn" data-tab="hidden">Questions cachées <b id="hiddenTabCount"></b></button>
     </div>
@@ -320,6 +321,31 @@
       </p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
         Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
+      </p>
+    </div>
+
+    <div id="paneMath" class="start-pane">
+      <div class="topbar">
+        <span class="chip">Banque de <b id="mathTotalCount">0</b> problèmes</span>
+        <span class="chip">Style tests psychotechniques pilote</span>
+      </div>
+      <p style="color:var(--muted); font-size:14px; margin:0 0 14px;">
+        Problèmes de logique, proportionnalité, vitesses, pourcentages et calcul mental — avec explications détaillées après chaque réponse.
+      </p>
+      <div class="controls">
+        <select id="mathCountSelect">
+          <option value="0">Toutes les questions</option>
+          <option value="15">15 questions</option>
+          <option value="25">25 questions</option>
+          <option value="40">40 questions</option>
+        </select>
+        <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathShuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
+      </div>
+      <div style="text-align:center; margin-top:12px;">
+        <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
+      </div>
+      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
+        Astuce : <kbd>1</kbd>–<kbd>5</kbd> pour répondre (5 choix possibles), <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
     </div>
 
@@ -1071,6 +1097,74 @@ const QUESTIONS = [
   {"c":"English","q":"Compared to the air on the lower surface (intrados), the air on the upper surface (extrados) travels:","o":["A greater distance","The same distance","A smaller distance","No distance"],"a":0,"e":"Upper-surface airflow follows a longer path, increasing speed and lowering pressure (lift)."},
   {"c":"English","q":"Which of the following is NOT an aircraft engine?","o":["CFM56","DC-9-10","GE90","JT8D"],"a":1,"e":"DC-9-10 is a Douglas airliner model, not an engine."},
   {"c":"English","q":"During landing, flap deflection is generally:","o":["Higher than at takeoff","Identical to takeoff","Identical to cruise","Lower than at takeoff"],"a":0,"e":"Landing typically uses greater flap settings than takeoff to fly slower on approach."},
+  {"c":"Problèmes mathématiques","q":"Timothé, Pierre et Jérome mettent 0h02min à exécuter la visite prévol de l'avion. Pierre met 0h06min à exécuter la visite prévol de l'avion. Timothé et Pierre mettent 0h04min à exécuter la visite prévol de l'avion. Combien de temps mettent Timothé et Jérome à faire cette visite prévol ensemble ?","o":["0h06min","0h04min","0h02min","0h12min","0h03min"],"a":4,"e":"Si Timothé, Pierre et Jérome mettent 0h02min ensemble, ils exécutent 30 tâches/heure. Pierre seul : 10/h. Timothé+Pierre : 15/h → Jérome seul : 15/h, Timothé seul : 5/h. Ensemble Timothé+Jérome : 20/h soit une tâche toutes les 3 min."},
+  {"c":"Problèmes mathématiques","q":"9 voiture(s) et 4 vélo(s) valent 5444 euros. 10 voiture(s) et 3 vélo(s) valent 5968 euros. Combien vaut une voiture ?","o":["56 euros","1305 euros","580 euros","224 euros","1160 euros"],"a":2,"e":"9V+4B=5444 ×3 → 27V+12B=16332 (a). 10V+3B=5968 ×4 → 40V+12B=23872 (b). (b)-(a) : 13V=7540 → V=580 €."},
+  {"c":"Problèmes mathématiques","q":"Sachant que 3 rial(s) vaut 1.02 dinar(s) et que 7.21 yen(s) vaut 1 dinar(s). Combien fait 1 rial en yen(s) ?","o":["2.45 yens","66 yens","420 yens","0.41 yen","1.22 yen"],"a":0,"e":"Règle de trois : 1 rial = 7.21×1.02/3 ≈ 2.45 yens."},
+  {"c":"Problèmes mathématiques","q":"Un objet est normalement vendu sans réduction à 650 euros. Pour les soldes le commerçant décide de lui appliquer une première remise de 50 % puis une deuxième remise de 68 %. Quel est le prix final de cet objet ?","o":["132 euros","137 euros","104 euros","94 euros","72 euros"],"a":2,"e":"650×0.5×(1-0.68) = 104 €."},
+  {"c":"Problèmes mathématiques","q":"Un objet est vendu avec réduction à 43 euros. En effet, le commerçant lui a appliqué une remise de 19 % à laquelle s'est ajoutée une deuxième remise de 41 %. Quel était le prix sans remise de cet objet ?","o":["117 euros","99 euros","72 euros","108 euros","90 euros"],"a":4,"e":"X×(1-0.19)×(1-0.41)=43 → X×0.48=43 → X=90 €."},
+  {"c":"Problèmes mathématiques","q":"250 ouvriers effectuent 3 m² de travail en 3 heures. Combien d'ouvriers seront nécessaires pour faire 10 m² en 4 h ?","o":["500","750","1875","625","1112"],"a":3,"e":"250 ouvriers font 1 m²/h. Il en faut 250×10/4 = 625."},
+  {"c":"Problèmes mathématiques","q":"Le prix final après remise est de 33 euros, et la remise de 11 euros. Quel était le pourcentage de remise dont a bénéficié le client ?","o":["20 %","23 %","21 %","33 %","25 %"],"a":4,"e":"Prix initial : 33+11=44 €. Remise : 11/44 = 25 %."},
+  {"c":"Problèmes mathématiques","q":"Le prix final après remise est de 123 euros, et la remise de 18 %. Quel était le prix initial ?","o":["113 euros","150 euros","188 euros","165 euros","128 euros"],"a":1,"e":"Prix initial : 123/(1-0.18) = 150 €."},
+  {"c":"Problèmes mathématiques","q":"En plaçant 839 euros sur un compte à 3 % par an, quelle somme sera sur ce compte après 3 ans ?","o":["916.8 euros","864.42 euros","1086.53 euros","1147.44 euros","1027.81 euros"],"a":0,"e":"839×(1.03)³ ≈ 916.8 € (intérêts composés)."},
+  {"c":"Problèmes mathématiques","q":"En 1983 le prix d'un objet est de 75 euros. En 1984 le prix a augmenté de 80 % par rapport à l'année précédente. En 1985 le prix a augmenté de 80 % par rapport à l'année précédente. Quel est le prix final de cet objet en 1985 ?","o":["287 euros","170 euros","272 euros","258 euros","243 euros"],"a":4,"e":"75×1.8×1.8 = 243 €."},
+  {"c":"Problèmes mathématiques","q":"Un avion consomme 7752 litres sur un aller-retour. À cause du vent il a consommé 48 % de moins à l'aller qu'au retour. Combien a-t-il consommé à l'aller ?","o":["1625 litres","3126 litres","2652 litres","5100 litres","4626 litres"],"a":2,"e":"X+(1-0.48)X=7752 → X=5100 L (retour). Aller : 7752-5100=2652 L."},
+  {"c":"Problèmes mathématiques","q":"Un champ de 5244 m² a une largeur de 69 m. De combien faut-il augmenter sa longueur pour que la surface soit égale à 6624 m² ?","o":["20 mètres","12 mètres","19 mètres","18 mètres","94 mètres"],"a":0,"e":"Surface à ajouter : 6624-5244=1380 m². Longueur supplémentaire : 1380/69=20 m."},
+  {"c":"Problèmes mathématiques","q":"2 trains partent de 2 gares distantes de 1792 km en roulant l'un vers l'autre. Le premier roule à 582 km/h. Le deuxième roule à 258 km/h. Sachant qu'ils sont partis à 14h11. À quelle heure se croisent-ils ?","o":["17h09","16h04","16h19","16h40","17h16"],"a":2,"e":"Vitesse de rapprochement : 840 km/h. Temps : 1792/840 h = 128 min = 2h08 → 16h19."},
+  {"c":"Problèmes mathématiques","q":"2 trains partent de 2 gares distantes de 3694 km en roulant l'un vers l'autre. Le premier roule à 282 km/h. Le deuxième roule à 918 km/h. Sachant que le premier est parti à 3h46 et que le second est parti à 4h06. À quelle heure se croisent-ils ?","o":["7h22","7h06","7h42","6h51","15h47"],"a":1,"e":"À 4h06, le 1er a parcouru 282/3=94 km. Distance restante : 3600 km. Temps : 3600/1200=3 h → 7h06."},
+  {"c":"Problèmes mathématiques","q":"Le capitaine, le copilote et le steward touchent leur salaire. La somme des salaires fait 6578 euros. Le capitaine touche sa part. Le copilote touche 1273 euros de moins que le steward. Le steward touche 612 euros de plus que le capitaine. Combien touche le copilote ?","o":["2192 euros","5030 euros","4369 euros","2209 euros","1548 euros"],"a":4,"e":"C+(C+1273)+(C+1273-612)=6578 → 3C=4644 → C=1548 €."},
+  {"c":"Problèmes mathématiques","q":"Le capitaine, le copilote et le steward touchent leurs salaires. La somme des salaires fait 618 euros. Le capitaine touche sa part. Le steward touche 201 euros de plus que 1/3 de ce que touche le capitaine. Le copilote touche 72 euros de plus que 1/3 de ce que touche le capitaine. Combien touche le copilote ?","o":["69 euros","207 euros","160.5 euros","90 euros","141 euros"],"a":4,"e":"Capitaine C : C+(72+C/3)+(201+C/3)=618 → 5C/3=345 → C=207. Copilote : 72+207/3=141 €."},
+  {"c":"Problèmes mathématiques","q":"Un champ carré dont on augmente la taille des côtés de 10 m a une surface de 441 m². Quelle était à l'origine la longueur du côté du champ ?","o":["8 mètres","11 mètres","9 mètres","12 mètres","10 mètres"],"a":1,"e":"√441=21 m après agrandissement. Côté initial : 21-10=11 m."},
+  {"c":"Problèmes mathématiques","q":"Un article a vu son prix augmenter en mars de 20 %. Il est ensuite soldé de 20 %. Son prix final est de 630 euros. Quel était son prix avant le mois de mars ?","o":["630 euros","657 euros","788 euros","525 euros","750 euros"],"a":1,"e":"P×1.2×0.8=630 → P=630/0.96=656.25 ≈ 657 €."},
+  {"c":"Problèmes mathématiques","q":"Un avion part à 13 h locale d'une ville A et arrive à une ville B à 17 h locale le même jour. Sachant qu'il a volé 10 h, quel est le décalage horaire entre les villes A et B ?","o":["14 heures","6 heures","5 heures","7 heures","10 heures"],"a":1,"e":"Décalage : 13+10-17=6 h."},
+  {"c":"Problèmes mathématiques","q":"À 17h la température est de 5°. De 17h à 17h30, la température évolue de -0.5°/h. De 17h30 à 22h30, la température évolue de -0.5°/h. De 22h30 à 0h30, la température évolue de 4°/h. De 0h30 à 5h, la température évolue de -0.5°/h. De 5h à 9h30, la température diminue de 3°. De 9h30 à 13h, la température évolue de 1°/h. Quelle est la température à 13h ?","o":["11.25°","8.5°","7°","12.75°","10.25°"],"a":1,"e":"17h:5° → 17h30:4.75° → 22h30:2.25° → 0h30:10.25° → 5h:8° → 9h30:5° → 13h:8.5°."},
+  {"c":"Problèmes mathématiques","q":"Dans 22 ans Jean-Cyrille, Pierre et François auront à eux trois 116 ans. François a 3 ans de plus que 1/4 de l'âge de Pierre. Jean-Cyrille a 5 ans de plus que 1/4 de l'âge de Pierre. Quel est l'âge de François ?","o":["10 ans","9 ans","7 ans","11 ans","12 ans"],"a":0,"e":"JC+P+F+66=116, F=3+P/4, JC=5+P/4 → 3P/2=42 → P=28 → F=10 ans."},
+  {"c":"Problèmes mathématiques","q":"J'ai 102 euros en pièces de 10 et 2 euros. J'ai en tout 27 pièces. Combien de pièces ai-je de chaque type ?","o":["4 de 10 € et 23 de 2 €","6 de 10 € et 21 de 2 €","1 de 10 € et 26 de 2 €","7 de 10 € et 20 de 2 €","24 de 10 € et 3 de 2 €"],"a":1,"e":"6×10+21×2=102 € et 6+21=27 pièces."},
+  {"c":"Problèmes mathématiques","q":"Une échelle fait 11.02 mètres. Elle est composée de 23 barreaux (il y a un espace entre chaque barreau mais il y a également un espace entre le sol et le premier barreau et entre le dernier barreau et le sommet de l'échelle). Sachant qu'un barreau fait 2 cm d'épaisseur, quel est la taille de l'espace entre chaque barreau ?","o":["39 cm","48 cm","44 cm","38 cm","50 cm"],"a":2,"e":"24 espacements + 23×0.02 m = 11.02 m → E=44 cm."},
+  {"c":"Problèmes mathématiques","q":"Une plante double de surface en un mois. Plantée début août, elle s'étend sur 50.56 m² fin décembre. Quelle était sa surface initiale en m² ?","o":["4.74 m²","1.26 m²","1.58 m²","3.16 m²","2.37 m²"],"a":2,"e":"5 mois pleins → ×2⁵=32. Surface initiale : 50.56/32=1.58 m²."},
+  {"c":"Problèmes mathématiques","q":"Le développement d'une bicyclette est le rapport du nombre de dents du plateau au nombre de dents du pignon. Parmi les développements suivants : 357/41, 783/89, 45/5, 151/17, 540/60, quel est le développement le plus faible ?","o":["8.4","9","8.7","8.9","8.5"],"a":2,"e":"Rapports ≈ 8.7, 8.79, 9, 8.88, 9. Le plus faible est 8.7 (357/41)."},
+  {"c":"Problèmes mathématiques","q":"Une chaudière a consommé entre le 29 octobre et le 30 janvier inclus de l'année suivante un volume de 1692 m³. Quelle a été la consommation journalière moyenne ?","o":["21 m³/jour","22 m³/jour","18 m³/jour","14 m³/jour","16 m³/jour"],"a":2,"e":"≈94 jours sur la période. 1692/94≈18 m³/jour."},
+  {"c":"Problèmes mathématiques","q":"Un avion part à 17 h locale d'une ville A et arrive à une ville B à 3 h locale le jour suivant. Sachant qu'il a volé 17 h et qu'il a passé 2 h en escale, quel est le décalage horaire entre les villes A et B ?","o":["19 heures","11 heures","5 heures","9 heures","7 heures"],"a":3,"e":"Temps total voyage : 19 h. Décalage : 17+19-3-24=9 h."},
+  {"c":"Problèmes mathématiques","q":"Le prix d'un billet de 1ère classe est 225/90 fois le prix de celui de 2ème classe. Quel est le prix d'un trajet en première classe sachant que l'écart entre les billets de 1ère et de 2ème classe est de 135 euros ?","o":["225 euros","248 euros","270 euros","214 euros","259 euros"],"a":0,"e":"P1=225/90×P2 et P1-P2=135 → P1=225 €."},
+  {"c":"Problèmes mathématiques","q":"Un avion vole à 200 km/h. Il rencontre un vent de face égal au 1/20 de sa vitesse. Combien de temps mettra-t-il pour parcourir 1995 km ?","o":["11h01","9h45","10h48","11h33","10h30"],"a":4,"e":"Vitesse sol : 200-10=190 km/h. Temps : 1995/190=10h30."},
+  {"c":"Problèmes mathématiques","q":"Deux personnes ayant 22 ans de différence d'âge ont à elles deux 142 ans. Quel est l'âge de la plus jeune ?","o":["86 ans","78 ans","62 ans","58 ans","60 ans"],"a":4,"e":"A+(A+22)=142 → A=60 ans."},
+  {"c":"Problèmes mathématiques","q":"La vitesse aérodynamique indiquée doit être augmentée de 6.5 % par 400 mètres d'altitude afin d'obtenir la vitesse aérodynamique vraie. Si la vitesse aérodynamique indiquée à 17200 mètres est de 500 km/h, quelle est la vitesse aérodynamique vraie ?","o":["1898 km/h","1328 km/h","2277 km/h","2467 km/h","1139 km/h"],"a":0,"e":"Correction : 6.5×17200/400=279.5 %. Vraie : 500×(1+2.795)≈1898 km/h."},
+  {"c":"Problèmes mathématiques","q":"On partage 1850 euros entre 10 personnes de la façon suivante : la première ayant reçu sa part, chacune reçoit alors 20 euros de plus que la précédente. Combien reçoit la première personne ?","o":["99 euros","95 euros","91 euros","97 euros","98 euros"],"a":1,"e":"10P+20×(0+1+…+9)=1850 → 10P+900=1850 → P=95 €."},
+  {"c":"Problèmes mathématiques","q":"Trois candidats ont obtenu à un test les notes suivantes : A a eu 36 points de plus que C ; B 20 points de plus que la moitié de A. La somme totale des points a été de 354. Combien B a-t-il totalisé ?","o":["36 points","54 points","148 points","94 points","56 points"],"a":3,"e":"a=c+36, b=20+a/2, a+b+c=354 → 5a/2=370 → a=148 → b=94 points."},
+  {"c":"Problèmes mathématiques","q":"Des avaries subies par les hélices d'un pétrolier réduisent sa vitesse moyenne à 4 nœuds au-dessus du 1/5 de sa vitesse moyenne avant les avaries. Si le pétrolier ne fait maintenant qu'un mile marin en 5 min, quelle a été sa vitesse moyenne normale ? (1 nœud = 1 mile marin par heure)","o":["44 nœuds","28 nœuds","40 nœuds","48 nœuds","36 nœuds"],"a":2,"e":"Vitesse actuelle : 12 nœuds. Avant : 5×(12-4)=40 nœuds."},
+  {"c":"Problèmes mathématiques","q":"Chaque fois que la température s'élève de 4 degrés au-dessus de la température normale, une correction de 8 % à la lecture de l'altimètre devra être rajoutée. Si l'altimètre indique 3683 mètres et si la température est de 40 degrés au-dessus de la température normale, quelle est l'altitude vraie ?","o":["6541 mètres","6629 mètres","6688 mètres","6924 mètres","6335 mètres"],"a":1,"e":"Correction : 8×40/4=80 %. Altitude vraie : 3683×1.8=6629 m."},
+  {"c":"Problèmes mathématiques","q":"L'avion A vole à une vitesse équivalente à 0.71 de la vitesse de l'avion B. Quelle distance effectuerait l'avion B si l'avion A parcourt 10 kilomètres ?","o":["19 km","14 km","34 km","24 km","9 km"],"a":1,"e":"10/0.71≈14 km."},
+  {"c":"Problèmes mathématiques","q":"Les commerciaux d'une coopérative agricole ont vendu 8694 kg de grain en une semaine, c'est-à-dire 38 % de plus que ce qu'ils ont vendu la semaine précédente. Combien de grain auraient-ils dû vendre pour augmenter de 55 % la quantité de grain vendue pendant la semaine précédente ?","o":["13476 kg","3478 kg","6300 kg","9765 kg","26662 kg"],"a":3,"e":"1.55×8694/1.38≈9765 kg."},
+  {"c":"Problèmes mathématiques","q":"Un groupe de pêcheurs sous-marins a rapporté 420 kg de poissons en trois jours. Le troisième jour, il a pêché les 4/6 de poissons du premier jour et le deuxième jour 3 fois plus de poissons que le premier jour. Combien de poissons a-t-il pêché le troisième jour ?","o":["72 kg","78 kg","60 kg","54 kg","66 kg"],"a":2,"e":"P1+3P1+2P1/3=420 → P1=90 → P3=60 kg."},
+  {"c":"Problèmes mathématiques","q":"Un avion de tourisme est parti de son aérodrome de départ à 15h vers un aérodrome de destination situé à 517 km. Il s'y est arrêté 7 minutes et est retourné ensuite vers son terrain de départ. Pendant son vol aller, sa vitesse a été de 110 km/h ; pendant son vol retour, sa vitesse a été de 20 % plus rapide. À quelle heure est-il retourné sur son aérodrome de départ ?","o":["22h56","23h44","8h43","1h27","1h41"],"a":1,"e":"Aller : 282 min + escale 7 min + retour à 132 km/h : 235 min = 524 min = 8h44 → 23h44."},
+  {"c":"Problèmes mathématiques","q":"Un camion de livraison doit se rendre à un point situé à 929 km de Paris et revenir. À cause du fret chargé, le voyage de retour demandera 1/3 de gas-oil de plus que le voyage aller. Si la quantité de gas-oil nécessaire pour le voyage aller et retour est de 154 litres, combien de litres seront nécessaires pour le voyage aller seulement ?","o":["59 litres","53 litres","40 litres","92 litres","66 litres"],"a":4,"e":"F+(4/3)F=154 → F=66 L."},
+  {"c":"Problèmes mathématiques","q":"La vitesse de l'avion A s'élève à 72/22 de la vitesse de l'avion B et la vitesse de l'avion C est de 52/12 de celle de l'avion B. Combien de fois l'avion C est-il plus rapide que l'avion A ?","o":["118/74","128/79","143/108","83/57","79/85"],"a":2,"e":"Vc=(52/12)×(22/72)×Va=(143/108)×Va."},
+  {"c":"Problèmes mathématiques","q":"Un camion effectuant le trajet St Yan-Muret sur l'autoroute A20 roule en raison de son chargement à 53 km/h. Il a 1235 km d'avance sur une voiture roulant dans le même sens à 148 km/h. Combien de kilomètres le camion fera-t-il avant d'être rattrapé ?","o":["827 km","2214 km","442 km","689 km","551 km"],"a":3,"e":"Temps de rattrapage : 1235/95 h. Distance camion : 53×1235/95≈689 km."},
+  {"c":"Problèmes mathématiques","q":"La vitesse par rapport au sol d'un avion volant avec fort vent de face est égale aux 4/8 de sa vitesse de croisière normale, moins 13 km/h. La vitesse perdue par rapport au sol, à cause du vent, est égale aux 5/8 de la vitesse croisière normale, moins 27 km/h. Quelle est sa vitesse de croisière normale ?","o":["320 km/h","256 km/h","224 km/h","352 km/h","288 km/h"],"a":0,"e":"Vn-Vv=(4/8)Vn-13 et Vv=(5/8)Vn-27 → Vn/8=40 → Vn=320 km/h."},
+  {"c":"Problèmes mathématiques","q":"Un avion de ligne parti d'Orly parcourt une distance de 5 % plus longue pendant la deuxième heure que pendant la première heure et 10 % plus longue pendant la troisième heure que pendant la deuxième. S'il vole à 462 km/h pendant la troisième heure, à quelle distance d'Orly était-il à la fin de la troisième heure ?","o":["1260 km","1282 km","882 km","1302 km","1220 km"],"a":1,"e":"D3=462, D2=420, D1=400 → total 1282 km."},
+  {"c":"Problèmes mathématiques","q":"Un avion de ligne A vole en direction d'un aéroport X à 288 km/h. Lorsqu'il est à 1590 km de cet aéroport, un avion B décolle et vole vers l'avion A à 242 km/h. À quelle distance de l'aéroport les deux avions se croiseront-ils ?","o":["1431 km","726 km","1272 km","436 km","795 km"],"a":1,"e":"Temps : 1590/530 h. Distance parcourue par B : 242×3=726 km."},
+  {"c":"Problèmes mathématiques","q":"Un avion s'éloigne du terrain A à 420 km/h. Une panne moteur le force à retourner à 21 km/h. Il est parti à 6h et est revenu à 7h. À quelle distance l'avion était-il lorsqu'il retourna vers le terrain A ?","o":["16 km","20 km","22 km","28 km","12 km"],"a":1,"e":"D/420+D/21=1 h → D=20 km."},
+  {"c":"Problèmes mathématiques","q":"Un bateau avance à 19 nœuds en maintenant un cap sud-ouest. Il subit un courant de 9 nœuds venant du nord et un vent de 6 nœuds venant de l'ouest. Quelle est sa vitesse finale ?","o":["14.18 nœuds","28.36 nœuds","16.54 nœuds","30.73 nœuds","23.63 nœuds"],"a":4,"e":"Composition vectorielle : vitesse finale ≈23.6 nœuds."},
+  {"c":"Problèmes mathématiques","q":"8 ouvriers effectuent 10 m² de travail en 14 heures. Combien de temps est nécessaire pour faire 6 m² à 4 ouvriers ?","o":["15h07","14h17","16h48","20h10","17h38"],"a":2,"e":"14×(8/4)×(6/10)=16h48."},
+  {"c":"Problèmes mathématiques","q":"3 ouvriers effectuent 80 m² de travail en 5 heures. Quelle surface réussiront 9 ouvriers à effectuer en 2 h ?","o":["86 m²","96 m²","81 m²","100 m²","91 m²"],"a":1,"e":"80×(9/3)×(2/5)=96 m²."},
+  {"c":"Problèmes mathématiques","q":"Le prix final après remise est de 126 euros, et le prix initial était de 420 euros. Quel est le pourcentage de remise dont a bénéficié le client ?","o":["84 %","233 %","56 %","81 %","70 %"],"a":4,"e":"Remise : (420-126)/420=70 %."},
+  {"c":"Problèmes mathématiques","q":"Un article a vu son prix augmenter en mars de 26 %. Il est ensuite soldé de 26 %. Son prix au début du mois de mars était de 379 euros. Quel est son prix à la fin du mois ?","o":["353 euros","239 euros","301 euros","692 euros","602 euros"],"a":0,"e":"379×1.26×0.74=353 €."},
+  {"c":"Problèmes mathématiques","q":"Une échelle fait 7.99 mètres. Elle est composée de 15 barreaux (espaces entre barreaux, sol et sommet). Sachant que l'espace entre deux barreaux est de 49 cm, quelle est l'épaisseur d'un barreau ?","o":["8 cm","1 cm","4 cm","5 cm","3 cm"],"a":1,"e":"7.99=15E+16×0.49 → E=0.01 m=1 cm."},
+  {"c":"Problèmes mathématiques","q":"Un bateau avance de 60 NM vers le nord puis de 32 NM vers l'est. Quelle distance a-t-il parcouru au final (à l'équateur) ?","o":["75 NM","60 NM","58 NM","68 NM","64 NM"],"a":3,"e":"√(60²+32²)=68 NM."},
+  {"c":"Problèmes mathématiques","q":"Un avion A vole vers le nord à 62 nœuds. Un avion B vole vers le nord-ouest. Quelle vitesse doit maintenir l'avion B pour rester au sud-ouest de l'avion A ?","o":["72 nœuds","88 nœuds","54 nœuds","31 nœuds","44 nœuds"],"a":4,"e":"Vb=Va/√2≈44 nœuds."},
+  {"c":"Problèmes mathématiques","q":"Une voiture accélère de façon constante de 66 km/h à 114 km/h en 5 min. Quelle distance a-t-elle parcourue pendant cette accélération ?","o":["9000 m","5250 m","7500 m","9750 m","6750 m"],"a":2,"e":"Vitesse moyenne 90 km/h sur 5 min → 7.5 km=7500 m."},
+  {"c":"Problèmes mathématiques","q":"Louis fait équipe avec Philippe : 1 trou en 8 jours. Avec Andréa : 1 trou en 45 jours. Philippe et Andréa ensemble : 1 trou en 72 jours. Combien de jours Louis met-il seul pour creuser un trou ?","o":["18 jours","15 jours","27 jours","28 jours","12 jours"],"a":1,"e":"L+P=1/8, L+A=1/45, P+A=1/72 → L=1/15 → 15 jours."},
+  {"c":"Problèmes mathématiques","q":"Un passager quitte son domicile parisien à 18h12 pour se rendre par avion à sa destination. Il effectue 50 % des 260 km en avion à 520 km/h et le reste en voiture à 104 km/h. Temps aéroports : 12 min départ + 12 min arrivée. À quelle heure arrive-t-il à son lieu de rendez-vous ?","o":["19h51","20h09","20h06","2h09","19h57"],"a":2,"e":"Vol 130 km : 15 min + route 1h15 + 24 min aéroports = 1h54 → 20h06."},
+  {"c":"Problèmes mathématiques","q":"Selon l'horaire un avion de tourisme devrait faire un vol de 2250 km en 10 h. Après 1275 km, l'avion est en retard de 2h35. À quelle vitesse doit-il voler sur le reste pour une moyenne globale de 125 km/h ?","o":["100 km/h","70 km/h","60 km/h","140 km/h","130 km/h"],"a":0,"e":"Objectif 18 h total. Reste 975 km en 9h45 → 100 km/h."},
+  {"c":"Problèmes mathématiques","q":"Lorsqu'il est 1 h du matin dans une ville A, il est 11 h du matin dans une ville B le même jour. Quelle heure est-il dans la ville A lorsqu'il est 9 h du matin le 20 novembre dans la ville B ?","o":["23 h le 19 novembre","6 h le 19 novembre","18 h le 21 novembre","11 h le 20 novembre","11 h le 19 novembre"],"a":0,"e":"Décalage +10 h → 9h B = 23h la veille en A."},
+  {"c":"Problèmes mathématiques","q":"Gérard loue une moto pour aller à 58 km. François monte pour les 42 derniers km aller, puis fait le retour inverse. Gérard parcourt 116 km, François 84 km. Ils paient proportionnellement aux km parcourus. Combien François paie-t-il sur 200 € ?","o":["84 €","122 €","93 €","99 €","104 €"],"a":0,"e":"200×84/(84+116)=84 € (km×personnes parcourus)."},
+  {"c":"Problèmes mathématiques","q":"Un bassin comporte 3 robinets. Le premier le remplit en 14 h, le deuxième en 12 h, le troisième le vide en 7 h. Les 3 ouverts, au bout de combien de temps le bassin est-il rempli ?","o":["84 h","81 h","96 h","91 h","97 h"],"a":0,"e":"Débit net : 1/14+1/12-1/7=1/84 → 84 h."},
+  {"c":"Problèmes mathématiques","q":"Deux villes A et B sont reliées par un chemin de fer. Toutes les heures, un train part de chaque ville. Chaque voyage dure 13 h. Combien chaque train croise-t-il de trains allant en sens inverse ?","o":["28","14","13","27","12"],"a":3,"e":"Entre midi J-1 et 14h J : 27 trains croisés."},
+  {"c":"Problèmes mathématiques","q":"Une carte est à l'échelle de 1/50000000. Quelle distance dans la réalité est représentée par 73 cm sur la carte ?","o":["365000 km","3.65 km","3650 km","3650000 km","36500 km"],"a":4,"e":"0.73×50000000 m=36500000 m=36500 km."},
+  {"c":"Problèmes mathématiques","q":"Une carte est à l'échelle de 1/80000. Quelle distance sur la carte représente 40.72 km sur terre ?","o":["5090 cm","509000 cm","0.05 cm","50.9 cm","50900 cm"],"a":3,"e":"40720/80000=0.509 m=50.9 cm."},
+  {"c":"Problèmes mathématiques","q":"Si sur une carte 91.4 cm représentent 731.2 km sur terre, quelle est l'échelle de la carte ?","o":["1/800","1/80","1/80000","1/8000000","1/800000"],"a":4,"e":"0.914/731200=1/800000."},
+  {"c":"Problèmes mathématiques","q":"Une entreprise fabrique un stock de 1175 produits. Elle en exporte 4/5 vers l'Espagne puis 2/5 de ce qui reste vers l'Italie. Combien reste-t-il de produits pour la France ?","o":["564","47","94","376","141"],"a":4,"e":"Reste 1/5=235, puis 3/5 de 235=141."},
+  {"c":"Problèmes mathématiques","q":"Sur une tôle de 1.55 m par 1.15 m, on découpe des carrés de 20 cm de côté. Quelle surface reste inutilisée ?","o":["0.365 m²","0.36 m²","0.405 m²","0.45 m²","0.383 m²"],"a":4,"e":"Bandes 0.1725+0.2325-0.0225=0.3825 m² ≈0.383 m²."},
+  {"c":"Problèmes mathématiques","q":"Un premier robinet remplit un bassin en 4 h, un deuxième en 7 h, un troisième en 6 h. Ouverts simultanément, ils déversent 3008 L en 4 h. Quelle est la contenance du bassin ?","o":["1344 L","336 L","840 L","1008 L","672 L"],"a":0,"e":"4×C×94/168=3008 → C=1344 L."}
 ];
 
 /* ===========================================================
@@ -1159,10 +1253,10 @@ function currentScreen(){
 function saveSession(){
   if(!pool.length || currentScreen()==="start") return;
   const data = {
-    mode: $("modeSelect").value,
+    mode: quizMode,
     cat: $("catSelect").value,
-    count: $("countSelect").value,
-    shuffle: $("shuffleChk").checked,
+    count: quizMode==="math" ? $("mathCountSelect").value : $("countSelect").value,
+    shuffle: quizMode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked,
     idx,
     screen: currentScreen(),
     pool: pool.map(q=>({
@@ -1198,17 +1292,23 @@ function updateResumeUI(){
   }
   const answered = data.pool.filter(q=>q._chosen!=null).length;
   const correct = data.pool.filter(q=>q._chosen!=null && q._chosen===q._correctIdx).length;
-  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", all:"Tout" };
+  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", all:"Tout" };
   $("resumeDesc").textContent = `${labels[data.mode]||data.mode} · ${answered}/${data.pool.length} répondues · score ${correct}`;
   box.classList.remove("hide");
 }
 
 function applySessionData(data){
-  $("modeSelect").value = data.mode || "cadet";
+  quizMode = data.mode || "cadet";
+  $("modeSelect").value = quizMode==="math" ? "cadet" : (quizMode || "cadet");
   rebuildCatSelect();
   $("catSelect").value = data.cat || "all";
-  $("countSelect").value = data.count ?? "0";
-  $("shuffleChk").checked = data.shuffle !== false;
+  if(quizMode==="math"){
+    $("mathCountSelect").value = data.count ?? "0";
+    $("mathShuffleChk").checked = data.shuffle !== false;
+  } else {
+    $("countSelect").value = data.count ?? "0";
+    $("shuffleChk").checked = data.shuffle !== false;
+  }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
     return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null };
@@ -1249,29 +1349,40 @@ function restoreSession(){
 
 function isBiaQuestion(q){ return q.c.startsWith("BIA"); }
 function isEnglishQuestion(q){ return q.c === "English"; }
+function isMathQuestion(q){ return q.c === "Problèmes mathématiques"; }
+
+let quizMode = "cadet";
 
 function questionsForMode(mode){
   const base = activeQuestions();
   if(mode==="bia") return base.filter(isBiaQuestion);
   if(mode==="english") return base.filter(isEnglishQuestion);
+  if(mode==="math") return base.filter(isMathQuestion);
   if(mode==="review") return base.filter(q=>isInReviewPool(q));
-  if(mode==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
+  if(mode==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q) && !isMathQuestion(q));
   return base;
 }
 
 function initStart(){
   rebuildCatSelect();
+  updateMathTab();
   updateResumeUI();
   renderHiddenTab();
   renderShortcuts();
   $("modeSelect").onchange = rebuildCatSelect;
 }
 
+function updateMathTab(){
+  $("mathTotalCount").textContent = questionsForMode("math").length;
+}
+
 function switchStartTab(tab){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   $("paneQuiz").classList.toggle("active", tab==="quiz");
+  $("paneMath").classList.toggle("active", tab==="math");
   $("paneShortcuts").classList.toggle("active", tab==="shortcuts");
   $("paneHidden").classList.toggle("active", tab==="hidden");
+  if(tab==="math") updateMathTab();
   if(tab==="hidden") renderHiddenTab();
   if(tab==="shortcuts") renderShortcuts();
 }
@@ -1301,14 +1412,25 @@ function rebuildCatSelect(){
 }
 
 function buildPool(){
-  const mode = $("modeSelect").value;
+  const mode = quizMode || $("modeSelect").value;
   const cat = $("catSelect").value;
   let arr = questionsForMode(mode).map((q,i)=>({...q,_id:i}));
   if(cat!=="all") arr = arr.filter(q=>q.c===cat);
-  if($("shuffleChk").checked) shuffle(arr);
-  const n = parseInt($("countSelect").value,10);
+  const shuffleOn = mode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked;
+  if(shuffleOn) shuffle(arr);
+  const countEl = mode==="math" ? $("mathCountSelect") : $("countSelect");
+  const n = parseInt(countEl.value,10);
   if(n>0) arr = arr.slice(0,n);
   // Réinitialise l'état de chaque question
+  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null}));
+}
+
+function buildMathPool(){
+  quizMode = "math";
+  let arr = questionsForMode("math").map((q,i)=>({...q,_id:i}));
+  if($("mathShuffleChk").checked) shuffle(arr);
+  const n = parseInt($("mathCountSelect").value,10);
+  if(n>0) arr = arr.slice(0,n);
   return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null}));
 }
 
@@ -1317,11 +1439,23 @@ const nAnswered = () => pool.filter(q=>q._chosen!=null).length;
 
 function start(){
   clearSession();
+  quizMode = $("modeSelect").value;
   pool = buildPool();
   if(!pool.length){
     if($("modeSelect").value==="review") rebuildCatSelect();
     return;
   }
+  launchQuiz();
+}
+
+function startMath(){
+  clearSession();
+  pool = buildMathPool();
+  if(!pool.length) return;
+  launchQuiz();
+}
+
+function launchQuiz(){
   idx=0;
   $("start").classList.add("hide");
   $("result").classList.add("hide");
@@ -1675,6 +1809,7 @@ function addShortcut(){
 }
 
 $("startBtn").onclick = start;
+$("startMathBtn").onclick = startMath;
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
 $("quitBtn").onclick = home;
