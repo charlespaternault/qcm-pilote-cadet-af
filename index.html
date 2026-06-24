@@ -201,6 +201,7 @@
         <option value="cadet">Mode Cadet AF</option>
         <option value="bia">Mode BIA</option>
         <option value="english">Mode English</option>
+        <option value="review">Mode Révision (mes erreurs)</option>
         <option value="all">Tout</option>
       </select>
       <select id="catSelect"><option value="all">Toutes les catégories</option></select>
@@ -215,6 +216,9 @@
     <div style="text-align:center; margin-top:8px;">
       <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Commencer ▶</button>
     </div>
+    <p id="reviewHint" class="hide" style="color:var(--gold); font-size:13px; text-align:center; margin-top:14px;">
+      Questions où tu t'es trompé au moins une fois (tous modes confondus). <b>3 bonnes réponses d'affilée</b> retirent la question de cette liste.
+    </p>
     <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
       Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
     </p>
@@ -906,8 +910,46 @@ const QUESTIONS = [
 const $ = id => document.getElementById(id);
 let pool = [], idx = 0, autoTimer = null;
 const SESSION_KEY = "qcm-pilote-cadet-af-v1";
+const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
+const REVIEW_MASTER_STREAK = 3;
 
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+function questionKey(q){ return q.c + "\x00" + q.q; }
+
+function loadReviewData(){
+  try{
+    const raw = localStorage.getItem(REVIEW_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(_){ return {}; }
+}
+
+function saveReviewData(data){
+  try{ localStorage.setItem(REVIEW_KEY, JSON.stringify(data)); }catch(_){}
+}
+
+function reviewQuestions(){ return QUESTIONS.filter(q=>isInReviewPool(q)); }
+
+function isInReviewPool(q){ return questionKey(q) in loadReviewData(); }
+
+function getReviewStreak(q){
+  const entry = loadReviewData()[questionKey(q)];
+  return entry ? (entry.streak || 0) : 0;
+}
+
+function recordReviewAnswer(q, correct){
+  const key = questionKey(q);
+  const data = loadReviewData();
+  if(!correct){
+    data[key] = { streak: 0 };
+    saveReviewData(data);
+  } else if(key in data){
+    data[key].streak = (data[key].streak || 0) + 1;
+    if(data[key].streak >= REVIEW_MASTER_STREAK) delete data[key];
+    saveReviewData(data);
+  }
+  if(currentScreen()==="start") rebuildCatSelect();
+}
 
 function currentScreen(){
   if(!$("quiz").classList.contains("hide")) return "quiz";
@@ -986,6 +1028,7 @@ function isEnglishQuestion(q){ return q.c === "English"; }
 function questionsForMode(mode){
   if(mode==="bia") return QUESTIONS.filter(isBiaQuestion);
   if(mode==="english") return QUESTIONS.filter(isEnglishQuestion);
+  if(mode==="review") return reviewQuestions();
   if(mode==="cadet") return QUESTIONS.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
   return QUESTIONS;
 }
@@ -999,6 +1042,9 @@ function rebuildCatSelect(){
   const mode = $("modeSelect").value;
   const base = questionsForMode(mode);
   $("totalCount").textContent = base.length;
+  $("reviewHint").classList.toggle("hide", mode!=="review");
+  $("startBtn").disabled = mode==="review" && !base.length;
+  $("startBtn").textContent = (mode==="review" && !base.length) ? "Aucune erreur à revoir" : "Commencer ▶";
   const sel = $("catSelect");
   sel.innerHTML = '<option value="all">Toutes les catégories</option>';
   const cats = [...new Set(base.map(q=>q.c))].sort((a,b)=>a.localeCompare(b,"fr"));
@@ -1028,7 +1074,10 @@ const nAnswered = () => pool.filter(q=>q._chosen!=null).length;
 function start(){
   clearSession();
   pool = buildPool();
-  if(!pool.length) return;
+  if(!pool.length){
+    if($("modeSelect").value==="review") rebuildCatSelect();
+    return;
+  }
   idx=0;
   $("start").classList.add("hide");
   $("result").classList.add("hide");
@@ -1082,7 +1131,12 @@ function render(){
   });
 
   if(locked){
-    $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}`;
+    let reviewNote = "";
+    const m = q._reviewMeta;
+    if(m?.added) reviewNote = ` <span style="color:var(--bad)">· Ajoutée à tes erreurs à revoir</span>`;
+    else if(m?.mastered) reviewNote = ` <span style="color:var(--good)">· Question maîtrisée ✓</span>`;
+    else if(m?.streak != null) reviewNote = ` <span style="color:var(--gold)">· Maîtrise ${m.streak}/${REVIEW_MASTER_STREAK}</span>`;
+    $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}${reviewNote}`;
     $("explain").classList.add("show");
   } else {
     $("explain").classList.remove("show");
@@ -1097,6 +1151,13 @@ function choose(i){
   if(q._chosen!=null) return;
   clearTimeout(autoTimer);
   q._chosen = i;
+  const correct = i === q._correctIdx;
+  const wasInReview = isInReviewPool(q);
+  recordReviewAnswer(q, correct);
+  if(!correct) q._reviewMeta = { added: true };
+  else if(isInReviewPool(q)) q._reviewMeta = { streak: getReviewStreak(q) };
+  else if(wasInReview) q._reviewMeta = { mastered: true };
+  else q._reviewMeta = null;
   render();
   // Bonne réponse : passage automatique à la question suivante après 1 s
   if(q._chosen===q._correctIdx && idx < pool.length-1){
