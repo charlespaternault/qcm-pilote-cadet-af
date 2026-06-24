@@ -122,7 +122,7 @@
   .explain.show { display:block; }
   .explain b { color: var(--accent2); }
 
-  .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; }
+  .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; flex-wrap: wrap; }
 
   /* ----- Layout quiz + overlay de navigation ----- */
   .quiz-layout { display:flex; gap:18px; align-items:flex-start; }
@@ -181,6 +181,65 @@
   .hide { display:none !important; }
   footer { text-align:center; color:#5d6b88; font-size:12px; padding: 0 0 30px; }
   kbd { background:#0e1626; border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:1px 7px; font-size:12px; }
+
+  .start-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:16px; flex-wrap:wrap; }
+  .start-tabs button { padding:8px 16px; font-size:14px; border-radius:999px; }
+  .start-tabs button.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .start-pane { display:none; }
+  .start-pane.active { display:block; }
+  .resume-box {
+    background:#0e1626; border:1px solid var(--accent); border-radius:14px;
+    padding:14px 16px; margin-bottom:14px; text-align:center;
+  }
+  .resume-box p { margin:0 0 12px; font-size:14px; color:var(--muted); }
+  .resume-box .actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .shortcut-list { display:grid; gap:8px; margin-bottom:12px; }
+  .shortcut-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:var(--card2); border:1px solid var(--line); border-radius:12px;
+  }
+  .shortcut-item a { flex:1; color:var(--accent2); text-decoration:none; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .shortcut-item a:hover { text-decoration:underline; }
+  .shortcut-form { display:grid; gap:8px; margin-top:10px; }
+  .shortcut-form input {
+    font:inherit; color:var(--txt); background:var(--card2); border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; width:100%;
+  }
+  .hidden-list { display:grid; gap:10px; max-height:420px; overflow:auto; }
+  .hidden-item {
+    background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+  }
+  .hidden-item .hi-cat { font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; }
+  .hidden-item .hi-q { font-size:14px; margin:6px 0 10px; }
+  .hidden-item .hi-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .modal-scrim {
+    position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:80;
+    display:none; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-scrim.open { display:flex; }
+  .modal {
+    width:min(100%,560px); max-height:min(92vh,720px); overflow:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:20px; box-shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  .modal h2 { margin:0 0 16px; font-size:18px; }
+  .form-field { margin-bottom:12px; }
+  .form-field label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:600; }
+  .form-field input, .form-field textarea, .form-field select {
+    width:100%; font:inherit; color:var(--txt); background:var(--card2);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  }
+  .form-field textarea { min-height:72px; resize:vertical; }
+  .opt-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .opt-row input[type=radio] { accent-color:var(--accent); flex:0 0 auto; }
+  .opt-row input[type=text] { flex:1; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; margin-top:16px; }
+  .annexe-box {
+    margin:0 0 14px; padding:12px 14px; border-radius:12px;
+    background:#0e1626; border:1px solid var(--line); font-size:14px; color:var(--muted);
+  }
+  .annexe-box b { color:var(--gold); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
 </style>
 </head>
 <body>
@@ -192,36 +251,67 @@
 <div class="wrap">
   <!-- START SCREEN -->
   <div id="start" class="panel">
-    <div class="topbar">
-      <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-      <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2022/2023/2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
+    <div class="start-tabs">
+      <button type="button" class="tab-btn active" data-tab="quiz">QCM</button>
+      <button type="button" class="tab-btn" data-tab="shortcuts">Raccourcis web</button>
+      <button type="button" class="tab-btn" data-tab="hidden">Questions cachées <b id="hiddenTabCount"></b></button>
     </div>
-    <div class="controls">
-      <select id="modeSelect">
-        <option value="cadet">Mode Cadet AF</option>
-        <option value="bia">Mode BIA</option>
-        <option value="english">Mode English</option>
-        <option value="review">Mode Révision (mes erreurs)</option>
-        <option value="all">Tout</option>
-      </select>
-      <select id="catSelect"><option value="all">Toutes les catégories</option></select>
-      <select id="countSelect">
-        <option value="0">Toutes les questions</option>
-        <option value="15">15 questions</option>
-        <option value="25">25 questions</option>
-        <option value="40">40 questions</option>
-      </select>
-      <label class="chip" style="cursor:pointer"><input type="checkbox" id="shuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
+
+    <div id="paneQuiz" class="start-pane active">
+      <div class="topbar">
+        <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
+        <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2022/2023/2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
+      </div>
+      <div id="resumeBox" class="resume-box hide">
+        <p>Partie en cours : <b id="resumeDesc">—</b></p>
+        <div class="actions">
+          <button class="primary" id="resumeBtn">Reprendre ▶</button>
+          <button id="discardBtn">Abandonner</button>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="modeSelect">
+          <option value="cadet">Mode Cadet AF</option>
+          <option value="bia">Mode BIA</option>
+          <option value="english">Mode English</option>
+          <option value="review">Mode Révision (mes erreurs)</option>
+          <option value="all">Tout</option>
+        </select>
+        <select id="catSelect"><option value="all">Toutes les catégories</option></select>
+        <select id="countSelect">
+          <option value="0">Toutes les questions</option>
+          <option value="15">15 questions</option>
+          <option value="25">25 questions</option>
+          <option value="40">40 questions</option>
+        </select>
+        <label class="chip" style="cursor:pointer"><input type="checkbox" id="shuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
+      </div>
+      <div style="text-align:center; margin-top:8px;">
+        <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
+      </div>
+      <p id="reviewHint" class="hide" style="color:var(--gold); font-size:13px; text-align:center; margin-top:14px;">
+        Questions où tu t'es trompé au moins une fois (tous modes confondus). <b>3 bonnes réponses d'affilée</b> retirent la question de cette liste.
+      </p>
+      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
+        Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
+      </p>
     </div>
-    <div style="text-align:center; margin-top:8px;">
-      <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Commencer ▶</button>
+
+    <div id="paneShortcuts" class="start-pane">
+      <p style="color:var(--muted); font-size:14px; margin:0 0 12px;">Liens utiles (météo, OACI, compagnie…)</p>
+      <div id="shortcutsList" class="shortcut-list"></div>
+      <div class="shortcut-form">
+        <input id="shortcutLabel" type="text" placeholder="Nom du raccourci (ex. Météo Orly)" />
+        <input id="shortcutUrl" type="url" placeholder="https://…" />
+        <button type="button" id="addShortcutBtn" class="primary">+ Ajouter un raccourci</button>
+      </div>
     </div>
-    <p id="reviewHint" class="hide" style="color:var(--gold); font-size:13px; text-align:center; margin-top:14px;">
-      Questions où tu t'es trompé au moins une fois (tous modes confondus). <b>3 bonnes réponses d'affilée</b> retirent la question de cette liste.
-    </p>
-    <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
-      Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
-    </p>
+
+    <div id="paneHidden" class="start-pane">
+      <p style="color:var(--muted); font-size:14px; margin:0 0 12px;">Questions masquées du QCM. Tu peux les réafficher ou les modifier.</p>
+      <div id="hiddenList" class="hidden-list"></div>
+      <p id="hiddenEmpty" class="hide" style="text-align:center; color:var(--muted); padding:24px 0;">Aucune question cachée.</p>
+    </div>
   </div>
 
   <!-- QUIZ SCREEN -->
@@ -236,8 +326,10 @@
       <div class="q-media hide" id="qMedia"><img class="q-img" id="qImg" alt="" loading="lazy" /></div>
       <div class="choices" id="choices"></div>
       <div class="explain" id="explain"></div>
+      <div class="annexe-box hide" id="annexeBox"><b>Annexe</b><div id="annexeText"></div></div>
       <div class="nav">
         <button id="prevBtn">← Précédent</button>
+        <button id="editBtn">✎ Modifier</button>
         <button id="quitBtn">✕ Quitter</button>
         <button class="primary" id="nextBtn">Suivant →</button>
       </div>
@@ -269,6 +361,43 @@
       <button class="primary" id="restartBtn">↻ Recommencer</button>
       <button id="reviewWrongBtn">Revoir mes erreurs</button>
       <button id="homeBtn">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="editModal">
+  <div class="modal" role="dialog" aria-labelledby="editModalTitle">
+    <h2 id="editModalTitle">Modifier la question</h2>
+    <div class="form-field">
+      <label for="editQ">Énoncé</label>
+      <textarea id="editQ"></textarea>
+    </div>
+    <div class="form-field">
+      <label>Réponses (coche la bonne)</label>
+      <div class="opt-row"><input type="radio" name="editA" value="0" id="editA0"><input type="text" id="editO0" placeholder="A"></div>
+      <div class="opt-row"><input type="radio" name="editA" value="1" id="editA1"><input type="text" id="editO1" placeholder="B"></div>
+      <div class="opt-row"><input type="radio" name="editA" value="2" id="editA2"><input type="text" id="editO2" placeholder="C"></div>
+      <div class="opt-row"><input type="radio" name="editA" value="3" id="editA3"><input type="text" id="editO3" placeholder="D"></div>
+    </div>
+    <div class="form-field">
+      <label for="editE">Explication</label>
+      <textarea id="editE"></textarea>
+    </div>
+    <div class="form-field">
+      <label for="editAnnexe">Annexe (texte complémentaire affiché sous la question)</label>
+      <textarea id="editAnnexe"></textarea>
+    </div>
+    <div class="form-field">
+      <label for="editImg">Image (URL ou chemin, ex. assets/bia/…)</label>
+      <input type="text" id="editImg" placeholder="assets/bia/mon-image.png">
+    </div>
+    <label class="chip" style="cursor:pointer; display:inline-flex; margin-bottom:4px;">
+      <input type="checkbox" id="editHide" style="accent-color:var(--accent); margin-right:8px;"> Cacher cette question du QCM
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="editResetBtn">Réinitialiser</button>
+      <button type="button" id="editCancelBtn">Annuler</button>
+      <button type="button" class="primary" id="editSaveBtn">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -911,24 +1040,54 @@ const $ = id => document.getElementById(id);
 let pool = [], idx = 0, autoTimer = null;
 const SESSION_KEY = "qcm-pilote-cadet-af-v1";
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
+const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
+const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
+const SHORTCUTS_KEY = "qcm-pilote-cadet-af-shortcuts-v1";
 const REVIEW_MASTER_STREAK = 3;
+let editingBankId = null;
 
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 
-function questionKey(q){ return q.c + "\x00" + q.q; }
+function loadJson(key, fallback){
+  try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(_){ return fallback; }
+}
+function saveJson(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){} }
 
-function loadReviewData(){
-  try{
-    const raw = localStorage.getItem(REVIEW_KEY);
-    return raw ? JSON.parse(raw) : {};
-  }catch(_){ return {}; }
+function loadEdits(){ return loadJson(EDITS_KEY, {}); }
+function saveEdits(data){ saveJson(EDITS_KEY, data); }
+function loadHiddenMap(){ return loadJson(HIDDEN_KEY, {}); }
+function saveHiddenMap(data){ saveJson(HIDDEN_KEY, data); }
+function isHiddenId(id){ return !!loadHiddenMap()[id]; }
+
+function mergeQuestion(q, i){
+  const id = String(i);
+  const edits = loadEdits()[id] || {};
+  const merged = { ...q, _bankId: id, ...edits };
+  if("img" in edits){ if(edits.img) merged.img = edits.img; else delete merged.img; }
+  if("annexe" in edits){ if(edits.annexe) merged.annexe = edits.annexe; else delete merged.annexe; }
+  if(edits.hidden != null) merged._hidden = !!edits.hidden;
+  else merged._hidden = isHiddenId(id);
+  return merged;
 }
 
-function saveReviewData(data){
-  try{ localStorage.setItem(REVIEW_KEY, JSON.stringify(data)); }catch(_){}
+function bankQuestion(id){ return mergeQuestion(QUESTIONS[Number(id)], Number(id)); }
+
+function activeQuestions(opts={}){
+  const { includeHidden=false, onlyHidden=false } = opts;
+  return QUESTIONS.map((q,i)=>{
+    const m = mergeQuestion(q, i);
+    if(onlyHidden) return m._hidden ? m : null;
+    if(m._hidden && !includeHidden) return null;
+    return m;
+  }).filter(Boolean);
 }
 
-function reviewQuestions(){ return QUESTIONS.filter(q=>isInReviewPool(q)); }
+function questionKey(q){ return q._bankId != null ? "id:"+q._bankId : q.c + "\x00" + q.q; }
+
+function loadReviewData(){ return loadJson(REVIEW_KEY, {}); }
+function saveReviewData(data){ saveJson(REVIEW_KEY, data); }
+
+function reviewQuestions(){ return activeQuestions().filter(q=>isInReviewPool(q)); }
 
 function isInReviewPool(q){ return questionKey(q) in loadReviewData(); }
 
@@ -967,34 +1126,60 @@ function saveSession(){
     idx,
     screen: currentScreen(),
     pool: pool.map(q=>({
-      c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img,
+      _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe,
       _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx
     }))
   };
   try{ localStorage.setItem(SESSION_KEY, JSON.stringify(data)); }catch(_){}
+  updateResumeUI();
 }
 
 function clearSession(){
   try{ localStorage.removeItem(SESSION_KEY); }catch(_){}
+  updateResumeUI();
 }
 
-function restoreSession(){
-  let raw;
-  try{ raw = localStorage.getItem(SESSION_KEY); }catch(_){ return false; }
-  if(!raw) return false;
-  let data;
-  try{ data = JSON.parse(raw); }catch(_){ clearSession(); return false; }
-  if(!data.pool?.length || !["quiz","result"].includes(data.screen)) return false;
+function peekSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(!data.pool?.length || !["quiz","result"].includes(data.screen)) return null;
+    return data;
+  }catch(_){ return null; }
+}
 
+function updateResumeUI(){
+  const data = peekSession();
+  const box = $("resumeBox");
+  if(!data){
+    box.classList.add("hide");
+    return;
+  }
+  const answered = data.pool.filter(q=>q._chosen!=null).length;
+  const correct = data.pool.filter(q=>q._chosen!=null && q._chosen===q._correctIdx).length;
+  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", all:"Tout" };
+  $("resumeDesc").textContent = `${labels[data.mode]||data.mode} · ${answered}/${data.pool.length} répondues · score ${correct}`;
+  box.classList.remove("hide");
+}
+
+function applySessionData(data){
   $("modeSelect").value = data.mode || "cadet";
   rebuildCatSelect();
   $("catSelect").value = data.cat || "all";
   $("countSelect").value = data.count ?? "0";
   $("shuffleChk").checked = data.shuffle !== false;
-
-  pool = data.pool.map(q=>({...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null}));
+  pool = data.pool.map(q=>{
+    const base = q._bankId != null ? bankQuestion(q._bankId) : q;
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null };
+  });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
+}
 
+function restoreSession(){
+  const data = peekSession();
+  if(!data) return false;
+  applySessionData(data);
   $("start").classList.add("hide");
   if(data.screen==="result"){
     $("quiz").classList.add("hide");
@@ -1026,16 +1211,34 @@ function isBiaQuestion(q){ return q.c.startsWith("BIA"); }
 function isEnglishQuestion(q){ return q.c === "English"; }
 
 function questionsForMode(mode){
-  if(mode==="bia") return QUESTIONS.filter(isBiaQuestion);
-  if(mode==="english") return QUESTIONS.filter(isEnglishQuestion);
-  if(mode==="review") return reviewQuestions();
-  if(mode==="cadet") return QUESTIONS.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
-  return QUESTIONS;
+  const base = activeQuestions();
+  if(mode==="bia") return base.filter(isBiaQuestion);
+  if(mode==="english") return base.filter(isEnglishQuestion);
+  if(mode==="review") return base.filter(q=>isInReviewPool(q));
+  if(mode==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
+  return base;
 }
 
 function initStart(){
   rebuildCatSelect();
+  updateResumeUI();
+  renderHiddenTab();
+  renderShortcuts();
   $("modeSelect").onchange = rebuildCatSelect;
+}
+
+function switchStartTab(tab){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  $("paneQuiz").classList.toggle("active", tab==="quiz");
+  $("paneShortcuts").classList.toggle("active", tab==="shortcuts");
+  $("paneHidden").classList.toggle("active", tab==="hidden");
+  if(tab==="hidden") renderHiddenTab();
+  if(tab==="shortcuts") renderShortcuts();
+}
+
+function updateHiddenBadge(){
+  const n = activeQuestions({ onlyHidden:true }).length;
+  $("hiddenTabCount").textContent = n ? `(${n})` : "";
 }
 
 function rebuildCatSelect(){
@@ -1044,7 +1247,8 @@ function rebuildCatSelect(){
   $("totalCount").textContent = base.length;
   $("reviewHint").classList.toggle("hide", mode!=="review");
   $("startBtn").disabled = mode==="review" && !base.length;
-  $("startBtn").textContent = (mode==="review" && !base.length) ? "Aucune erreur à revoir" : "Commencer ▶";
+  $("startBtn").textContent = (mode==="review" && !base.length) ? "Aucune erreur à revoir" : "Nouvelle partie ▶";
+  updateHiddenBadge();
   const sel = $("catSelect");
   sel.innerHTML = '<option value="all">Toutes les catégories</option>';
   const cats = [...new Set(base.map(q=>q.c))].sort((a,b)=>a.localeCompare(b,"fr"));
@@ -1101,6 +1305,13 @@ function render(){
   $("liveScore").textContent = nCorrect();
   $("qNum").textContent = `Q${idx+1}/${pool.length}`;
   $("qText").textContent = q.q;
+  if(q.annexe){
+    $("annexeBox").classList.remove("hide");
+    $("annexeText").textContent = q.annexe;
+  } else {
+    $("annexeBox").classList.add("hide");
+    $("annexeText").textContent = "";
+  }
   if(q.img){
     $("qMedia").classList.remove("hide");
     $("qImg").src = q.img;
@@ -1243,10 +1454,163 @@ function reviewWrong(){
 function home(){
   clearTimeout(autoTimer);
   closeNav();
+  closeEditModal();
   saveSession();
   $("quiz").classList.add("hide");
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
+  updateResumeUI();
+  rebuildCatSelect();
+}
+
+/* ---------- Édition & raccourcis ---------- */
+function openEditModal(bankId){
+  editingBankId = bankId;
+  const q = bankQuestion(bankId);
+  $("editQ").value = q.q;
+  q.o.forEach((opt,i)=>{ $(`editO${i}`).value = opt; });
+  document.querySelector(`input[name="editA"][value="${q.a}"]`).checked = true;
+  $("editE").value = q.e || "";
+  $("editAnnexe").value = q.annexe || "";
+  $("editImg").value = q.img || "";
+  $("editHide").checked = !!q._hidden;
+  $("editModal").classList.add("open");
+}
+
+function openEditCurrent(){ if(pool[idx]?._bankId != null) openEditModal(pool[idx]._bankId); }
+
+function closeEditModal(){
+  editingBankId = null;
+  $("editModal").classList.remove("open");
+}
+
+function saveQuestionEdit(){
+  if(editingBankId == null) return;
+  const id = editingBankId;
+  const a = parseInt(document.querySelector('input[name="editA"]:checked')?.value ?? "0", 10);
+  const patch = {
+    q: $("editQ").value.trim(),
+    o: [0,1,2,3].map(i=>$(`editO${i}`).value.trim()),
+    a,
+    e: $("editE").value.trim(),
+    annexe: $("editAnnexe").value.trim(),
+    img: $("editImg").value.trim(),
+    hidden: $("editHide").checked
+  };
+  if(!patch.q || patch.o.some(o=>!o)){ alert("Remplis l'énoncé et les 4 réponses."); return; }
+  const edits = loadEdits();
+  const prev = edits[id] || {};
+  edits[id] = {
+    ...prev,
+    q: patch.q,
+    o: patch.o,
+    a: patch.a,
+    e: patch.e,
+    hidden: patch.hidden
+  };
+  if(patch.annexe) edits[id].annexe = patch.annexe; else delete edits[id].annexe;
+  if(patch.img) edits[id].img = patch.img; else edits[id].img = "";
+  saveEdits(edits);
+  const hidden = loadHiddenMap();
+  if(patch.hidden) hidden[id] = true; else delete hidden[id];
+  saveHiddenMap(hidden);
+  const refreshed = bankQuestion(id);
+  pool = pool.map(q=>q._bankId===id ? { ...refreshed, _order:null, _correctIdx:0, _chosen:q._chosen } : q);
+  if(refreshed._hidden && currentScreen()==="quiz"){
+    pool = pool.filter(q=>q._bankId!==id);
+    if(!pool.length){ home(); clearSession(); }
+    else idx = Math.min(idx, pool.length-1);
+    buildGrid();
+  }
+  closeEditModal();
+  rebuildCatSelect();
+  renderHiddenTab();
+  if(currentScreen()==="quiz") render();
+  saveSession();
+}
+
+function resetQuestionEdit(){
+  if(editingBankId == null) return;
+  const id = editingBankId;
+  const edits = loadEdits();
+  delete edits[id];
+  saveEdits(edits);
+  const hidden = loadHiddenMap();
+  delete hidden[id];
+  saveHiddenMap(hidden);
+  openEditModal(id);
+  rebuildCatSelect();
+  renderHiddenTab();
+}
+
+function unhideQuestion(id){
+  const edits = loadEdits();
+  if(edits[id]){ edits[id].hidden = false; saveEdits(edits); }
+  const hidden = loadHiddenMap();
+  delete hidden[id];
+  saveHiddenMap(hidden);
+  rebuildCatSelect();
+  renderHiddenTab();
+}
+
+function renderHiddenTab(){
+  const list = activeQuestions({ onlyHidden:true });
+  updateHiddenBadge();
+  const box = $("hiddenList");
+  box.innerHTML = "";
+  $("hiddenEmpty").classList.toggle("hide", list.length > 0);
+  list.forEach(q=>{
+    const div = document.createElement("div");
+    div.className = "hidden-item";
+    div.innerHTML = `<div class="hi-cat">${q.c}</div><div class="hi-q">${q.q}</div><div class="hi-actions"></div>`;
+    const actions = div.querySelector(".hi-actions");
+    const btnShow = document.createElement("button");
+    btnShow.textContent = "Réafficher";
+    btnShow.onclick = ()=>unhideQuestion(q._bankId);
+    const btnEdit = document.createElement("button");
+    btnEdit.textContent = "Modifier";
+    btnEdit.onclick = ()=>openEditModal(q._bankId);
+    actions.append(btnShow, btnEdit);
+    box.appendChild(div);
+  });
+}
+
+function loadShortcuts(){ return loadJson(SHORTCUTS_KEY, []); }
+function saveShortcuts(list){ saveJson(SHORTCUTS_KEY, list); }
+
+function renderShortcuts(){
+  const list = loadShortcuts();
+  const box = $("shortcutsList");
+  box.innerHTML = "";
+  if(!list.length){
+    box.innerHTML = '<p style="color:var(--muted);font-size:13px;margin:0;">Aucun raccourci. Ajoute tes liens utiles ci-dessous.</p>';
+    return;
+  }
+  list.forEach((s,i)=>{
+    const row = document.createElement("div");
+    row.className = "shortcut-item";
+    const a = document.createElement("a");
+    a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = s.label;
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.title = "Supprimer";
+    del.onclick = ()=>{ const L=loadShortcuts(); L.splice(i,1); saveShortcuts(L); renderShortcuts(); };
+    row.append(a, del);
+    box.appendChild(row);
+  });
+}
+
+function addShortcut(){
+  const label = $("shortcutLabel").value.trim();
+  let url = $("shortcutUrl").value.trim();
+  if(!label || !url){ alert("Nom et URL requis."); return; }
+  if(!/^https?:\/\//i.test(url)) url = "https://" + url;
+  const list = loadShortcuts();
+  list.push({ label, url });
+  saveShortcuts(list);
+  $("shortcutLabel").value = "";
+  $("shortcutUrl").value = "";
+  renderShortcuts();
 }
 
 $("startBtn").onclick = start;
@@ -1260,8 +1624,18 @@ $("homeBtn").onclick = home;
 $("navToggle").onclick = openNav;
 $("navClose").onclick = closeNav;
 $("scrim").onclick = closeNav;
+$("editBtn").onclick = openEditCurrent;
+$("editSaveBtn").onclick = saveQuestionEdit;
+$("editCancelBtn").onclick = closeEditModal;
+$("editResetBtn").onclick = resetQuestionEdit;
+$("editModal").onclick = e=>{ if(e.target===$("editModal")) closeEditModal(); };
+$("resumeBtn").onclick = ()=>{ if(restoreSession()) updateResumeUI(); };
+$("discardBtn").onclick = ()=>{ clearSession(); };
+$("addShortcutBtn").onclick = addShortcut;
+document.querySelectorAll(".tab-btn").forEach(b=>b.onclick = ()=>switchStartTab(b.dataset.tab));
 
 document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && $("editModal").classList.contains("open")) closeEditModal();
   if($("quiz").classList.contains("hide")) return;
   if(["1","2","3","4","5"].includes(e.key)){
     const i = parseInt(e.key,10)-1;
@@ -1272,7 +1646,6 @@ document.addEventListener("keydown", e=>{
 });
 
 initStart();
-if(!restoreSession()) rebuildCatSelect();
 window.addEventListener("pagehide", saveSession);
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveSession(); });
 </script>
