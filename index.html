@@ -1360,6 +1360,7 @@ function questionsForMode(mode){
   if(mode==="math") return base.filter(isMathQuestion);
   if(mode==="review") return base.filter(q=>isInReviewPool(q));
   if(mode==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q) && !isMathQuestion(q));
+  if(mode==="all") return base.filter(q=>!isMathQuestion(q));
   return base;
 }
 
@@ -1659,16 +1660,21 @@ function closeEditModal(){
 }
 
 function buildChatGPTPrompt(q){
-  const keys = ["A","B","C","D"];
+  const keys = ["A","B","C","D","E"];
   const opts = q.o.map((opt,i)=>`${keys[i]}) ${opt}`).join("\n");
-  let prompt = `Explique-moi cette question de QCM (préparation pilote / culture aéronautique Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`;
+  const isMath = isMathQuestion(q);
+  let prompt = isMath
+    ? `Explique-moi ce problème mathématique (préparation tests psychotechniques pilote Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`
+    : `Explique-moi cette question de QCM (préparation pilote / culture aéronautique Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`;
   if(q.annexe) prompt += `\n\nAnnexe : ${q.annexe}`;
   if(q._chosen!=null){
     const chosen = q._order?.[q._chosen]?.opt;
     const correct = q.o[q.a];
     prompt += `\n\nMa réponse : ${chosen || "—"}\nBonne réponse attendue : ${correct}`;
   }
-  prompt += "\n\nRéponds en français, de façon pédagogique et concise.";
+  prompt += isMath
+    ? "\n\nRéponds en français, de façon pédagogique et concise. Donne-moi aussi une astuce concrète pour résoudre ce type de problème mentalement (calcul de tête, raccourcis, ordre de grandeur)."
+    : "\n\nRéponds en français, de façon pédagogique et concise.";
   return prompt;
 }
 
