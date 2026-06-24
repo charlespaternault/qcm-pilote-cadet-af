@@ -1,2 +1,4 @@
 node_modules/
 .DS_Store
+scripts/screenshots/
+scripts/.last_region.json
