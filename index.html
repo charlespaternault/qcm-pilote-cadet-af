@@ -194,7 +194,7 @@
   <div id="start" class="panel">
     <div class="topbar">
       <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-      <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
+      <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2022/2023/2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
     </div>
     <div class="controls">
       <select id="modeSelect">
@@ -694,6 +694,185 @@ const QUESTIONS = [
   {"c":"Géographie","q":"Le réseau KLM dessert Auckland. Quelle est la capitale de la Nouvelle-Zélande ?","o":["Wellington","Auckland","Christchurch","Queenstown"],"a":0,"e":"Auckland est la plus grande ville néo-zélandaise, mais Wellington est la capitale politique."},
   {"c":"Géographie","q":"Air France dessert Zurich. Quelle est la capitale de la Suisse ?","o":["Berne","Zurich","Genève","Bâle"],"a":0,"e":"Zurich est la plus grande ville suisse et une destination AF, mais Berne (Bern) est la capitale fédérale."},
 
+
+
+  /* Annales BIA 2022 (sujet 22BIAME1 — 110 Q dont bonus) */
+  {"c": "BIA · Météo", "q": "Un front occlus est représenté sur les cartes météorologiques par :", "o": ["une ligne avec des demi-cercles accolés à elle.", "une ligne avec des triangles accolés à elle.", "une ligne avec une alternance de demi-cercles et de triangles.", "une ligne avec des dessins de nuages accolés."], "a": 2, "e": "Annales BIA 2022 — question 1.1."},
+  {"c": "BIA · Météo", "q": "La visibilité en cas de brume :", "o": ["est comprise entre 1 kilomètre et 30 secondes de vol.", "est inférieur à 1 kilomètre.", "est comprise entre 1 et 5 kilomètres.", "peut aller de 0 à 5 kilomètres."], "a": 2, "e": "Annales BIA 2022 — question 1.3."},
+  {"c": "BIA · Météo", "q": "Sur la , on peut lire une validité au 14/10/2019 15 UTC. Sachant que le 14 octobre 2019, la France était en « heure d’été », à quelle heure légale correspond cette prévision ?", "o": ["13h.", "14h.", "16h.", "17h."], "a": 3, "e": "Annales BIA 2022 — question 1.4.", "img": "assets/bia/bia-2022-temsi.png"},
+  {"c": "BIA · Météo", "q": "Les fronts visibles sur la sont des fronts :", "o": ["occlus.", "froids.", "chauds.", "tièdes."], "a": 1, "e": "Annales BIA 2022 — question 1.5.", "img": "assets/bia/bia-2022-temsi.png"},
+  {"c": "BIA · Météo", "q": "Compte tenu des observations des précipitations et des impacts de foudre, on peut conclure que l’atmosphère au niveau du front étudié est :", "o": ["chaude.", "stable.", "instable.", "froide."], "a": 2, "e": "Annales BIA 2022 — question 1.6.", "img": "assets/bia/bia-2022-temsi-maps.png"},
+  {"c": "BIA · Météo", "q": "Au niveau du front étudié, on peut dire que :", "o": ["de l’air chaud passe au-dessus de l’air froid qui le précède.", "de l’air froid passe au-dessus de l’air chaud qui le précède.", "de l’air chaud passe en-dessous de l’air froid qui le précède.", "de l’air froid passe en-dessous de l’air chaud qui le précède."], "a": 3, "e": "Annales BIA 2022 — question 1.7.", "img": "assets/bia/bia-2022-temsi-maps.png"},
+  {"c": "BIA · Météo", "q": "Les orages observés se produisent :", "o": ["dans la zone chaude.", "dans la traine, dite active.", "dans la traine, dite inactive.", "dans l’occlusion."], "a": 1, "e": "Annales BIA 2022 — question 1.8.", "img": "assets/bia/bia-2022-temsi-maps.png"},
+  {"c": "BIA · Météo", "q": "La tropopause :", "o": ["se trouve généralement à une altitude plus élevée aux pôles qu’à l’équateur.", "se trouve généralement à une altitude plus élevée à l’équateur qu’aux pôles.", "est toujours située à la limite supérieure des nuages.", "est toujours située à une altitude de 12000 mètres."], "a": 1, "e": "Annales BIA 2022 — question 1.9."},
+  {"c": "BIA · Météo", "q": "En atmosphère standard, le gradient de température en s’élevant en altitude dans les basses couches est de :", "o": ["+ 2°C par 1000 pieds.", "- 2°C par 1000 pieds.", "- 2°C par 1000 mètres.", "+ 2°C par 1000 mètres."], "a": 1, "e": "Annales BIA 2022 — question 1.10."},
+  {"c": "BIA · Météo", "q": "Dans le dossier météorologique du pilote, on trouve un certain nombre de messages. Parmi eux le METAR est un message :", "o": ["d’observation du temps en un lieu donné.", "de prévision du temps en un lieu donné.", "de prévision du temps sous forme d’une carte.", "d’observation du temps sous forme de carte."], "a": 0, "e": "Annales BIA 2022 — question 1.11."},
+  {"c": "BIA · Météo", "q": "Le Mistral est un vent :", "o": ["du Sud sur Marseille.", "du Sud-Ouest qui souffle sur le Languedoc.", "du Nord-Ouest qui souffle sur le Languedoc.", "du Nord qui souffle dans la vallée du Rhône."], "a": 3, "e": "Annales BIA 2022 — question 1.12."},
+  {"c": "BIA · Météo", "q": "La brise de vallée descendante s’établit lorsque les versants montagneux :", "o": ["le jour, se réchauffent moins vite que les fonds des vallées.", "le jour, se réchauffent plus vite que les fonds des vallées.", "la nuit, se refroidissent plus vite que les fonds des vallées.", "la nuit, se refroidissent moins vite que les fonds des vallées."], "a": 2, "e": "Annales BIA 2022 — question 1.13."},
+  {"c": "BIA · Météo", "q": "Lorsque de la pluie surfondue touche le sol froid, il se forme :", "o": ["de la grêle.", "du brouillard.", "de la neige.", "du verglas."], "a": 3, "e": "Annales BIA 2022 — question 1.14."},
+  {"c": "BIA · Météo", "q": "Le vent dans l’hémisphère nord :", "o": ["vient de la gauche quand on se dirige de la dépression vers l’anticyclone.", "vient de la droite quand on se dirige de l’anticyclone vers la dépression.", "est plus fort quand les isobares sont rapprochés.", "est moins fort lorsqu’il pleut."], "a": 2, "e": "Annales BIA 2022 — question 1.15."},
+  {"c": "BIA · Météo", "q": "En plaine, les vélivoles profitent d'un phénomène météorologique pour gagner de l'altitude. Il s'agit des :", "o": ["brises de vallée.", "ascendances.", "des turbulences.", "des cisaillements des couches d'air."], "a": 1, "e": "Annales BIA 2022 — question 1.16."},
+  {"c": "BIA · Météo", "q": "En atmosphère standard, à 1000 ft, la température sera d’environ :", "o": ["8,5°C.", "13°C.", "0°C.", "-3°C."], "a": 1, "e": "Annales BIA 2022 — question 1.17."},
+  {"c": "BIA · Météo", "q": "L’atmosphère est principalement composée :", "o": ["de dioxygène.", "de diazote.", "de gaz carbonique.", "de vapeur d’eau."], "a": 1, "e": "Annales BIA 2022 — question 1.18."},
+  {"c": "BIA · Météo", "q": "L’épaisseur de l’atmosphère (limite de Karman) est de :", "o": ["100 km.", "10 000 km.", "100 000 km.", "30 km."], "a": 0, "e": "Annales BIA 2022 — question 1.20."},
+  {"c": "BIA · Météo", "q": "Des mouvements aléatoires de petite échelle qui perturbent un flux d’air bien établi sont appelés :", "o": ["des cyclones.", "du cisaillement et de la turbulence.", "des ascendances.", "des mouvements laminaires."], "a": 1, "e": "Annales BIA 2022 — question 1.22."},
+  {"c": "BIA · Technique", "q": "En vol plané à une hauteur d’un mètre, celui-ci parcourt une distance de 5 mètres avant de tomber à terre, le sol étant horizontal. Que vaut sa finesse lors de ce vol plané ?", "o": ["0,5.", "1.", "2.", "5."], "a": 3, "e": "Annales BIA 2022 — question 2.1."},
+  {"c": "BIA · Technique", "q": "Quel est l’ordre de grandeur des finesses des avions et planeurs actuels ?", "o": ["1 à 70.", "30 à 40.", "1 à 10.", "50 à 100."], "a": 0, "e": "Annales BIA 2022 — question 2.2."},
+  {"c": "BIA · Technique", "q": "L’avion ayant eu une tendance à piquer rapidement, on décide d’ajouter un peu de poids à l’arrière en scotchant une pièce le plus en arrière possible. Cela a pour effet", "o": ["d’avancer son centre de gravité, rendant son équilibre autour de l’axe de tangage moins stable.", "de reculer son centre de gravité, rendant son équilibre autour de l’axe de tangage moins stable.", "d’avancer son centre de gravité, rendant son équilibre autour de l’axe de tangage plus stable.", "de reculer son centre de gravité, rendant son équilibre autour de l’axe de tangage plus stable."], "a": 1, "e": "Annales BIA 2022 — question 2.3."},
+  {"c": "BIA · Technique", "q": "On souhaite développer un avion en papier ayant d’excellentes performances de plané. Pour cela, on fait appel à un laboratoire possédant une soufflerie. L’objectif des mesures réalisées est", "o": ["de déterminer la portance maximale.", "d’obtenir une polaire.", "de déterminer la trainée minimale.", "de mesurer des pressions."], "a": 1, "e": "Annales BIA 2022 — question 2.4."},
+  {"c": "BIA · Technique", "q": "Sur la demi-aile associée à l’aileron baissé, la portance", "o": ["ne varie pas, la traînée augmente.", "augmente, la traînée augmente.", "augmente, la traînée ne varie pas.", "diminue, la traînée diminue."], "a": 1, "e": "Annales BIA 2022 — question 2.5."},
+  {"c": "BIA · Technique", "q": "A tous paramètres identiques, quand un avion va deux fois plus vite sa portance :", "o": ["triple.", "quadruple.", "double.", "ne change pas."], "a": 1, "e": "Annales BIA 2022 — question 2.6."},
+  {"c": "BIA · Technique", "q": "Le plus grand rapport Cz/Cx caractérise l’incidence de :", "o": ["décrochage.", "portance maximum.", "traînée minimum.", "finesse maximum."], "a": 3, "e": "Annales BIA 2022 — question 2.7."},
+  {"c": "BIA · Technique", "q": "Certaines gouvernes génèrent la force nécessaire à la rotation en tangage, que modifient- elles ?", "o": ["le roulis.", "le centrage.", "l’assiette.", "le lacet."], "a": 2, "e": "Annales BIA 2022 — question 2.8."},
+  {"c": "BIA · Technique", "q": "Le contrôle en tangage est obtenu en bougeant :", "o": ["la gouverne de profondeur.", "les ailerons.", "les volets.", "le palonnier."], "a": 0, "e": "Annales BIA 2022 — question 2.9."},
+  {"c": "BIA · Technique", "q": "Le schéma ci-dessus représente :", "o": ["une soufflerie de type Eiffel où 1 désigne le collecteur et 3 désigne la veine d’essai.", "une soufflerie de type Eiffel où 2 désigne la veine d’essai et 3 le diffuseur.", "une soufflerie de type Prandtl où 1 désigne le collecteur et 2 la veine d’essai.", "une soufflerie de type Prandtl où 1 désigne le collecteur et 2 le diffuseur."], "a": 1, "e": "Annales BIA 2022 — question 2.11.", "img": "assets/bia/bia-2022-soufflerie.png"},
+  {"c": "BIA · Technique", "q": "Le tube Prandtl est réalisé avec 2 sondes, pour déterminer les pressions, dynamiques et statiques :", "o": ["le tube extérieur s'ouvre perpendiculairement à l'écoulement du fluide et informe de la pression totale.", "le tube intérieur s’ouvre parallèlement à l'écoulement du fluide, et est ouvert en son bout et informe de la pression statique.", "le tube extérieur s'ouvre perpendiculairement à l'écoulement du fluide et informe de la pression statique.", "le tube intérieur s’ouvre parallèlement à l'écoulement du fluide, et est ouvert en son bout et informe de la pression dynamique."], "a": 2, "e": "Annales BIA 2022 — question 2.12."},
+  {"c": "BIA · Technique", "q": "Une hélice à pas variable réglée sur petit pas au décollage permet de :", "o": ["diminuer la distance de décollage et la pente de montée.", "augmenter la distance de décollage et diminuer la pente de montée.", "diminuer la distance de décollage et augmenter la pente de montée.", "augmenter la distance de décollage et la pente de montée."], "a": 2, "e": "Annales BIA 2022 — question 2.13."},
+  {"c": "BIA · Technique", "q": "Le fuselage de l’avion est générateur de :", "o": ["traînée de forme et traînée de frottements.", "traînée de frottements uniquement.", "traînée induite uniquement.", "traînée de forme uniquement."], "a": 0, "e": "Annales BIA 2022 — question 2.15."},
+  {"c": "BIA · Technique", "q": "Si la vitesse diminue, pour rester en palier, on doit :", "o": ["augmenter l’incidence.", "diminuer l’incidence.", "sortir le train d’atterrissage.", "se mettre en virage."], "a": 0, "e": "Annales BIA 2022 — question 2.17."},
+  {"c": "BIA · Technique", "q": "Pendant un virage en palier à vitesse constante, le pilote doit :", "o": ["augmenter l’incidence et la puissance.", "diminuer l’incidence et la puissance.", "augmenter l’incidence et diminuer la puissance.", "diminuer l’incidence et augmenter la puissance."], "a": 0, "e": "Annales BIA 2022 — question 2.18."},
+  {"c": "BIA · Technique", "q": "La marge statique est :", "o": ["la distance entre le centre de gravité et le foyer de l’avion.", "la quantité d’électricité statique qu’un avion peut supporter.", "la place que l’avion en stationnement occupe sur le parking.", "la bande située sur la gauche des pages du manuel de vol."], "a": 0, "e": "Annales BIA 2022 — question 2.19."},
+  {"c": "BIA · Technique", "q": "La sortie des volets Fowler :", "o": ["augmente la surface de l’aile et la vitesse de décrochage.", "diminue la surface de l’aile et la vitesse de décrochage.", "diminue la surface de l’aile et augmente la vitesse de décrochage.", "augmente la surface de l’aile et diminue la vitesse de décrochage."], "a": 3, "e": "Annales BIA 2022 — question 2.20."},
+  {"c": "BIA · Technique", "q": "Le décrochage pour un profil d’aile précis arrive :", "o": ["toujours à la même vitesse.", "toujours à la même incidence.", "toujours à la même pente.", "toujours à la même assiette."], "a": 1, "e": "Annales BIA 2022 — question 2.21."},
+  {"c": "BIA · Technique", "q": "Un avion en virage subit 2 g. Quel est son angle d’inclinaison ?", "o": ["40°.", "50°.", "60°.", "80°."], "a": 2, "e": "Annales BIA 2022 — question 2.22."},
+  {"c": "BIA · Aéronefs", "q": "Combien existe-t-il de classe d’ULM ?", "o": ["2.", "4.", "6.", "8."], "a": 2, "e": "Annales BIA 2022 — question 3.1."},
+  {"c": "BIA · Aéronefs", "q": "Le train d’atterrissage d’un planeur est :", "o": ["toujours fixe pour des raisons de sécurité.", "rétractable sur certains modèles de planeurs.", "toujours rétractable pour améliorer la finesse.", "rétractable automatiquement lorsqu’il ne touche plus le sol."], "a": 1, "e": "Annales BIA 2022 — question 3.2."},
+  {"c": "BIA · Aéronefs", "q": "Parmi les différentes classes d’ULM, le paramoteur est un ULM de la classe :", "o": ["1.", "2.", "3.", "4."], "a": 0, "e": "Annales BIA 2022 — question 3.3."},
+  {"c": "BIA · Aéronefs", "q": "Le pilote d’un avion braque le manche (ou le volant) à droite :", "o": ["la gouverne de direction se braque à droite.", "la gouverne de direction se braque à gauche.", "l’aileron droit s’abaisse.", "l’aileron droit se lève."], "a": 3, "e": "Annales BIA 2022 — question 3.5."},
+  {"c": "BIA · Aéronefs", "q": "Vous volez avec un avion équipé d’une hélice « petit pas » c’est-à-dire à faible calage. Vous vous attendez à :", "o": ["de bonnes performances au décollage sans conséquence sur les performances en croisière.", "de bonnes performances en croisière au détriment des performances au décollage.", "de bonnes performances au décollage au détriment des performances en croisière.", "de mauvaises performances au décollage ainsi qu’en croisière."], "a": 2, "e": "Annales BIA 2022 — question 3.6."},
+  {"c": "BIA · Aéronefs", "q": "L’instrument qui vous permet de détecter une glissade est :", "o": ["le conservateur de cap.", "la bille.", "l’horizon artificiel.", "le variomètre."], "a": 1, "e": "Annales BIA 2022 — question 3.7."},
+  {"c": "BIA · Aéronefs", "q": "Quels aéronefs peut-on classer dans les engins spatiaux ? 1 : Satellites 2 : Sondes 3 : Fusées 4 : Vaisseaux", "o": ["1 ; 4", "3 ; 4", "2 ; 3", "1 ; 2"], "a": 3, "e": "Annales BIA 2022 — question 3.9."},
+  {"c": "BIA · Aéronefs", "q": "Quel nouveau prochain rôle peut-on espérer des satellites ?", "o": ["télécommunication.", "GPS.", "nettoyage de l’espace.", "météorologie."], "a": 2, "e": "Annales BIA 2022 — question 3.10."},
+  {"c": "BIA · Aéronefs", "q": "Comment se nomme la partie de l'aile qui assure la jonction avec le fuselage et son profilage aérodynamique ?", "o": ["l'emplanture et le Karman.", "l'envergure et le Karman.", "l’emplanture et le saumon.", "l'envergure et le saumon."], "a": 0, "e": "Annales BIA 2022 — question 3.11."},
+  {"c": "BIA · Aéronefs", "q": "Comment se nomme le profil d’aile ci-dessus ?", "o": ["auto stable.", "double courbure.", "déstabilisant deux fois.", "dissymétrique."], "a": 0, "e": "Annales BIA 2022 — question 3.12.", "img": "assets/bia/bia-2022-profil-aile.png"},
+  {"c": "BIA · Aéronefs", "q": "L’équipement du tableau de bord est un :", "o": ["EFIS.", "horizon artificiel.", "GPS.", "une carte déroulante."], "a": 0, "e": "Annales BIA 2022 — question 3.16.", "img": "assets/bia/bia-2022-ulm.png"},
+  {"c": "BIA · Aéronefs", "q": "Sur l’instrument proposé, l’avion est en :", "o": ["inclinaison à gauche et assiette à piquer.", "inclinaison à gauche et assiette à cabrer.", "inclinaison à droite et assiette à piquer.", "inclinaison à droite et assiette à cabrer."], "a": 0, "e": "Annales BIA 2022 — question 3.17.", "img": "assets/bia/bia-2022-ulm.png"},
+  {"c": "BIA · Aéronefs", "q": "Jean Delemontez disait \"Ce qui n'existe pas, ne pèse rien, ne coûte rien, et ne tombe jamais en panne ! » Mais pour un ULM biplace de classe 3, quelle est la nouvelle limite autorisée sans équipement additionnel ?", "o": ["masse maxi 330 kg.", "il n'y a pas de limite.", "masse maxi 500kg.", "tout dépend des matériaux utilisés."], "a": 2, "e": "Annales BIA 2022 — question 3.18.", "img": "assets/bia/bia-2022-ulm.png"},
+  {"c": "BIA · Aéronefs", "q": "La plupart des moteurs d’avion sont équipés d’un système de double allumage qui a pour but :", "o": ["d’améliorer la combustion et d’augmenter la sécurité en vol.", "de réguler la consommation électrique.", "de réduire la consommation de carburant.", "de diminuer l’usure des bougies."], "a": 0, "e": "Annales BIA 2022 — question 3.19."},
+  {"c": "BIA · Aéronefs", "q": "Sur un moteur à pistons, la bielle est un élément qui :", "o": ["permet la fixation du moteur à l'avion.", "assure l'entraînement de l'arbre à cames par l'intermédiaire du vilebrequin.", "commande l'ouverture et la fermeture des soupapes.", "relie le piston au vilebrequin."], "a": 3, "e": "Annales BIA 2022 — question 3.20."},
+  {"c": "BIA · Aéronefs", "q": "Lorsque le pilote incline le manche à droite :", "o": ["les ailerons se lèvent.", "les ailerons de baissent.", "l’aileron droit se lève et l’aileron gauche se baisse.", "l’aileron gauche se lève et l’aileron droit se baisse."], "a": 2, "e": "Annales BIA 2022 — question 3.21."},
+  {"c": "BIA · Aéronefs", "q": "Les réservoirs de carburant situés en bout d’aile provoquent sur la structure de l’aile d’un avion au sol des contraintes :", "o": ["de torsion.", "de flexion.", "nulles.", "de contraction."], "a": 1, "e": "Annales BIA 2022 — question 3.22."},
+  {"c": "BIA · Navigation", "q": "Dans l’encart indiquant les fréquences radio sur une carte VAC, A/A signifie :", "o": ["qu’il faudra dire « alpha, alpha » au début de chaque message radio.", "que les militaires ont installé des missiles air/air sur l’aérodrome.", "annonce automatique. C’est la fréquence donnant des informations sur l’aérodrome.", "que les messages sont en auto-information air/air."], "a": 3, "e": "Annales BIA 2022 — question 4.1."},
+  {"c": "BIA · Navigation", "q": "Les numéros pour désigner les pistes sont :", "o": ["choisis par le maire de la ville où est implanté l’aérodrome.", "choisis par l’aviation civile en fonction des aérodromes alentours.", "les dizaines arrondies de l’orientation géographique de la piste.", "la longueur de la piste pour le chiffre le plus au nord, la largeur de la piste pour celui au sud."], "a": 2, "e": "Annales BIA 2022 — question 4.2."},
+  {"c": "BIA · Navigation", "q": "L’indication sur le VOR dépend :", "o": ["de la position de l’avion, mais pas de son cap.", "de la position et du cap de l’avion.", "du cap et mais pas de la position de l’avion.", "ni du cap, ni de la position de l’avion."], "a": 0, "e": "Annales BIA 2022 — question 4.3."},
+  {"c": "BIA · Navigation", "q": "La formation FOX ALPHATANGO proposée par la DGAC est une formation à distance à effectuer pour le télépilotage de drones à partir de :", "o": ["0 g.", "1500 g.", "200 g.", "800 g."], "a": 3, "e": "Annales BIA 2022 — question 4.4."},
+  {"c": "BIA · Navigation", "q": "Le temps universel (UTC) en France :", "o": ["présente toujours le même écart avec l’heure légale.", "est supérieur de 2h en été et 1h en hiver à l’heure légale.", "est inférieur de 1h en été et 2h en hiver à l’heure légale.", "est inférieur de 2h en été et 1h en hiver à l’heure légale."], "a": 3, "e": "Annales BIA 2022 — question 4.8."},
+  {"c": "BIA · Navigation", "q": "Deux aéronefs dont les routes convergent doivent :", "o": ["s’éviter par en dessous.", "s’éviter en changeant d’altitude.", "s’éviter par la droite.", "s’éviter par la gauche."], "a": 2, "e": "Annales BIA 2022 — question 4.9."},
+  {"c": "BIA · Navigation", "q": "Vous mesurez sur la carte une route vraie de 124°, la déclinaison magnétique est de 1° E, la route magnétique :", "o": ["n’est pas prévisible car la déclinaison magnétique est très différente entre LFOZ et LFEI.", "est d’environ 123°", "est d’environ 124°", "est d’environ 125°"], "a": 1, "e": "Annales BIA 2022 — question 4.10.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "La préparation du vol comprend l’étude des données météorologiques. Laquelle n’en fait pas partie :", "o": ["METAR.", "NOTAM.", "TAF.", "cartes TEMSI et WINTEM."], "a": 1, "e": "Annales BIA 2022 — question 4.11.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "Votre navigation est au cap théorique 134°, les bulletins météorologiques annoncent une prévision de vent du nord pour 20 kt :", "o": ["cela n'a aucune incidence sur votre navigation.", "le vent risque de vous obliger à diminuer votre cap pour le contrer.", "le vent risque de vous obliger à augmenter votre cap pour le contrer.", "le vent n'influencera que la durée de votre vol."], "a": 1, "e": "Annales BIA 2022 — question 4.12.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "En effectuant le tracé de votre navigation sur la carte, vous constatez que vous traversez la zone P 24, vous décidez :", "o": ["de suivre le tracé théorique car l'avantage de l'avion c'est de se déplacer en ligne droite.", "d'éviter la zone rouge P 24 car cette zone est réservée aux parachutistes.", "d’éviter la zone rouge P 24 car cette zone est interdite aux aéronefs.", "d'éviter la zone rouge P 24 car cette zone est une zone protégée."], "a": 2, "e": "Annales BIA 2022 — question 4.13.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "Sur quelle longitude approximative se trouve la zone P 24 :", "o": ["47,5° S.", "2,5° W.", "47,5° N.", "2,5° E."], "a": 3, "e": "Annales BIA 2022 — question 4.14.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "La cause d’accident la moins fréquente en aéronautique est :", "o": ["le pilote.", "la météo.", "les infrastructures.", "l’aéronef."], "a": 2, "e": "Annales BIA 2022 — question 4.15.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "Quelle est la distance à vol d’oiseau entre les terrains LFOZ et LFEI ?", "o": ["10 nm.", "20 nm.", "30 nm.", "40 nm."], "a": 2, "e": "Annales BIA 2022 — question 4.16.", "img": "assets/bia/bia-2022-nav.png"},
+  {"c": "BIA · Navigation", "q": "L’hyperventilation provoque :", "o": ["une trop forte concentration d’oxygène dans le sang et peut amener à une perte de conscience.", "une trop faible concentration d’oxygène dans le sang et peut amener à une perte de conscience.", "une trop forte concentration de gaz carbonique dans le sang et peut amener à une perte de conscience.", "une trop forte concentration d’oxygène dans le sang et est sans risque de perte de conscience."], "a": 0, "e": "Annales BIA 2022 — question 4.17."},
+  {"c": "BIA · Navigation", "q": "Un avion passe le mur du son à 340 m/s. Cela correspond à une vitesse d’environ :", "o": ["170 mph.", "680 km/h.", "680 kt.", "170 kt."], "a": 2, "e": "Annales BIA 2022 — question 4.19."},
+  {"c": "BIA · Navigation", "q": "Le pilote d'un aéronef immatriculé F-HBNU devra s'identifier à la radio par :", "o": ["Foxtrot - Hotel - Beta - November - Univers.", "France - Hotel - Bravo - November - Univers.", "Foxtrot - Hotel - Beta - November - Uniform.", "Foxtrot - Hotel - Bravo - November - Uniform."], "a": 3, "e": "Annales BIA 2022 — question 4.20."},
+  {"c": "BIA · Navigation", "q": "Une carte Lambert est :", "o": ["une projection plane.", "une projection conique.", "une projection cylindrique.", "une projection elliptique."], "a": 1, "e": "Annales BIA 2022 — question 4.21."},
+  {"c": "BIA · Histoire", "q": "Le X15 premier avion à avoir franchi (volontairement) le mur du son :", "o": ["décollait par ses propres moyens.", "était largué à partir d’un autre avion.", "était largué à partir d’une fusée.", "décollait à l’aide d’une rampe de lancement."], "a": 1, "e": "Annales BIA 2022 — question 5.2."},
+  {"c": "BIA · Histoire", "q": "Au cours de la Première Guerre mondiale, quels sont les trois principaux apports militaires de l’armée aérienne ?", "o": ["Bombardement, Voltige, Ravitaillement.", "Bombardement, Ravitaillement, Domination aérienne.", "Voltige, Observation, Ravitaillement.", "Bombardement, Observation, Domination aérienne."], "a": 3, "e": "Annales BIA 2022 — question 5.3."},
+  {"c": "BIA · Histoire", "q": "Le concorde est un avion franco-britannique, quelle était sa particularité ?", "o": ["il avait des ailes delta.", "il disposait de commandes de vol entièrement électriques et analogiques.", "il pouvait se poser sur un porte-avion.", "c’était le premier avion à réaction."], "a": 1, "e": "Annales BIA 2022 — question 5.4."},
+  {"c": "BIA · Histoire", "q": "Quelle innovation technologique a fortement contribué au succès de la résistance de la Royal Air Force lors de la bataille d’Angleterre ?", "o": ["le missile V2.", "le pudding.", "le radar.", "le moteur à réaction."], "a": 2, "e": "Annales BIA 2022 — question 5.5."},
+  {"c": "BIA · Histoire", "q": "Quel est le nom du groupe d’aviation de chasse français ayant combattu sur le front de l’Est aux côtés de l’URSS ?", "o": ["Cigognes.", "Pyrénées.", "Normandie Niémen.", "Côte d’Or."], "a": 2, "e": "Annales BIA 2022 — question 5.6."},
+  {"c": "BIA · Histoire", "q": "Quel est le nom de l’actuel lanceur spatial européen ?", "o": ["Discover.", "Astérix.", "Ariane V.", "Athéna.SPATIAL"], "a": 2, "e": "Annales BIA 2022 — question 5.7."},
+  {"c": "BIA · Histoire", "q": "La française Adrienne BOLLAND est devenue célèbre en 1921 pour avoir franchi :", "o": ["les Alpes.", "les Andes.", "les Pyrénées.", "la Méditerranée."], "a": 1, "e": "Annales BIA 2022 — question 5.10."},
+  {"c": "BIA · Histoire", "q": "Chuck YEAGER est le premier pilote au monde à avoir franchi le mur du son en 1947 sur :", "o": ["le BELL X-1.", "le North American F86 Sabre.", "le Hawker Sea Hawk.", "le MIG15."], "a": 0, "e": "Annales BIA 2022 — question 5.11."},
+  {"c": "BIA · Histoire", "q": "En quelle année Solar Impulse boucle-t-il son premier tour du monde ?", "o": ["2010.", "2012.", "2014.", "2016."], "a": 3, "e": "Annales BIA 2022 — question 5.13."},
+  {"c": "BIA · Histoire", "q": "Qui a réussi le premier looping ?", "o": ["Adolphe PEGOUD.", "Louis BLERIOT.", "Alberto SANTOS DUMONT.", "Henri FARMAN.SPATIAL"], "a": 0, "e": "Annales BIA 2022 — question 5.14."},
+  {"c": "BIA · Histoire", "q": "En 2014, quel robot atterrissait sur la comète « Tchouri » ?", "o": ["Sojourner.", "Perseverance.", "Philae.", "Curiosity."], "a": 2, "e": "Annales BIA 2022 — question 5.15."},
+  {"c": "BIA · Histoire", "q": "Le DR 400 fête ses 50 ans cette année (en 2022), quel constructeur l’a commercialisé à sa sortie en mars 1972 ?", "o": ["ROBIN.", "CESSNA.", "PIPER.", "MUDRY."], "a": 0, "e": "Annales BIA 2022 — question 5.16."},
+  {"c": "BIA · Histoire", "q": "Quel est le plus gros avion de ligne fabriqué par Airbus ?", "o": ["A 380.", "A 320.", "A 340.", "A 400M."], "a": 0, "e": "Annales BIA 2022 — question 5.17."},
+  {"c": "BIA · Histoire", "q": "Le premier être vivant à être envoyé dans l'espace est :", "o": ["Youri GAGARINE.", "John GLENN.", "Neil ARMSTRONG.", "la chienne LAÏKA."], "a": 3, "e": "Annales BIA 2022 — question 5.18."},
+  {"c": "BIA · Histoire", "q": "Le 17 novembre 2016 décolle, pour rejoindre la station spatiale internationale, à bord de Soyouz MS-03 :", "o": ["Patrick BAUDRY.", "Claudie HAIGNERÉ.", "Jean-Loup CHRÉTIEN.", "Thomas PESQUET."], "a": 3, "e": "Annales BIA 2022 — question 5.20."},
+  {"c": "BIA · Histoire", "q": "Quel aviateur a effectué la première traversée de la Manche en 1909 ?", "o": ["Clément Ader.", "Louis Blériot.", "Rolland Garros.", "Henri Fabre."], "a": 1, "e": "Annales BIA 2022 — question 5.21."},
+  {"c": "BIA · Histoire", "q": "En quelle année Charles Lindbergh a-t-il traversé l’Atlantique pour la première fois ?", "o": ["1909.", "1913.", "1927.", "1941.BIA 2022 BREVET D’INITIATION AÉRONAUTIQUE"], "a": 2, "e": "Annales BIA 2022 — question 5.22."},
+
+  /* Annales BIA 2023 (sujet 23BIAME1) */
+  {"c": "BIA · Météo", "q": "Sur une carte de pressions telle que ci-dessous, quelle est l’affirmation exacte :", "o": ["les isobares donnent une indication sur la force et la direction du vent en altitude.", "les isobares donnent une indication sur la force et la direction du vent en basse couche (proche du sol et loin de tout relief).", "les isobares donnent une indication sur la force et la direction des courants jets.", "les isohypses donnent une indication sur la force et la direction du vent au sol."], "a": 1, "e": "Annales BIA 2023 — question 1.1.", "img": "assets/bia/bia-2023-1-1.png"},
+  {"c": "BIA · Météo", "q": "Les cumulonimbus sont des nuages :", "o": ["stables et inoffensifs.", "instables et dangereux qui peuvent provoquer des dégâts considérables à un aéronef.", "qui sont la conséquence d’un vent fort en altitude.", "en forme de cheveux d’anges, très haut dans le ciel."], "a": 1, "e": "Annales BIA 2023 — question 1.2."},
+  {"c": "BIA · Météo", "q": "Concernant les précipitations relatives aux nuages, trouvez l’affirmation exacte :", "o": ["Les cumulonimbus et les nuages convectifs produisent de la bruine.", "Les nimbostratus produisent des averses et de la grêle.", "Les stratus, altostratus et cirrostratus produisent de la neige.", "Les nimbostratus produisent plutôt une pluie fine ou de la neige et les cumulonimbus des averses et de la grêle."], "a": 3, "e": "Annales BIA 2023 — question 1.3."},
+  {"c": "BIA · Météo", "q": "La brise de mer est la plus forte :", "o": ["tôt le matin.", "en milieu d’après-midi.", "en début de nuit.", "en milieu de nuit."], "a": 1, "e": "Annales BIA 2023 — question 1.4."},
+  {"c": "BIA · Météo", "q": "Le point de rosée est défini comme :", "o": ["l’emplacement de l’aéroport où les données météorologiques sont mesurées.", "la température qui permet l’évaporation de la rosée.", "la température à partir de laquelle la masse d’air considérée arrive à saturation (à pression constante).", "l’heure à laquelle la rosée va commencer à se déposer."], "a": 1, "e": "Annales BIA 2023 — question 1.5."},
+  {"c": "BIA · Météo", "q": "Lors du passage d'une perturbation, depuis le sol, un observateur verra dans l'ordre :", "o": ["Air froid antérieur - Front chaud - Secteur chaud - Front froid - Traine", "Front chaud - Secteur chaud - Front froid - Traine - Air froid antérieur", "Secteur chaud - Front froid - Traine - Air froid antérieur - Front chaud", "Traine - Air froid antérieur - Front chaud - Secteur chaud - Front froid"], "a": 1, "e": "Annales BIA 2023 — question 1.6."},
+  {"c": "BIA · Météo", "q": "La tranche d'atmosphère entre la troposphère et la stratosphère est appelée :", "o": ["stratopause.", "tropopause.", "stratosphère.", "planisphère."], "a": 1, "e": "Annales BIA 2023 — question 1.7."},
+  {"c": "BIA · Météo", "q": "Quelle est la température dans l'atmosphère standard à 10 000 ft ?", "o": ["10° C.", "0° C.", "-5° C.", "-17° C."], "a": 2, "e": "Annales BIA 2023 — question 1.8."},
+  {"c": "BIA · Météo", "q": "Le Mistral souffle :", "o": ["de l’est vers l’ouest.", "de l’ouest vers l’est.", "du sud vers le nord.", "du nord vers le sud."], "a": 3, "e": "Annales BIA 2023 — question 1.9."},
+  {"c": "BIA · Météo", "q": "Quelle est la composition moyenne de l’atmosphère en volume :", "o": ["78 % d’oxygène, 21 % d’oxyde de carbone et 1 % d’autres éléments.", "78 % d’oxyde de carbone, 21 % d’oxygène et 1 % d’autres éléments.", "78 % d’oxygène, 21 % d’azote et 1 % d’autres éléments.", "78 % d’azote, 21 % d’oxygène et 1 % d’autres éléments."], "a": 3, "e": "Annales BIA 2023 — question 1.11."},
+  {"c": "BIA · Météo", "q": "Parmi les différentes couches de l'atmosphère, les phénomènes météorologiques (nuages, précicipations) ont lieu dans :", "o": ["la troposphère.", "la stratosphère.", "la mésosphère.", "la thermosphère."], "a": 3, "e": "Annales BIA 2023 — question 1.14."},
+  {"c": "BIA · Météo", "q": "La Tramontane est :", "o": ["un vent qui souffle du secteur nord-ouest, entre les Pyrénées et le Massif central.", "l’assèchement de la masse d’air sous le vent d’un massif montagneux.", "un vent qui souffle du nord vers le sud dans la vallée du Rhône.", "une onde générée par la déviation d’un vent fort soufflant perpendiculairement à une chaîne montagneuse."], "a": 0, "e": "Annales BIA 2023 — question 1.17."},
+  {"c": "BIA · Météo", "q": "La brise de vallée descendante s’établit :", "o": ["en milieu de matinée.", "en début de soirée.", "lorsqu’un vent dominant souffle perpendiculairement au relief.", "lorsqu’une inversion de température est présente dans la masse d’air."], "a": 1, "e": "Annales BIA 2023 — question 1.18."},
+  {"c": "BIA · Météo", "q": "Quel est le nuage qui a « une tête d’enclume » :", "o": ["l’altocumulus.", "le stratonimbus.", "le cumulonimbus.", "le cirus."], "a": 3, "e": "Annales BIA 2023 — question 1.19."},
+  {"c": "BIA · Météo", "q": "Pour un aéronef en vol, le seul nuage pouvant être la cause de tous ces dangers (réduction de visibilité, cisaillement de vent, dégâts à la structure, altération du profil aérodynamique, givrage, vents ascendants très forts, grêle) est :", "o": ["le nimbostratus.", "le stratus.", "le cumulonimbus.", "le cirrocumulus."], "a": 3, "e": "Annales BIA 2023 — question 1.20."},
+  {"c": "BIA · Technique", "q": "Quel est l’inconvénient majeur d’un triplan de type Albatros (l’avion du « Baron Rouge » von Richthofen au cours de la Première Guerre mondiale) ?", "o": ["L’aile triple pesait trop lourd pour la motorisation.", "Le supplément de portance était négligeable.", "Le système de commandes était trop complexe.", "La trainée induite était très importante."], "a": 3, "e": "Annales BIA 2023 — question 2.1."},
+  {"c": "BIA · Technique", "q": "En observant du sol le lancement d’une fusée de Cap Kennedy (Floride), on constate que la trajectoire s’incurve vers l’Est. Pourquoi ?", "o": ["C’est une illusion d’optique due à la température des gaz des moteurs fusées.", "On bénéficie ainsi de la vitesse de rotation de la Terre d’Ouest en Est pour atteindre la vitesse de mise en orbite.", "C’est pour la sécurité en cas d’incident au décollage. Les débris du lanceur retombent dans l’océan Atlantique.", "On préserve ainsi la couche d’ozone au-dessus des États-Unis."], "a": 1, "e": "Annales BIA 2023 — question 2.2."},
+  {"c": "BIA · Technique", "q": "Le décrochage d'un avion se produit toujours à la même :", "o": ["incidence.", "inclinaison.", "vitesse.", "assiette."], "a": 0, "e": "Annales BIA 2023 — question 2.3."},
+  {"c": "BIA · Technique", "q": "Dans le cas d’un satellite géostationnaire, l’orbite est :", "o": ["circulaire dans le plan de l’équateur.", "elliptique dans un plan perpendiculaire à celui du plan de l’équateur.", "elliptique avec la Lune comme l’un des foyers.", "circulaire sous un plan à 45° par rapport au plan de l’équateur."], "a": 1, "e": "Annales BIA 2023 — question 2.4."},
+  {"c": "BIA · Technique", "q": "Sous son ballon à air chaud, l’aérostier (le pilote) après son décollage, constate au GPS qu’à 200 m, le vent est du Nord pour 10 kt. Il l’annonce par radio à son coéquipier au sol pour venir le récupérer. Puis, ils perdent le contact radio. Après un vol prévu de 90 min, où ce dernier va-t-il le chercher ?", "o": ["Au Nord de l’aire de décollage à 15 km.", "Au Sud à environ 30 km.", "À l’Ouest pour 30 km.", "Au Sud-Ouest à 20 km à cause de la rotation de la terre."], "a": 0, "e": "Annales BIA 2023 — question 2.5."},
+  {"c": "BIA · Technique", "q": "On appelle incidence ou angle d'attaque, l'angle formé par :", "o": ["la corde de l'aile et l'horizon.", "la direction du vent relatif et l'horizon.", "la corde de l'aile et la direction du vent relatif.", "la corde de l'aile et l'axe longitudinal de l'aéronef."], "a": 2, "e": "Annales BIA 2023 — question 2.7."},
+  {"c": "BIA · Technique", "q": "Pour un aéronef en vol en palier stabilisé (vol horizontal à vitesse constante), quelle proposition est correcte ?", "o": ["La portance est légèrement inférieure au poids.", "La portance équilibre la trainée.", "La portance et la traction sont identiques.", "La portance équilibre le poids."], "a": 3, "e": "Annales BIA 2023 — question 2.8."},
+  {"c": "BIA · Technique", "q": "À propos du vent relatif, quelle est l’affirmation correcte ?", "o": ["Sa direction est indépendante de la trajectoire de l’avion.", "Il dépend du relief et est plus fort en zone montagneuse.", "Il est parallèle et de sens opposé à la trajectoire de l’avion.", "Il dépend de l’altitude de vol et de la température extérieure."], "a": 2, "e": "Annales BIA 2023 — question 2.9."},
+  {"c": "BIA · Technique", "q": "La différence de vitesse d’écoulement de l’air entre l’extrados et l’intrados de l’aile a pour effet :", "o": ["d'engendrer une différence de pression entre intrados et extrados qui contribue à créer la portance.", "d’augmenter la pression au bord de fuite.", "de ralentir l’avion.", "est un phénomène parasite que l’on cherche à réduire."], "a": 0, "e": "Annales BIA 2023 — question 2.10."},
+  {"c": "BIA · Technique", "q": "Que peut-on dire à propos de la position du centre de gravité de l’avion, elle :", "o": ["ne dépend que de la forme de l’avion.", "a un effet très important sur la stabilité et la manœuvrabilité de l’avion en vol.", "se déplace par rapport à l’avion en fonction de l’incidence.", "est l’endroit où s’applique la résultante aérodynamique."], "a": 1, "e": "Annales BIA 2023 — question 2.11."},
+  {"c": "BIA · Technique", "q": "En vol, le facteur de charge d’un avion :", "o": ["ne dépend que du poids de l’équipage et des bagages embarqués dans l’avion.", "augmente la vitesse de décrochage quand le facteur de charge augmente.", "est supérieur à 1 quand l’avion est en montée.", "est le rapport entre la masse et la surface des ailes de l’avion."], "a": 1, "e": "Annales BIA 2023 — question 2.12."},
+  {"c": "BIA · Technique", "q": "Lors d’un virage en palier symétrique, et par rapport au vol horizontal en palier :", "o": ["le facteur de charge ne varie pas.", "le facteur de charge est proportionnel à la vitesse de l’avion.", "le facteur de charge est proportionnel à la masse de l’avion.", "le facteur de charge ne dépend que de l’inclinaison de l’avion."], "a": 3, "e": "Annales BIA 2023 — question 2.13."},
+  {"c": "BIA · Technique", "q": "La fonction principale des winglets en bouts d’ailes est :", "o": ["d’augmenter la traînée.", "de diminuer la vitesse.", "de diminuer la portance.", "de diminuer la traînée induite."], "a": 3, "e": "Annales BIA 2023 — question 2.14."},
+  {"c": "BIA · Technique", "q": "Lorsque vous déplacez le manche d’un avion vers la droite :", "o": ["l’aileron droit se lève et l’aileron gauche s’abaisse.", "l’aileron droit s’abaisse et l’aileron gauche se lève.", "les deux ailerons se lèvent.", "les deux ailerons s’abaissent."], "a": 0, "e": "Annales BIA 2023 — question 2.15."},
+  {"c": "BIA · Technique", "q": "En avion, pour tourner selon l’axe de tangage, je dois :", "o": ["actionner le manche vers l’avant ou vers l’arrière.", "actionner le manche vers la gauche ou vers la droite.", "utiliser le palonnier.", "changer le pas d’hélice."], "a": 0, "e": "Annales BIA 2023 — question 2.16."},
+  {"c": "BIA · Technique", "q": "La formule « canard » correspond à :", "o": ["un avion à ailes multiples.", "un avion à empennage en V.", "un avion à empennage avant.", "un avion en toile qui vole mal."], "a": 2, "e": "Annales BIA 2023 — question 2.17."},
+  {"c": "BIA · Technique", "q": "Un centrage avant permet :", "o": ["de diminuer la stabilité mais augmenter la manœuvrabilité.", "de diminuer la stabilité et la manœuvrabilité.", "d’augmenter la stabilité mais de diminuer la manœuvrabilité.", "d’augmenter la stabilité et la manœuvrabilité."], "a": 2, "e": "Annales BIA 2023 — question 2.19."},
+  {"c": "BIA · Technique", "q": "Un planeur possède une finesse de 40. Il est à une altitude de 2000m et son terrain de destination se trouve à une altitude de 1000m et à 20km de sa position. En volant dans un air calme sans vent à la vitesse de finesse maximale, choisissez la bonne proposition :", "o": ["il atteindra le terrain avec une hauteur de 500m.", "il n'atteindra pas le terrain.", "il atteindra le terrain à une hauteur nulle.", "il atteindra le terrain avec une hauteur de 250m."], "a": 0, "e": "Annales BIA 2023 — question 2.20."},
+  {"c": "BIA · Aéronefs", "q": "Quel type d'aéronef utilise le déplacement de son centre de gravité pour changer de trajectoire ?", "o": ["avions et planeurs.", "paramoteurs et parapentes.", "deltaplanes et pendulaires.", "hélicoptères et autogires."], "a": 2, "e": "Annales BIA 2023 — question 3.2."},
+  {"c": "BIA · Aéronefs", "q": "Le rotor anticouple des hélicoptères est contrôlé par :", "o": ["les palonniers.", "le levier du pas collectif.", "le levier du pas cyclique.", "la manette des gaz."], "a": 0, "e": "Annales BIA 2023 — question 3.3."},
+  {"c": "BIA · Aéronefs", "q": "Une montgolfière :", "o": ["s’élève dans l’air car la masse volumique de l’air chaud est plus faible que celle de l’air froid.", "perd de l’altitude lorsque la température de l’air situé dans l’enveloppe augmente.", "fait partie de la catégorie des aérodynes.", "peut être dirigée à l’aide d’une gouverne de profondeur située sur la nacelle."], "a": 0, "e": "Annales BIA 2023 — question 3.4."},
+  {"c": "BIA · Aéronefs", "q": "Un aéronef qui, en croisière, voit son rotor entraîné par le vent relatif est :", "o": ["un convertible.", "un girodyne.", "un hélicoptère.", "un autogire."], "a": 3, "e": "Annales BIA 2023 — question 3.5."},
+  {"c": "BIA · Aéronefs", "q": "Si on la compare aux voilures d’un avion, la voilure des planeurs modernes se caractérise par :", "o": ["une petite envergure.", "une très grande finesse.", "une grande épaisseur du profil.", "une très grande rigidité."], "a": 1, "e": "Annales BIA 2023 — question 3.7."},
+  {"c": "BIA · Aéronefs", "q": "La disposition des cylindres de ce moteur est :", "o": ["en ligne.", "en V.", "en étoile.", "à plat."], "a": 2, "e": "Annales BIA 2023 — question 3.8.", "img": "assets/bia/bia-2023-3-8.png"},
+  {"c": "BIA · Aéronefs", "q": "En considérant la figure 1 ci-contre, les conditions 1, 2, 3, 4 et 5 correctes sont (associer les chiffres et les lettres) :", "o": ["A2, B4, C3, D1.", "A2, B4, C1, D3.", "A4, B5, C2, D1.", "A4, B2, C3, D5."], "a": 0, "e": "Annales BIA 2023 — question 3.9.", "img": "assets/bia/bia-2023-3-9.png"},
+  {"c": "BIA · Aéronefs", "q": "Dans une aile d’avion, les pièces se situant dans le sens longitudinal de l’aile et assurant la plus grande partie de la résistance sont :", "o": ["les traverses.", "les longerons.", "les lisses.", "les raidisseurs."], "a": 3, "e": "Annales BIA 2023 — question 3.10."},
+  {"c": "BIA · Aéronefs", "q": "La plupart des moteurs d’avions légers sont équipés d’un système de double allumage qui a pour principal avantage :", "o": ["de réguler la consommation électrique.", "de réduire la consommation de carburant.", "d’améliorer la combustion et d’augmenter la sécurité en vol.", "de diminuer l’usure des bougies."], "a": 1, "e": "Annales BIA 2023 — question 3.11."},
+  {"c": "BIA · Aéronefs", "q": "L’indication donnée par cet instrument est :", "o": ["virage à droite inclinaison 30°.", "virage à gauche inclinaison 30°.", "vol en palier.", "virage à droite inclinaison 10°."], "a": 0, "e": "Annales BIA 2023 — question 3.13."},
+  {"c": "BIA · Aéronefs", "q": "L’horizon artificiel fournit des indications sur :", "o": ["les variations d’altitude.", "la symétrie du vol.", "la visibilité horizontale.", "l’assiette de l’inclinaison."], "a": 3, "e": "Annales BIA 2023 — question 3.14.", "img": "assets/bia/bia-2023-3-14.png"},
+  {"c": "BIA · Aéronefs", "q": "Dans un moteur à 4 temps, quel temps est celui qui fournit l'énergie ?", "o": ["l’admission.", "la compression.", "explosion / détente.", "l’échappement."], "a": 2, "e": "Annales BIA 2023 — question 3.16."},
+  {"c": "BIA · Aéronefs", "q": "Avec un avion équipé d’une hélice à pas variable, le grand pas sera utilisé :", "o": ["au décollage.", "à l’atterrissage.", "au décollage et à l’atterrissage.", "en vol de croisière."], "a": 0, "e": "Annales BIA 2023 — question 3.17."},
+  {"c": "BIA · Aéronefs", "q": "Le bord d’attaque est :", "o": ["l’aileron.", "le bord avant de l’aile.", "le bord arrière de l’aile.", "le bout d’aile."], "a": 1, "e": "Annales BIA 2023 — question 3.18."},
+  {"c": "BIA · Aéronefs", "q": "L’instrument qui vous permet de détecter une glissade est :", "o": ["le conservateur de cap.", "la bille.", "l’horizon artificiel.", "l’anémomètre."], "a": 0, "e": "Annales BIA 2023 — question 3.19."},
+  {"c": "BIA · Aéronefs", "q": "L’aérodrome se situe à 10 nautiques miles (NM) de votre position. Cela correspond à :", "o": ["18.52 km.", "18.52 m.", "1,852 m.", "1,852 km."], "a": 0, "e": "Annales BIA 2023 — question 3.20."},
+  {"c": "BIA · Navigation", "q": "Le pilote peut s’orienter dans l’espace grâce aux informations fournies par :", "o": ["la vision.", "l’oreille interne.", "les muscles.", "Les trois propositions ci-dessus sont exactes."], "a": 3, "e": "Annales BIA 2023 — question 4.1."},
+  {"c": "BIA · Navigation", "q": "Deux vols VFR navigent en route opposée selon la règle de la semi-circulaire. Quel est l'espacement minimal vertical qu'ils auront ?", "o": ["500 ft", "1000 ft", "1500 ft", "2000 ft"], "a": 1, "e": "Annales BIA 2023 — question 4.2."},
+  {"c": "BIA · Navigation", "q": "Combien de classes d'ULM différentes existent ?", "o": ["4", "5", "6", "7"], "a": 2, "e": "Annales BIA 2023 — question 4.3."},
+  {"c": "BIA · Navigation", "q": "Où peut-on trouver une approximation de la déclinaison magnétique d'un aérodrome ?", "o": ["Sur sa carte VAC", "Dans la légende de la carte OACI 1/500000 (IGN)", "Sur la carte (directement) OACI 1/500000 (IGN)", "Les réponses a) et b) sont exactes"], "a": 3, "e": "Annales BIA 2023 — question 4.4."},
+  {"c": "BIA · Navigation", "q": "Quelle est le siège de l’organisation de l’aviation civile internationale ?", "o": ["OACI", "FFA", "DGAC", "GIFAS"], "a": 0, "e": "Annales BIA 2023 — question 4.5."},
+  {"c": "BIA · Navigation", "q": "Dans quel cas il n’est pas obligatoire de posséder le brevet de télépilote de drone ?", "o": ["Lors de relevés de cartographie par un géologue.", "Lors d’une inspection de fuselage d’avions de ligne par une compagnie aérienne.", "Lors d’une activité personnelle à but lucratif.", "Lors d’une activité de loisir ou de compétition."], "a": 3, "e": "Annales BIA 2023 — question 4.6."},
+  {"c": "BIA · Navigation", "q": "En préparant votre navigation, vous mesurer une distance de 9 cm sur la carte OACI 1/500000. A quelle distance cela correspond en vrai ?", "o": ["93 km.", "45 km.", "9,3 km.", "46 NM."], "a": 1, "e": "Annales BIA 2023 — question 4.7."},
+  {"c": "BIA · Navigation", "q": "La Réunion et la Nouvelle-Calédonie sont à la même latitude. Quelle route vraie permet de naviguer d'une île vers l'autre ?", "o": ["120.", "180.", "0.", "270."], "a": 3, "e": "Annales BIA 2023 — question 4.8."},
+  {"c": "BIA · Navigation", "q": "En vol, le vent vous oblige à suivre un cap magnétique inférieur à la route magnétique prévue afin de la suivre. Vous en déduisez que le vent :", "o": ["vient de votre gauche.", "vient de votre droite.", "est de face.", "est arrière."], "a": 0, "e": "Annales BIA 2023 — question 4.9."},
+  {"c": "BIA · Navigation", "q": "Sur une carte, comment sont appelées les lignes joignant les points d'égale déclinaison magnétique ?", "o": ["Isogones.", "Isotope.", "Isobares.", "Isothermes."], "a": 3, "e": "Annales BIA 2023 — question 4.10."},
+  {"c": "BIA · Navigation", "q": "Élève candidat au BIA, vous réaliser un vol de découverte en tant que passager en place avant sur un avion. En cas de détresse, parmi ces actions, lesquelles sont correctes :", "o": ["transpondeur 7700.", "les 3 actions proposées.", "radio sur 121.5 et message MAYDAY (3 fois).", "balise de détresse sur marche."], "a": 0, "e": "Annales BIA 2023 — question 4.11."},
+  {"c": "BIA · Navigation", "q": "La fédération française qui prend en charge l’aéromodélisme est :", "o": ["la FFA.", "la FFAM.", "la FFVL.", "la FNAM."], "a": 0, "e": "Annales BIA 2023 — question 4.15."},
+  {"c": "BIA · Navigation", "q": "La navigation par cheminement correspond à un suivi :", "o": ["des instruments.", "des astres.", "d'éléments caractéristiques au sol.", "d'un cap constant par branches de navigation."], "a": 3, "e": "Annales BIA 2023 — question 4.17."},
+  {"c": "BIA · Navigation", "q": "Un accident survient généralement par la conjonction de plusieurs facteurs. James REASON (psychologue) a établi un modèle représentant l'alignement des conditions menant au drame. Ce modèle utilise :", "o": ["des sphères.", "des plaques trouées.", "des triangles.", "des rectangles."], "a": 1, "e": "Annales BIA 2023 — question 4.18."},
+  {"c": "BIA · Navigation", "q": "En cas de rapprochement de face, chaque appareil effectue un changement de direction :", "o": ["l’un par le haut, l’autre par le bas.", "en fonction des indications du contrôleur aérien.", "par la droite.", "par la gauche."], "a": 0, "e": "Annales BIA 2023 — question 4.19."},
+  {"c": "BIA · Navigation", "q": "Le contrôleur aérien vous informe que vous devez utiliser la piste de gauche orientée à 70 degrés. Le marquage au sol de cette piste sera :", "o": ["70 L", "70 R", "07 L", "07 R"], "a": 2, "e": "Annales BIA 2023 — question 4.20."},
+  {"c": "BIA · Histoire", "q": "En quelle année le mur du son a-t-il été franchi pour la première fois ?", "o": ["1937", "1947", "1957", "1967"], "a": 1, "e": "Annales BIA 2023 — question 5.1."},
+  {"c": "BIA · Histoire", "q": "Début 1900, quels frères célèbres sont les pionniers de l’aviation ?", "o": ["Les frères LUMIÈRE", "Les frères MONTGOLFIER", "Les frères WRIGHT", "Les frères BOGDANOFF"], "a": 2, "e": "Annales BIA 2023 — question 5.2."},
+  {"c": "BIA · Histoire", "q": "Les pilotes anglais ont remporté la Bataille d’Angleterre contre les pilotes allemands grâce :", "o": ["au blindage des Spitfire.", "à la synchronisation des mitrailleuses avec la rotation de l’hélice.", "au radar.", "au décryptage des messages envoyés par la machine Enigma."], "a": 2, "e": "Annales BIA 2023 — question 5.3."},
+  {"c": "BIA · Histoire", "q": "La phrase « C'est un petit pas pour l'homme, c’est un bond de géant pour l'humanité » a été prononcée par :", "o": ["Youri GAGARINE lors du premier vol d’un homme dans l’espace.", "André TURCAT lors du premier vol du Concorde.", "Neil ARMSTRONG lors du premier alunissage.", "John YOUNG lors du premier atterrissage de la navette Columbia."], "a": 2, "e": "Annales BIA 2023 — question 5.4."},
+  {"c": "BIA · Histoire", "q": "Quel est le précurseur des plus lourds que l’air avec ses planeurs :", "o": ["Louis BLERIOT", "Clément ADER", "Octave CHANUTE", "Otto LILIENTHAL"], "a": 3, "e": "Annales BIA 2023 — question 5.5."},
+  {"c": "BIA · Histoire", "q": "L’Airbus A400M est un avion de transport militaire de fabrication :", "o": ["Européenne", "Russe", "Américaine", "Chinoise"], "a": 0, "e": "Annales BIA 2023 — question 5.6."},
+  {"c": "BIA · Histoire", "q": "Le vaisseau spatial lancé par la NASA en 1977 et qui est officiellement sorti du système solaire en 2013 est :", "o": ["Apollo 13", "Voyager 1", "USS Enterprise", "Philae"], "a": 1, "e": "Annales BIA 2023 — question 5.7."},
+  {"c": "BIA · Histoire", "q": "Le 1er janvier 1910, les seize premiers brevets sont décernés, sans examen, à des aviateurs confirmés. Cette liste est rédigée dans l’ordre alphabétique des pilotes. Le brevet n°1 incombe à :", "o": ["René FONCK", "Georges GUYNEMER", "Louis BLERIOT", "Adolphe PEGOUD"], "a": 2, "e": "Annales BIA 2023 — question 5.8."},
+  {"c": "BIA · Histoire", "q": "L'Agence spatiale européenne (ESA) à annoncer en 2022 qu'une astronaute française faisait désormais partie de la nouvelle promotion d'astronautes il s'agit de :", "o": ["Claudie HAIGNERE", "Sophie ADENOT", "Hélène BOUCHET", "Jacqueline AURIOL"], "a": 1, "e": "Annales BIA 2023 — question 5.9."},
+  {"c": "BIA · Histoire", "q": "Parmi les travaux réalisés par Léonard de Vinci, en rapport avec la possibilité de voler, on peut citer :", "o": ["le parachute.", "la fusée.", "le drone.", "l’avion motorisé."], "a": 0, "e": "Annales BIA 2023 — question 5.10."},
+  {"c": "BIA · Histoire", "q": "En 1783, le premier vol d’un ballon à air chaud est rendu possible grâce au travail des frères :", "o": ["WRIGHT", "MONTGOLFIER", "CAUDRON", "VOISIN"], "a": 1, "e": "Annales BIA 2023 — question 5.11."},
+  {"c": "BIA · Histoire", "q": "Le premier appareil civil entièrement équipé de commandes électriques est :", "o": ["la Caravelle.", "le Boeing 737.", "l’AIRBUS A320.", "le Mercure."], "a": 2, "e": "Annales BIA 2023 — question 5.12."},
+  {"c": "BIA · Histoire", "q": "Parmi ces astronautes, quel est celui ou celle qui a réalisé la première sortie « extravéhiculaire » dans l’espace en 1965 ?", "o": ["Jean Pierre HAIGNERE", "Valentina TERECHKOVA", "Alexeï LEONOV", "Sophie ADENOT"], "a": 2, "e": "Annales BIA 2023 — question 5.13."},
+  {"c": "BIA · Histoire", "q": "En 1977, l’objectif de la NASA en envoyant les 2 sondes « Voyager » dans l’espace était :", "o": ["de préparer le programme Apollo.", "de faire des photos de Mars en vue de l’envoi de robots.", "d’explorer le système solaire.", "de permettre à des passagers payants de faire un séjour dans l’espace."], "a": 0, "e": "Annales BIA 2023 — question 5.14."},
+  {"c": "BIA · Histoire", "q": "Marcel DASSAULT, illustre ingénieur puis industriel aéronautique, fut d’abord sous son vrai nom Marcel BLOCH le concepteur d’une hélice à haut rendement. Cette hélice s’appelait :", "o": ["Tornade", "Eclair", "Ratier", "Evra"], "a": 1, "e": "Annales BIA 2023 — question 5.15."},
+  {"c": "BIA · Histoire", "q": "La Patrouille de France (PAF) a été créée en :", "o": ["1920.", "1929.", "1953.", "2020."], "a": 2, "e": "Annales BIA 2023 — question 5.16."},
+  {"c": "BIA · Histoire", "q": "Parmi ces avions à réaction, celui ayant initié le transport de masse en nombre de passagers est :", "o": ["le Boeing B747.", "le Concorde.", "l’Airbus Beluga.", "l’Airbus A380."], "a": 0, "e": "Annales BIA 2023 — question 5.18."},
+  {"c": "BIA · Histoire", "q": "L’équipage de la mission spatiale Apollo 13 menée en 1970 par les États-Unis pour explorer la lune a été :", "o": ["victime d’une grave avarie le mettant en péril.", "le premier à s’être posé sur la lune.", "le dernier à s’être posé sur la lune.", "victime d’un accident au sol."], "a": 0, "e": "Annales BIA 2023 — question 5.19."},
+  {"c": "BIA · Histoire", "q": "L'objectif de la sonde Rosetta, lancée en 2004 et parvenue à destination 10 ans plus tard, était :", "o": ["d’observer les éruptions solaires.", "de poser un atterrisseur sur une comète pour analyser sa composition.", "de vérifier les conditions d'un voyage vers Mars.", "de transporter des témoignages pour d'éventuelles civilisations extra-terrestres."], "a": 1, "e": "Annales BIA 2023 — question 5.20."},
+
   /* Infinite Psyo AF Cadets 2022 — English (video debrief) */
   {"c":"English","q":"How many runways does Paris-Charles de Gaulle airport have?","o":["3","2","5","4"],"a":3,"e":"CDG (LFPG) has four parallel runways: 08L/26R, 08R/26L, 09L/27R and 09R/27L."},
   {"c":"English","q":"When was the last Airbus A380 delivered (end of production)?","o":["2021","It is not planned","2028","2019"],"a":0,"e":"The last A380 was delivered to Emirates in December 2021."},
@@ -726,8 +905,80 @@ const QUESTIONS = [
    =========================================================== */
 const $ = id => document.getElementById(id);
 let pool = [], idx = 0, autoTimer = null;
+const SESSION_KEY = "qcm-pilote-cadet-af-v1";
 
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+function currentScreen(){
+  if(!$("quiz").classList.contains("hide")) return "quiz";
+  if(!$("result").classList.contains("hide")) return "result";
+  return "start";
+}
+
+function saveSession(){
+  if(!pool.length || currentScreen()==="start") return;
+  const data = {
+    mode: $("modeSelect").value,
+    cat: $("catSelect").value,
+    count: $("countSelect").value,
+    shuffle: $("shuffleChk").checked,
+    idx,
+    screen: currentScreen(),
+    pool: pool.map(q=>({
+      c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img,
+      _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx
+    }))
+  };
+  try{ localStorage.setItem(SESSION_KEY, JSON.stringify(data)); }catch(_){}
+}
+
+function clearSession(){
+  try{ localStorage.removeItem(SESSION_KEY); }catch(_){}
+}
+
+function restoreSession(){
+  let raw;
+  try{ raw = localStorage.getItem(SESSION_KEY); }catch(_){ return false; }
+  if(!raw) return false;
+  let data;
+  try{ data = JSON.parse(raw); }catch(_){ clearSession(); return false; }
+  if(!data.pool?.length || !["quiz","result"].includes(data.screen)) return false;
+
+  $("modeSelect").value = data.mode || "cadet";
+  rebuildCatSelect();
+  $("catSelect").value = data.cat || "all";
+  $("countSelect").value = data.count ?? "0";
+  $("shuffleChk").checked = data.shuffle !== false;
+
+  pool = data.pool.map(q=>({...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null}));
+  idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
+
+  $("start").classList.add("hide");
+  if(data.screen==="result"){
+    $("quiz").classList.add("hide");
+    $("result").classList.remove("hide");
+    const correct = nCorrect();
+    const pct = Math.round((correct/pool.length)*100);
+    $("finalScore").textContent = `${correct} / ${pool.length}`;
+    $("finalBar").style.width = `${pct}%`;
+    const answered = nAnswered();
+    const reste = pool.length - answered;
+    const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
+    let msg;
+    if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+    else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
+    else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
+    else msg = "📚 Reprends les fiches et recommence.";
+    $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+    $("reviewWrongBtn").style.display = pool.some(q=>q._chosen!=null && q._chosen!==q._correctIdx) ? "" : "none";
+  } else {
+    $("result").classList.add("hide");
+    $("quiz").classList.remove("hide");
+    buildGrid();
+    render();
+  }
+  return true;
+}
 
 function isBiaQuestion(q){ return q.c.startsWith("BIA"); }
 function isEnglishQuestion(q){ return q.c === "English"; }
@@ -775,6 +1026,7 @@ const nCorrect = () => pool.filter(q=>q._chosen!=null && q._chosen===q._correctI
 const nAnswered = () => pool.filter(q=>q._chosen!=null).length;
 
 function start(){
+  clearSession();
   pool = buildPool();
   if(!pool.length) return;
   idx=0;
@@ -783,6 +1035,7 @@ function start(){
   $("quiz").classList.remove("hide");
   buildGrid();
   render();
+  saveSession();
 }
 
 function prepare(q){
@@ -836,6 +1089,7 @@ function render(){
     $("explain").innerHTML="";
   }
   updateGrid();
+  saveSession();
 }
 
 function choose(i){
@@ -882,10 +1136,11 @@ function gotoQ(i){
   idx = Math.max(0, Math.min(pool.length-1, i));
   render();
   closeNav();
+  saveSession();
 }
 
-function next(){ clearTimeout(autoTimer); if(idx<pool.length-1){ idx++; render(); } }
-function prev(){ clearTimeout(autoTimer); if(idx>0){ idx--; render(); } }
+function next(){ clearTimeout(autoTimer); if(idx<pool.length-1){ idx++; render(); saveSession(); } }
+function prev(){ clearTimeout(autoTimer); if(idx>0){ idx--; render(); saveSession(); } }
 
 function openNav(){ $("navGrid").classList.add("open"); $("scrim").classList.add("open"); }
 function closeNav(){ $("navGrid").classList.remove("open"); $("scrim").classList.remove("open"); }
@@ -909,6 +1164,7 @@ function finish(){
   const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
   $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
   $("reviewWrongBtn").style.display = pool.some(q=>q._chosen!=null && q._chosen!==q._correctIdx) ? "" : "none";
+  saveSession();
 }
 
 function reviewWrong(){
@@ -920,11 +1176,13 @@ function reviewWrong(){
   $("quiz").classList.remove("hide");
   buildGrid();
   render();
+  saveSession();
 }
 
 function home(){
   clearTimeout(autoTimer);
   closeNav();
+  saveSession();
   $("quiz").classList.add("hide");
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
@@ -953,6 +1211,9 @@ document.addEventListener("keydown", e=>{
 });
 
 initStart();
+if(!restoreSession()) rebuildCatSelect();
+window.addEventListener("pagehide", saveSession);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveSession(); });
 </script>
 </body>
 </html>
