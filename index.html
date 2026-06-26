@@ -112,6 +112,20 @@
   .choice.correct .key { background: var(--good); color:#fff; border-color: var(--good); }
   .choice.wrong { border-color: var(--bad); background: var(--bad-bg); }
   .choice.wrong .key { background: var(--bad); color:#fff; border-color: var(--bad); }
+  .input-answer {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    background: var(--card2); border: 1.5px solid var(--line);
+    border-radius: 13px; padding: 14px 16px;
+  }
+  .input-answer input[type=text] {
+    flex: 1 1 180px; min-width: 0; font: inherit; font-size: 16px;
+    color: var(--txt); background: #0e1626; border: 1px solid var(--line);
+    border-radius: 10px; padding: 11px 14px;
+  }
+  .input-answer input[type=text]:focus { outline: none; border-color: var(--accent); }
+  .input-answer.correct { border-color: var(--good); background: var(--good-bg); }
+  .input-answer.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .input-answer.locked input { opacity: .85; }
   .choice.locked { cursor: default; }
 
   .explain {
@@ -280,6 +294,7 @@
     <div class="start-tabs">
       <button type="button" class="tab-btn active" data-tab="quiz">QCM</button>
       <button type="button" class="tab-btn" data-tab="math">Problèmes mathématiques</button>
+      <button type="button" class="tab-btn" data-tab="airways">Airways PLAY!</button>
       <button type="button" class="tab-btn" data-tab="shortcuts">Raccourcis web</button>
       <button type="button" class="tab-btn" data-tab="hidden">Questions cachées <b id="hiddenTabCount"></b></button>
     </div>
@@ -324,6 +339,22 @@
       </p>
     </div>
 
+    <div id="paneAirways" class="start-pane">
+      <div class="topbar">
+        <span class="chip">Test psychotechnique · Voies aériennes</span>
+        <span class="chip">Version entraînement</span>
+      </div>
+      <p style="color:var(--muted); font-size:14px; margin:0 0 14px;">
+        Même principe que le test PiloTest « PLAY ! » : dérouter les avions (triangles) avec les boutons couleur,
+        respecter les compteurs de fluidité (max 4 avions / max 2 bleus dans chaque zone grise).
+        <strong>Mode entraînement</strong> : jusqu'à <strong>3 accidents</strong> par planche (au lieu d'1) ;
+        les <strong>X de ligne</strong> vident la voie mais n'empêchent plus l'apparition de nouvelles flèches.
+      </p>
+      <div style="text-align:center; margin-top:12px;">
+        <a class="primary" href="airways/index.html" style="display:inline-block; padding:12px 30px; font-size:16px; text-decoration:none; border-radius:12px;">Lancer PLAY ! ▶</a>
+      </div>
+    </div>
+
     <div id="paneMath" class="start-pane">
       <div class="topbar">
         <span class="chip">Banque de <b id="mathTotalCount">0</b> problèmes</span>
@@ -345,7 +376,7 @@
         <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
       </div>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
-        Astuce : <kbd>1</kbd>–<kbd>5</kbd> pour répondre (5 choix possibles), <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
+        Astuce : saisie libre ou touches <kbd>1</kbd>–<kbd>5</kbd> (QCM), <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
     </div>
 
@@ -1164,8 +1195,37 @@ const QUESTIONS = [
   {"c":"Problèmes mathématiques","q":"Si sur une carte 91.4 cm représentent 731.2 km sur terre, quelle est l'échelle de la carte ?","o":["1/800","1/80","1/80000","1/8000000","1/800000"],"a":4,"e":"0.914/731200=1/800000."},
   {"c":"Problèmes mathématiques","q":"Une entreprise fabrique un stock de 1175 produits. Elle en exporte 4/5 vers l'Espagne puis 2/5 de ce qui reste vers l'Italie. Combien reste-t-il de produits pour la France ?","o":["564","47","94","376","141"],"a":4,"e":"Reste 1/5=235, puis 3/5 de 235=141."},
   {"c":"Problèmes mathématiques","q":"Sur une tôle de 1.55 m par 1.15 m, on découpe des carrés de 20 cm de côté. Quelle surface reste inutilisée ?","o":["0.365 m²","0.36 m²","0.405 m²","0.45 m²","0.383 m²"],"a":4,"e":"Bandes 0.1725+0.2325-0.0225=0.3825 m² ≈0.383 m²."},
-  {"c":"Problèmes mathématiques","q":"Un premier robinet remplit un bassin en 4 h, un deuxième en 7 h, un troisième en 6 h. Ouverts simultanément, ils déversent 3008 L en 4 h. Quelle est la contenance du bassin ?","o":["1344 L","336 L","840 L","1008 L","672 L"],"a":0,"e":"4×C×94/168=3008 → C=1344 L."}
-];
+  {"c":"Problèmes mathématiques","q":"Un premier robinet remplit un bassin en 4 h, un deuxième en 7 h, un troisième en 6 h. Ouverts simultanément, ils déversent 3008 L en 4 h. Quelle est la contenance du bassin ?","o":["1344 L","336 L","840 L","1008 L","672 L"],"a":0,"e":"4×C×94/168=3008 → C=1344 L."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Alain, Bernard et Chloé font une course en relais. Les trois étapes ont la même longueur. Alain met 45 minutes de moins que Bernard, Chloé met deux fois moins de temps que Bernard. La durée totale du relais est 12 h 35 min. Combien de temps Bernard a-t-il mis pour parcourir son étape ?","ans":["5h20","5 h 20","5h20min","320 min"],"e":"B + (B−45) + B/2 = 755 min → 2,5B = 800 → B = 320 min = 5 h 20."},
+  {"c":"Problèmes mathématiques","q":"Quatorze personnes se partagent un gros gâteau. La première en prend un cinquième, la deuxième en prend un sixième du reste. Ces deux personnes s'effacent et les autres se partagent le reste équitablement. Quelle fraction du gâteau chacune des personnes restantes obtient-elle ?","o":["Un demi","Un douzième","Un tiers","Un dix-huitième","Un quinzième"],"a":3,"e":"Reste après les deux premières : 2/3 du gâteau. Partagé entre 12 personnes : (2/3)/12 = 1/18."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Dora est trois fois plus âgée que son fils et onze fois plus vieille que son petit-fils. Quel âge a Dora ?","ans":["99","99 ans"],"e":"Dora = 11×petit-fils et 3×fils → petit-fils = 9, fils = 33, Dora = 99 ans."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Stanou a 14 ans de moins que son oncle Jonathan. Dans 8 ans, Stanou sera deux fois moins âgé que son oncle. Dans combien de temps Stanou pourra-t-il conduire un scooter (âge requis : 16 ans) ?","ans":["10","10 ans","dans 10 ans"],"e":"Stanou a 6 ans, il aura 16 ans dans 10 ans."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Deux classes se retrouvent dans la même salle. La première : 20 % de filles. La seconde, 50 % plus grande, compte 75 % de garçons. Quel est le pourcentage de filles dans la salle ?","ans":["23","23%","23 %"],"e":"Classe 1 : 0,2f. Classe 2 : 1,5× plus grande, 25 % filles → total filles / effectif total ≈ 23 %."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Nicolas est deux fois plus riche que Victor et la fortune de Nicolas représente 70 % de celle de Marc. Que vaut la fortune de Marc en pourcentage de celle de Victor ?","ans":["286","286%","286 %"],"e":"Nicolas = 2V, Marc = Nicolas/0,7 = 2V/0,7 → Marc = 286 % de Victor."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Marc a 21 ans et son père 57 ans. Dans combien d'années l'âge du père sera-t-il égal au double de celui de Marc ?","ans":["aucune réponse","aucune reponse","aucune réponse n'est bonne","15","15 ans"],"e":"57+t = 2(21+t) → t = 15 ans. Les propositions du test étaient toutes fausses : « aucune réponse n'est bonne »."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un train à 120 km/h part de Paris pour Vesoul (364,5 km) à 7h. Un autre part de Vesoul à 8h à 90 km/h. À quelle heure se croisent-ils ?","ans":["9h27","9 h 27","09h27"],"e":"À 8h, le 1er a parcouru 120 km. Distance restante 244,5 km. Vitesse de rapprochement 210 km/h → croisement à 9h27."},
+  {"c":"Problèmes mathématiques","q":"Les dimensions d'un rectangle sont a et b. Si on augmente a de 3 cm et b de 2 cm, l'aire augmente de 37 cm² ; si on diminue a de 2 cm et b de 1 cm, l'aire diminue de 16 cm². Quelles sont a et b ?","o":["9 cm et 7 cm","6 cm et 4 cm","9 cm et 8 cm","8 cm et 5 cm","7 cm et 6 cm"],"a":3,"e":"3b+2a=31 et a+2b=18 → a=8 cm, b=5 cm."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Normand et Margot demeurent à 40 km l'un de l'autre. Normand part à 7h à 3 km/h. Margot part 30 min plus tard à 4 km/h. À quelle heure se rencontrent-ils ?","ans":["13h","13 h","13:00"],"e":"Écart initial 40 km. Margot rattrape à 1 km/h d'écart → 40 h après le départ de Margot (7h30) → 13h."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un magasin offre 3 % de réduction aux adhérents du club (60 €). Un client adhère et achète pour 4 000 €. Quelle est sa réduction réelle (abonnement inclus) ?","ans":["1.5","1,5","1.5%","1,5%","1.5 %"],"e":"Économie : 4000×3%−60 = 60 € sur 4000 € → 1,5 %."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un agent achète un terrain 24 300 €, le divise en lots égaux vendus 1 800 € chacun. Son bénéfice égale le prix d'achat de 6 lots. En combien de lots le terrain a-t-il été divisé ?","ans":["18"],"e":"n×1800 − 24300 = 6×1800 → n = 18 lots."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un sac de 150 L de blé pèse 100 kg. Le blé perd 25 % en farine ; 3 kg de farine font 5 kg de pain. Combien de kg de pain avec 6 hl (600 L) de blé ?","ans":["500","500 kg"],"e":"600 L → 400 kg de blé → 300 kg de farine → 500 kg de pain."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un train Paris–Toulouse : au 1er arrêt, 1/5 descendent et 12 montent ; au 2e, 1/4 descendent et 9 montent ; au 3e, 1/3 descendent et 6 montent. Il reste 66 passagers à Toulouse. Combien au départ de Paris ?","ans":["120"],"e":"En remontant les arrêts : départ = 120 passagers."},
+  {"c":"Problèmes mathématiques","q":"Un objet avec TVA 20,6 % coûte 295,47 € TTC. Quel est son prix HT ?","o":["217 euros","265 euros","205 euros","245 euros","200 euros"],"a":3,"e":"HT = 295,47 / 1,206 ≈ 245 €."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Test (coef. 3) + entretien (coef. 2), moyenne minimale 12/20. Une candidate a 10,5 au test. Quelle note minimale à l'entretien pour être admise ?","ans":["14.25","14,25","14.25/20"],"e":"(10,5×3 + x×2)/5 ≥ 12 → x ≥ 14,25."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Robert dépense 1/4 de son pécule pour le voyage et 2/5 pour le logement. Il lui reste 3 220 €. Quel montant avait-il au départ ?","ans":["9200","9200 €","9200 euros"],"e":"Reste 7/20 du total → total = 3220×20/7 = 9 200 €."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Théâtre : 80 €/spectacle sans abonnement, ou 100 € d'abonnement + 40 €/spectacle. À partir de combien de spectacles l'abonnement est-il rentable ?","ans":["3","3 spectacles"],"e":"100+40n < 80n → n > 2,5 → à partir de 3 spectacles."},
+  {"c":"Problèmes mathématiques","t":"input","q":"81 écrous dont un seul est plus léger. Combien de pesées minimum avec une balance à deux plateaux (sans poids étalon) pour le trouver ?","ans":["4"],"e":"Chaque pesée divise par 3 groupes → 3⁴ = 81 → 4 pesées."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Puits de 5 m (Ø 2 m), margelle 1 m, 6 000 L d'eau résiduelle, pluie 4/3 L/min/m² (π=3). Durée d'averse pour débordement ?","ans":["50","50 h","50 heures"],"e":"Volume utile avant débordement calculé → temps ≈ 50 h."},
+  {"c":"Problèmes mathématiques","t":"input","q":"« Moitié × tiers de la quantité de bonbons = 2 400 ». Combien de bonbons ?","ans":["120"],"e":"(n/2)×(n/3)=2400 → n²=14400 → n=120."},
+  {"c":"Problèmes mathématiques","t":"input","q":"10 citrons = 8 oranges, 16 oranges = 12 pamplemousses, 4 pamplemousses = 1 melon, 6 melons = 48 bananes. Pour 5 citrons, combien de bananes ?","ans":["6"],"e":"Chaîne de conversion → 5 citrons = 6 bananes."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Martha partage des oranges : 1/3 à un copain, 10 à l'autre, autant à son fils qu'aux deux copains réunis. Combien d'oranges au total ?","ans":["60"],"e":"Fils = 1/3 + 10 = 1/2 du total → total = 60."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Darine compte ses coquilles pour deux enclos. 4/enclos A + 3/enclos B → reste 3 ; 3/A + 4/B → manque 5 ; 4 à chaque poule → manque 14. Combien de poules ?","ans":["26"],"e":"Système sur les effectifs des enclos → 26 poules."},
+  {"c":"Problèmes mathématiques","q":"Une somme placée à taux fixe rapporte 12 $ la 1re année et 12,48 $ la 2e. Quelle somme a été placée ?","o":["250 dollars","220 dollars","300 dollars","200 dollars","330 dollars"],"a":2,"e":"Taux 4 % → capital = 12/0,04 = 300 $."},
+  {"c":"Problèmes mathématiques","q":"Piscine rectangulaire : +7 m longueur et −5 m largeur → surface inchangée ; +20 m et −13 m → surface +20 m². Quelle est la largeur ?","o":["105 mètres","155 mètres","120 mètres","135 mètres","140 mètres"],"a":0,"e":"7l−5L=35 et 20l−13L=280 → L=140 m, l=105 m."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Un homme dépense tout son argent dans 5 magasins : à chaque fois, il dépense 1 € de plus que la moitié de ce qu'il avait en entrant. Combien avait-il au départ ?","ans":["62","62 €"],"e":"Remontée magasin par magasin → départ = 62 €."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Marlène fêtait le 16 janvier 2001 ses « 1 976 semaines ». Quel âge a-t-elle fêté le 16 janvier 2013 ?","ans":["50","50 ans"],"e":"1976 semaines ≈ 38 ans en 2001 → 50 ans en 2013."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Échelle verticale contre une grille : dépasse de 5 cm. Écartée de 50 cm, elle arrive au bord supérieur. Longueur de l'échelle (m, au centième inf.) ?","ans":["2.52","2,52","2.52 m","2,52 m"],"e":"Théorème de Pythagore → L ≈ 2,52 m."},
+  {"c":"Problèmes mathématiques","t":"input","q":"Foire au vin : 7 lots, chacun = moitié du reste + 0,5 L. Quelle quantité totale distribuée (en litres) ?","ans":["127","127 L"],"e":"Remontée lot par lot → total = 127 L."}];
 
 /* ===========================================================
    LOGIQUE DU QUIZ
@@ -1261,7 +1321,8 @@ function saveSession(){
     screen: currentScreen(),
     pool: pool.map(q=>({
       _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe,
-      _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx
+      _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
+      _inputVal:q._inputVal, _inputOk:q._inputOk
     }))
   };
   try{ localStorage.setItem(SESSION_KEY, JSON.stringify(data)); }catch(_){}
@@ -1290,8 +1351,8 @@ function updateResumeUI(){
     box.classList.add("hide");
     return;
   }
-  const answered = data.pool.filter(q=>q._chosen!=null).length;
-  const correct = data.pool.filter(q=>q._chosen!=null && q._chosen===q._correctIdx).length;
+  const answered = data.pool.filter(isQuestionAnswered).length;
+  const correct = data.pool.filter(isQuestionCorrect).length;
   const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", all:"Tout" };
   $("resumeDesc").textContent = `${labels[data.mode]||data.mode} · ${answered}/${data.pool.length} répondues · score ${correct}`;
   box.classList.remove("hide");
@@ -1311,7 +1372,7 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
 }
@@ -1337,7 +1398,7 @@ function restoreSession(){
     else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
     else msg = "📚 Reprends les fiches et recommence.";
     $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
-    $("reviewWrongBtn").style.display = pool.some(q=>q._chosen!=null && q._chosen!==q._correctIdx) ? "" : "none";
+    $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
   } else {
     $("result").classList.add("hide");
     $("quiz").classList.remove("hide");
@@ -1350,6 +1411,45 @@ function restoreSession(){
 function isBiaQuestion(q){ return q.c.startsWith("BIA"); }
 function isEnglishQuestion(q){ return q.c === "English"; }
 function isMathQuestion(q){ return q.c === "Problèmes mathématiques"; }
+function isInputQuestion(q){ return q.t === "input" || (!q.o?.length && q.ans != null); }
+
+function acceptedAnswers(q){
+  const a = q.ans;
+  return Array.isArray(a) ? a : (a != null ? [String(a)] : []);
+}
+
+function normalizeAns(s){
+  return String(s).toLowerCase()
+    .normalize("NFD").replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .replace(/,/g, ".")
+    .replace(/€/g, " euro")
+    .replace(/(\d)\s*%/g, "$1%")
+    .replace(/h\s*(\d)/g, "h$1")
+    .trim();
+}
+
+function answersMatch(user, q){
+  const u = normalizeAns(user);
+  if(!u) return false;
+  return acceptedAnswers(q).some(a=>{
+    const n = normalizeAns(a);
+    if(u === n) return true;
+    const nu = parseFloat(u.replace(/[^\d.-]/g, ""));
+    const na = parseFloat(n.replace(/[^\d.-]/g, ""));
+    return !Number.isNaN(nu) && !Number.isNaN(na) && nu === na;
+  });
+}
+
+function isQuestionAnswered(q){ return q._chosen != null; }
+function isQuestionCorrect(q){
+  if(isInputQuestion(q)) return q._inputOk === true;
+  return q._chosen != null && q._chosen === q._correctIdx;
+}
+function correctAnswerLabel(q){
+  if(isInputQuestion(q)) return acceptedAnswers(q)[0] || "—";
+  return q.o[q.a];
+}
 
 let quizMode = "cadet";
 
@@ -1381,6 +1481,7 @@ function switchStartTab(tab){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   $("paneQuiz").classList.toggle("active", tab==="quiz");
   $("paneMath").classList.toggle("active", tab==="math");
+  $("paneAirways").classList.toggle("active", tab==="airways");
   $("paneShortcuts").classList.toggle("active", tab==="shortcuts");
   $("paneHidden").classList.toggle("active", tab==="hidden");
   if(tab==="math") updateMathTab();
@@ -1423,7 +1524,7 @@ function buildPool(){
   const n = parseInt(countEl.value,10);
   if(n>0) arr = arr.slice(0,n);
   // Réinitialise l'état de chaque question
-  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null}));
+  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null}));
 }
 
 function buildMathPool(){
@@ -1432,11 +1533,11 @@ function buildMathPool(){
   if($("mathShuffleChk").checked) shuffle(arr);
   const n = parseInt($("mathCountSelect").value,10);
   if(n>0) arr = arr.slice(0,n);
-  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null}));
+  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null}));
 }
 
-const nCorrect = () => pool.filter(q=>q._chosen!=null && q._chosen===q._correctIdx).length;
-const nAnswered = () => pool.filter(q=>q._chosen!=null).length;
+const nCorrect = () => pool.filter(isQuestionCorrect).length;
+const nAnswered = () => pool.filter(isQuestionAnswered).length;
 
 function start(){
   clearSession();
@@ -1467,7 +1568,7 @@ function launchQuiz(){
 }
 
 function prepare(q){
-  if(q._order) return;
+  if(isInputQuestion(q) || q._order) return;
   q._order = shuffle(q.o.map((opt,i)=>({opt,correct:i===q.a})));
   q._correctIdx = q._order.findIndex(o=>o.correct);
 }
@@ -1501,20 +1602,50 @@ function render(){
   $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
 
   const box = $("choices"); box.innerHTML="";
-  const keys = ["A","B","C","D","E"];
-  q._order.forEach((item,i)=>{
-    const b = document.createElement("button");
-    b.className="choice";
-    b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
+  if(isInputQuestion(q)){
+    const wrap = document.createElement("div");
+    wrap.className = "input-answer" + (locked ? " locked " + (q._inputOk ? "correct" : "wrong") : "");
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.id = "answerInput";
+    inp.placeholder = "Ta réponse…";
+    inp.autocomplete = "off";
     if(locked){
-      b.classList.add("locked");
-      if(i===q._correctIdx) b.classList.add("correct");
-      else if(i===q._chosen) b.classList.add("wrong");
+      inp.value = q._inputVal || "";
+      inp.readOnly = true;
     } else {
-      b.onclick = ()=>choose(i);
+      inp.value = q._inputVal || "";
+      inp.onkeydown = e=>{
+        if(e.key === "Enter"){ e.preventDefault(); submitInput(inp.value); }
+      };
     }
-    box.appendChild(b);
-  });
+    wrap.appendChild(inp);
+    if(!locked){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "primary";
+      btn.textContent = "Valider";
+      btn.onclick = ()=>submitInput(inp.value);
+      wrap.appendChild(btn);
+      setTimeout(()=>inp.focus(), 0);
+    }
+    box.appendChild(wrap);
+  } else {
+    const keys = ["A","B","C","D","E"];
+    q._order.forEach((item,i)=>{
+      const b = document.createElement("button");
+      b.className="choice";
+      b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
+      if(locked){
+        b.classList.add("locked");
+        if(i===q._correctIdx) b.classList.add("correct");
+        else if(i===q._chosen) b.classList.add("wrong");
+      } else {
+        b.onclick = ()=>choose(i);
+      }
+      box.appendChild(b);
+    });
+  }
 
   if(locked){
     let reviewNote = "";
@@ -1522,7 +1653,8 @@ function render(){
     if(m?.added) reviewNote = ` <span style="color:var(--bad)">· Ajoutée à tes erreurs à revoir</span>`;
     else if(m?.mastered) reviewNote = ` <span style="color:var(--good)">· Question maîtrisée ✓</span>`;
     else if(m?.streak != null) reviewNote = ` <span style="color:var(--gold)">· Maîtrise ${m.streak}/${REVIEW_MASTER_STREAK}</span>`;
-    $("explain").innerHTML = `<b>${q.o[q.a]}</b> — ${q.e}${reviewNote}`;
+    const wrongNote = isInputQuestion(q) && !q._inputOk ? ` <span style="color:var(--bad)">(ta réponse : ${q._inputVal || "—"})</span>` : "";
+    $("explain").innerHTML = `<b>${correctAnswerLabel(q)}</b> — ${q.e}${wrongNote}${reviewNote}`;
     $("explain").classList.add("show");
   } else {
     $("explain").classList.remove("show");
@@ -1545,8 +1677,30 @@ function choose(i){
   else if(wasInReview) q._reviewMeta = { mastered: true };
   else q._reviewMeta = null;
   render();
-  // Bonne réponse : passage automatique à la question suivante après 1 s
-  if(q._chosen===q._correctIdx && idx < pool.length-1){
+  if(isQuestionCorrect(q) && idx < pool.length-1){
+    const target = idx;
+    autoTimer = setTimeout(()=>{
+      if(idx===target && !$("quiz").classList.contains("hide")) next();
+    }, 1000);
+  }
+}
+
+function submitInput(val){
+  const q = pool[idx];
+  if(q._chosen!=null) return;
+  clearTimeout(autoTimer);
+  q._inputVal = val.trim();
+  q._inputOk = answersMatch(val, q);
+  q._chosen = 0;
+  const correct = q._inputOk;
+  const wasInReview = isInReviewPool(q);
+  recordReviewAnswer(q, correct);
+  if(!correct) q._reviewMeta = { added: true };
+  else if(isInReviewPool(q)) q._reviewMeta = { streak: getReviewStreak(q) };
+  else if(wasInReview) q._reviewMeta = { mastered: true };
+  else q._reviewMeta = null;
+  render();
+  if(correct && idx < pool.length-1){
     const target = idx;
     autoTimer = setTimeout(()=>{
       if(idx===target && !$("quiz").classList.contains("hide")) next();
@@ -1570,7 +1724,7 @@ function updateGrid(){
   pool.forEach((q,i)=>{
     const c = cells[i]; if(!c) return;
     c.classList.remove("correct","wrong","current");
-    if(q._chosen!=null) c.classList.add(q._chosen===q._correctIdx ? "correct" : "wrong");
+    if(q._chosen!=null) c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
     if(i===idx) c.classList.add("current");
   });
   const stat = `${nAnswered()}/${pool.length}`;
@@ -1610,14 +1764,14 @@ function finish(){
   const reste = pool.length - answered;
   const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
   $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
-  $("reviewWrongBtn").style.display = pool.some(q=>q._chosen!=null && q._chosen!==q._correctIdx) ? "" : "none";
+  $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
   saveSession();
 }
 
 function reviewWrong(){
-  const wrong = pool.filter(q=>q._chosen!=null && q._chosen!==q._correctIdx);
+  const wrong = pool.filter(q=>isQuestionAnswered(q) && !isQuestionCorrect(q));
   if(!wrong.length) return;
-  pool = wrong.map(q=>({...q,_order:null,_correctIdx:0,_chosen:null}));
+  pool = wrong.map(q=>({...q,_order:null,_correctIdx:0,_chosen:null,_inputVal:null,_inputOk:null}));
   idx=0;
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
@@ -1660,17 +1814,20 @@ function closeEditModal(){
 }
 
 function buildChatGPTPrompt(q){
-  const keys = ["A","B","C","D","E"];
-  const opts = q.o.map((opt,i)=>`${keys[i]}) ${opt}`).join("\n");
   const isMath = isMathQuestion(q);
   let prompt = isMath
-    ? `Explique-moi ce problème mathématique (préparation tests psychotechniques pilote Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`
-    : `Explique-moi cette question de QCM (préparation pilote / culture aéronautique Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n\n${opts}`;
-  if(q.annexe) prompt += `\n\nAnnexe : ${q.annexe}`;
+    ? `Explique-moi ce problème mathématique (préparation tests psychotechniques pilote Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n`
+    : `Explique-moi cette question de QCM (préparation pilote / culture aéronautique Air France) et aide-moi à trouver la bonne réponse.\n\nCatégorie : ${q.c}\n\nQuestion : ${q.q}\n`;
+  if(isInputQuestion(q)){
+    prompt += `\n(Type réponse libre — bonne réponse attendue : ${acceptedAnswers(q).join(" ou ")})\n`;
+  } else {
+    const keys = ["A","B","C","D","E"];
+    prompt += `\n${q.o.map((opt,i)=>`${keys[i]}) ${opt}`).join("\n")}\n`;
+  }
+  if(q.annexe) prompt += `\nAnnexe : ${q.annexe}`;
   if(q._chosen!=null){
-    const chosen = q._order?.[q._chosen]?.opt;
-    const correct = q.o[q.a];
-    prompt += `\n\nMa réponse : ${chosen || "—"}\nBonne réponse attendue : ${correct}`;
+    const chosen = isInputQuestion(q) ? (q._inputVal || "—") : (q._order?.[q._chosen]?.opt);
+    prompt += `\n\nMa réponse : ${chosen || "—"}\nBonne réponse attendue : ${correctAnswerLabel(q)}`;
   }
   prompt += isMath
     ? "\n\nRéponds en français, de façon pédagogique et concise. Donne-moi aussi une astuce concrète pour résoudre ce type de problème mentalement (calcul de tête, raccourcis, ordre de grandeur)."
@@ -1840,6 +1997,7 @@ document.querySelectorAll(".tab-btn").forEach(b=>b.onclick = ()=>switchStartTab(
 document.addEventListener("keydown", e=>{
   if(e.key==="Escape" && $("editModal").classList.contains("open")) closeEditModal();
   if($("quiz").classList.contains("hide")) return;
+  if(e.target?.id === "answerInput") return;
   if(["1","2","3","4","5"].includes(e.key)){
     const i = parseInt(e.key,10)-1;
     const all = [...document.querySelectorAll(".choice")];
