@@ -45,7 +45,46 @@
   }
   header p { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 16px 18px 80px; }
-  #start, #result { max-width: 720px; margin-left:auto; margin-right:auto; }
+  #start, #result { max-width: 820px; margin-left:auto; margin-right:auto; }
+
+  /* ----- Accueil QCM : cartes de mode ----- */
+  .home-intro { text-align:center; margin-bottom:22px; }
+  .home-intro h2 { margin:0 0 6px; font-size:18px; font-weight:700; letter-spacing:.2px; }
+  .home-intro p { margin:0; font-size:13px; color:var(--muted); }
+  .mode-grid {
+    display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; margin-bottom:16px;
+  }
+  @media (max-width: 560px) { .mode-grid { grid-template-columns: 1fr; } }
+  .mode-card {
+    background:var(--card2); border:1px solid var(--line); border-radius:16px;
+    padding:18px 18px 16px; display:flex; flex-direction:column; gap:8px;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .mode-card:hover { border-color:#3d5080; }
+  .mode-card.is-selected { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .mode-card-head { display:flex; align-items:flex-start; gap:12px; }
+  .mode-icon {
+    flex:0 0 40px; height:40px; border-radius:12px; display:grid; place-items:center;
+    font-size:18px; background:#0e1626; border:1px solid var(--line);
+  }
+  .mode-card h3 { margin:0; font-size:16px; font-weight:700; }
+  .mode-card .mode-desc { margin:0; font-size:12px; color:var(--muted); line-height:1.45; }
+  .mode-meta { font-size:12px; color:var(--accent2); font-weight:600; }
+  .mode-progress { margin-top:4px; }
+  .mode-progress small { display:block; font-size:11px; color:var(--muted); margin-bottom:5px; }
+  .mode-progress .progress { margin-bottom:0; height:6px; }
+  .mode-actions { display:flex; gap:8px; margin-top:auto; padding-top:6px; flex-wrap:wrap; }
+  .mode-actions button { flex:1 1 auto; min-width:0; padding:9px 12px; font-size:13px; }
+  .mode-actions button.mode-resume { background:transparent; }
+  .filtres-panel {
+    background:#0e1626; border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .filtres-panel h4 { margin:0 0 12px; font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .filtres-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
+  .filtres-grid label { display:block; font-size:11px; color:var(--muted); margin-bottom:4px; font-weight:600; }
+  .filtres-grid select { width:100%; padding:9px 10px; font-size:13px; }
+  .home-foot { text-align:center; font-size:12px; color:var(--muted); margin-top:8px; line-height:1.6; }
 
   .panel {
     background: linear-gradient(180deg, var(--card) 0%, var(--bg2) 100%);
@@ -126,13 +165,6 @@
   .input-answer.correct { border-color: var(--good); background: var(--good-bg); }
   .input-answer.wrong { border-color: var(--bad); background: var(--bad-bg); }
   .exam-timer-wrap.urgent .exam-timer-bar i { background: var(--bad); }
-  .exam-box {
-    margin-top: 16px; padding: 14px 16px; border-radius: 12px;
-    border: 1px solid var(--gold); background: rgba(212,175,55,.06);
-  }
-  .exam-box h3 { margin: 0 0 6px; font-size: 15px; color: var(--gold); }
-  .exam-box p { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
-  .exam-box .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   #examTimerChip.hide, #examScoreChip.hide, #examTimerWrap.hide { display: none !important; }
   .quiz-main.exam-mode .nav-left button:not(#quitBtn),
   .quiz-main.exam-mode .nav-right button:not(#quitBtn) { display: none; }
@@ -297,7 +329,7 @@
 <body>
 <header>
   <h1>✈️ QCM Pilote Cadet — Air France</h1>
-  <p>Sélection AF/AFKLM · BIA · English (AF Cadets 2022) · Connaissances aéronautiques</p>
+  <p>Préparation sélection pilote · BIA · English · Psychotechnique</p>
 </header>
 
 <div class="wrap">
@@ -312,52 +344,126 @@
     </div>
 
     <div id="paneQuiz" class="start-pane active">
-      <div class="topbar">
-        <span class="chip">Banque de <b id="totalCount">0</b> questions</span>
-        <span class="chip" id="sourceChip">Retours candidats · Pilotest · BIA 2022/2023/2024/2026 · Infinite Psyo AF Cadets 2022 (EN)</span>
+      <div class="home-intro">
+        <h2>Choisis un mode</h2>
+        <p>Chaque mode conserve sa progression — tu peux quitter et revenir plus tard.</p>
       </div>
-      <div id="resumeBox" class="resume-box hide">
-        <p>Partie en cours : <b id="resumeDesc">—</b></p>
-        <div class="actions">
-          <button class="primary" id="resumeBtn">Reprendre ▶</button>
-          <button id="discardBtn">Abandonner</button>
+
+      <div class="mode-grid">
+        <article class="mode-card" id="modeCardTout">
+          <div class="mode-card-head">
+            <div class="mode-icon">📚</div>
+            <div>
+              <h3>Tout</h3>
+              <p class="mode-desc">Toutes les questions QCM, toutes catégories confondues.</p>
+            </div>
+          </div>
+          <div class="mode-meta"><span id="toutMeta">—</span></div>
+          <div class="mode-progress hide" id="toutProgress">
+            <small id="toutProgressLabel">—</small>
+            <div class="progress"><i id="toutProgressBar"></i></div>
+          </div>
+          <div class="mode-actions">
+            <button type="button" class="mode-resume hide" data-mode="tout">Reprendre</button>
+            <button type="button" class="primary mode-start" data-mode="tout">Commencer</button>
+          </div>
+        </article>
+
+        <article class="mode-card" id="modeCardExamen">
+          <div class="mode-card-head">
+            <div class="mode-icon">⏱</div>
+            <div>
+              <h3>Examen</h3>
+              <p class="mode-desc">35 questions · 8–11 s/Q · score +3 / 0 / −2 avec bonus rapidité.</p>
+            </div>
+          </div>
+          <div class="mode-meta">Tirage équilibré par catégorie</div>
+          <div class="mode-progress hide" id="examenProgress">
+            <small id="examenProgressLabel">—</small>
+            <div class="progress"><i id="examenProgressBar"></i></div>
+          </div>
+          <div class="mode-actions">
+            <button type="button" class="mode-resume hide" data-mode="examen">Reprendre</button>
+            <button type="button" class="primary mode-start" data-mode="examen">Commencer</button>
+          </div>
+        </article>
+
+        <article class="mode-card hide" id="modeCardErreurs">
+          <div class="mode-card-head">
+            <div class="mode-icon">🎯</div>
+            <div>
+              <h3>Erreurs</h3>
+              <p class="mode-desc">Questions ratées · maîtrisées après 3 bonnes réponses d'affilée.</p>
+            </div>
+          </div>
+          <div class="mode-meta"><span id="erreursMeta">—</span></div>
+          <div class="mode-progress hide" id="erreursProgress">
+            <small id="erreursProgressLabel">—</small>
+            <div class="progress"><i id="erreursProgressBar"></i></div>
+          </div>
+          <div class="mode-actions">
+            <button type="button" class="mode-resume hide" data-mode="erreurs">Reprendre</button>
+            <button type="button" class="primary mode-start" data-mode="erreurs">Commencer</button>
+          </div>
+        </article>
+
+        <article class="mode-card" id="modeCardFiltres">
+          <div class="mode-card-head">
+            <div class="mode-icon">⚙️</div>
+            <div>
+              <h3>Filtres</h3>
+              <p class="mode-desc">Session personnalisée : source, catégorie, nombre de questions.</p>
+            </div>
+          </div>
+          <div class="mode-meta"><span id="filtresMeta">—</span></div>
+          <div class="mode-progress hide" id="filtresProgress">
+            <small id="filtresProgressLabel">—</small>
+            <div class="progress"><i id="filtresProgressBar"></i></div>
+          </div>
+          <div class="mode-actions">
+            <button type="button" class="mode-resume hide" data-mode="filtres">Reprendre</button>
+            <button type="button" class="primary mode-start" data-mode="filtres">Commencer</button>
+          </div>
+        </article>
+      </div>
+
+      <div id="filtresPanel" class="filtres-panel">
+        <h4>Options du mode Filtres</h4>
+        <div class="filtres-grid">
+          <div>
+            <label for="filtrePreset">Banque</label>
+            <select id="filtrePreset">
+              <option value="all">Tout le QCM</option>
+              <option value="cadet">Cadet AF</option>
+              <option value="bia">BIA</option>
+              <option value="english">English</option>
+            </select>
+          </div>
+          <div>
+            <label for="filtreSource">Source</label>
+            <select id="filtreSource"><option value="all">Toutes les sources</option></select>
+          </div>
+          <div>
+            <label for="filtreCat">Catégorie</label>
+            <select id="filtreCat"><option value="all">Toutes</option></select>
+          </div>
+          <div>
+            <label for="filtreCount">Nombre</label>
+            <select id="filtreCount">
+              <option value="0">Toutes</option>
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="40">40</option>
+            </select>
+          </div>
         </div>
+        <label class="chip" style="cursor:pointer; display:inline-flex; margin-top:12px;">
+          <input type="checkbox" id="filtreShuffle" checked style="accent-color:var(--accent); margin-right:8px;"> Mélanger les questions
+        </label>
       </div>
-      <div class="controls">
-        <select id="modeSelect">
-          <option value="cadet">Mode Cadet AF</option>
-          <option value="bia">Mode BIA</option>
-          <option value="english">Mode English</option>
-          <option value="review">Mode Révision (mes erreurs)</option>
-          <option value="all">Tout</option>
-        </select>
-        <select id="sourceSelect"><option value="all">Toutes les sources</option></select>
-        <select id="catSelect"><option value="all">Toutes les catégories</option></select>
-        <select id="countSelect">
-          <option value="0">Toutes les questions</option>
-          <option value="15">15 questions</option>
-          <option value="25">25 questions</option>
-          <option value="40">40 questions</option>
-        </select>
-        <label class="chip" style="cursor:pointer"><input type="checkbox" id="shuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
-      </div>
-      <div style="text-align:center; margin-top:8px;">
-        <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
-      </div>
-      <div class="exam-box">
-        <h3>⏱ Mode examen</h3>
-        <p>35 questions QCM · 8 s par question · score : <b>+3</b> (bon + rapidité) · <b>0</b> (non répondu) · <b>−2</b> (faux)<br>
-        Bonne réponse : 60 % fixe + 40 % selon la vitesse (100 % si &lt; 1,5 s, dégressif jusqu'à 8 s).</p>
-        <div class="actions">
-          <button type="button" class="primary" id="startExamBtn">Examen (filtres actuels)</button>
-          <button type="button" id="startExamWrongBtn">Examen sur mes erreurs</button>
-        </div>
-      </div>
-      <p id="reviewHint" class="hide" style="color:var(--gold); font-size:13px; text-align:center; margin-top:14px;">
-        Questions où tu t'es trompé au moins une fois (tous modes confondus). <b>3 bonnes réponses d'affilée</b> retirent la question de cette liste.
-      </p>
-      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
-        Astuce : <kbd>1</kbd>–<kbd>4</kbd> pour répondre, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer. La grille à droite (ou le bouton « Questions » sur mobile) permet de sauter à n'importe quelle question.
+
+      <p class="home-foot">
+        <kbd>1</kbd>–<kbd>4</kbd> pour répondre · <kbd>←</kbd><kbd>→</kbd> pour naviguer (hors examen)
       </p>
     </div>
 
@@ -394,9 +500,11 @@
         </select>
         <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathShuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
       </div>
-      <div style="text-align:center; margin-top:12px;">
+      <div style="text-align:center; margin-top:12px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="hide" id="resumeMathBtn">Reprendre</button>
         <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
       </div>
+      <p id="mathResumeHint" class="hide" style="color:var(--muted); font-size:13px; text-align:center; margin-top:10px;"></p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
         Astuce : saisie libre ou touches <kbd>1</kbd>–<kbd>5</kbd> (QCM), <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
@@ -444,7 +552,6 @@
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
         <div class="nav-right">
-          <button type="button" id="examFromQuizBtn" class="hide">⏱ Examen</button>
           <button id="quitBtn">✕ Quitter</button>
           <button class="primary" id="nextBtn">Suivant →</button>
         </div>
@@ -475,7 +582,6 @@
     <div class="sub" id="finalMsg"></div>
     <div class="controls">
       <button class="primary" id="restartBtn">↻ Recommencer</button>
-      <button type="button" id="examFromResultBtn" class="hide">⏱ Examen sur mes erreurs</button>
       <button id="reviewWrongBtn">Revoir mes erreurs</button>
       <button id="homeBtn">🏠 Accueil</button>
     </div>
@@ -1265,12 +1371,21 @@ let examMode = false;
 let examTimerInterval = null;
 let examTimeoutTimer = null;
 let examQuestionStart = 0;
+let playMode = "tout";
+let quizMode = "tout";
 const EXAM_SIZE = 35;
-const EXAM_TIME_SEC = 8;
+const EXAM_TIME_SHORT = 8;
+const EXAM_TIME_LONG = 11;
+const EXAM_LONG_CHARS = 120;
 const EXAM_FAST_SEC = 1.5;
 const EXAM_MAX_PTS = 3;
 const EXAM_WRONG_PTS = -2;
-const SESSION_KEY = "qcm-pilote-cadet-af-v1";
+const SESSION_KEY_LEGACY = "qcm-pilote-cadet-af-v1";
+const SESSION_KEY_PREFIX = "qcm-pilote-cadet-af-session-";
+const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
+const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math"];
+const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths" };
+const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
@@ -1376,7 +1491,7 @@ function recordReviewAnswer(q, correct){
     if(data[key].streak >= REVIEW_MASTER_STREAK) delete data[key];
     saveReviewData(data);
   }
-  if(currentScreen()==="start") rebuildFilters();
+  if(currentScreen()==="start") updateModeCards();
 }
 
 function currentScreen(){
@@ -1385,36 +1500,83 @@ function currentScreen(){
   return "start";
 }
 
+function sessionKey(mode){ return SESSION_KEY_PREFIX + mode; }
+
+function loadFiltresPrefs(){
+  return loadJson(FILTRES_PREFS_KEY, { preset:"all", source:"all", cat:"all", count:"0", shuffle:true });
+}
+function saveFiltresPrefs(prefs){
+  saveJson(FILTRES_PREFS_KEY, prefs || {
+    preset: $("filtrePreset").value,
+    source: $("filtreSource").value,
+    cat: $("filtreCat").value,
+    count: $("filtreCount").value,
+    shuffle: $("filtreShuffle").checked
+  });
+}
+function loadFiltresPrefsToUI(){
+  const p = loadFiltresPrefs();
+  $("filtrePreset").value = p.preset || "all";
+  $("filtreSource").value = p.source || "all";
+  $("filtreCat").value = p.cat || "all";
+  $("filtreCount").value = p.count ?? "0";
+  $("filtreShuffle").checked = p.shuffle !== false;
+}
+
+function migrateLegacySession(){
+  const raw = localStorage.getItem(SESSION_KEY_LEGACY);
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+    let mode = "tout";
+    if(data.examMode) mode = "examen";
+    else if(data.mode === "review") mode = "erreurs";
+    else if(data.mode === "math") mode = "math";
+    else if(data.mode && !["all","cadet"].includes(data.mode) || (data.source && data.source !== "all") || (data.cat && data.cat !== "all")){
+      mode = "filtres";
+      const preset = ["bia","english","cadet"].includes(data.mode) ? data.mode : "all";
+      saveFiltresPrefs({ preset, source:data.source||"all", cat:data.cat||"all", count:data.count??"0", shuffle:data.shuffle!==false });
+      data.filtres = loadFiltresPrefs();
+    }
+    data.playMode = mode;
+    localStorage.setItem(sessionKey(mode), JSON.stringify(data));
+  }catch(_){}
+  localStorage.removeItem(SESSION_KEY_LEGACY);
+}
+
+function poolSnapshot(){
+  return pool.map(q=>({
+    _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe, t:q.t, ans:q.ans,
+    _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
+    _inputVal:q._inputVal, _inputOk:q._inputOk,
+    _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
+  }));
+}
+
 function saveSession(){
   if(!pool.length || currentScreen()==="start") return;
   const data = {
-    mode: quizMode,
+    playMode,
     examMode,
-    cat: $("catSelect").value,
-    source: $("sourceSelect").value,
-    count: quizMode==="math" ? $("mathCountSelect").value : $("countSelect").value,
-    shuffle: quizMode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked,
     idx,
     screen: currentScreen(),
-    pool: pool.map(q=>({
-      _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe,
-      _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
-      _inputVal:q._inputVal, _inputOk:q._inputOk,
-      _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
-    }))
+    filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
+    mathPrefs: playMode === "math" ? { count:$("mathCountSelect").value, shuffle:$("mathShuffleChk").checked } : undefined,
+    pool: poolSnapshot()
   };
-  try{ localStorage.setItem(SESSION_KEY, JSON.stringify(data)); }catch(_){}
-  updateResumeUI();
+  try{ localStorage.setItem(sessionKey(playMode), JSON.stringify(data)); }catch(_){}
+  updateModeCards();
 }
 
-function clearSession(){
-  try{ localStorage.removeItem(SESSION_KEY); }catch(_){}
-  updateResumeUI();
+function clearSession(mode){
+  const m = mode || playMode;
+  try{ localStorage.removeItem(sessionKey(m)); }catch(_){}
+  updateModeCards();
 }
 
-function peekSession(){
+function peekSession(mode){
   try{
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(sessionKey(mode));
     if(!raw) return null;
     const data = JSON.parse(raw);
     if(!data.pool?.length || !["quiz","result"].includes(data.screen)) return null;
@@ -1422,35 +1584,71 @@ function peekSession(){
   }catch(_){ return null; }
 }
 
-function updateResumeUI(){
-  const data = peekSession();
-  const box = $("resumeBox");
-  if(!data){
-    box.classList.add("hide");
-    return;
+function examScoreFromPool(arr){
+  return arr.reduce((s,q)=>s + (q._examPoints ?? 0), 0);
+}
+
+function updateModeCardProgress(mode, data){
+  const progressEl = $(`${mode}Progress`);
+  const resumeBtn = document.querySelector(`.mode-resume[data-mode="${mode}"]`);
+  const startBtn = document.querySelector(`.mode-start[data-mode="${mode}"]`);
+  if(!progressEl || !resumeBtn || !startBtn) return;
+  if(data){
+    const answered = data.pool.filter(isQuestionAnswered).length;
+    const total = data.pool.length;
+    const pct = total ? (answered / total) * 100 : 0;
+    const label = data.examMode
+      ? `${answered}/${total} · ${examScoreFromPool(data.pool).toFixed(1)} pts`
+      : `${answered}/${total} répondues`;
+    $(`${mode}ProgressLabel`).textContent = label;
+    $(`${mode}ProgressBar`).style.width = `${pct}%`;
+    progressEl.classList.remove("hide");
+    resumeBtn.classList.remove("hide");
+    startBtn.textContent = "Recommencer";
+  } else {
+    progressEl.classList.add("hide");
+    resumeBtn.classList.add("hide");
+    startBtn.textContent = "Commencer";
   }
-  const answered = data.pool.filter(isQuestionAnswered).length;
-  const correct = data.pool.filter(isQuestionCorrect).length;
-  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", exam:"Examen", all:"Tout" };
-  const modeLabel = data.examMode ? "Examen" : (labels[data.mode]||data.mode);
-  const srcTxt = data.source === "bia-all" ? " · Toutes BIA" : (data.source && data.source !== "all" ? ` · ${sourceLabel(data.source)}` : "");
-  $("resumeDesc").textContent = `${modeLabel}${srcTxt} · ${answered}/${data.pool.length} répondues · score ${correct}`;
-  box.classList.remove("hide");
+}
+
+function updateModeCards(){
+  const toutPool = baseQcmPool();
+  $("toutMeta").textContent = `${toutPool.length} questions`;
+  updateModeCardProgress("tout", peekSession("tout"));
+
+  const examAvail = toutPool.length;
+  const examStart = document.querySelector('.mode-start[data-mode="examen"]');
+  if(examStart) examStart.disabled = examAvail < 1;
+  updateModeCardProgress("examen", peekSession("examen"));
+
+  const erreurs = erreursPool();
+  $("modeCardErreurs").classList.toggle("hide", !erreurs.length);
+  $("erreursMeta").textContent = erreurs.length ? `${erreurs.length} à revoir` : "—";
+  updateModeCardProgress("erreurs", peekSession("erreurs"));
+
+  rebuildFiltresSelects();
+  const filtresN = buildFiltresPool({ fresh:false }).length;
+  $("filtresMeta").textContent = filtresN ? `${filtresN} questions` : "Aucune question";
+  const filtresStart = document.querySelector('.mode-start[data-mode="filtres"]');
+  if(filtresStart) filtresStart.disabled = !filtresN;
+  updateModeCardProgress("filtres", peekSession("filtres"));
+
+  updateMathTab();
 }
 
 function applySessionData(data){
-  quizMode = data.mode || "cadet";
+  playMode = data.playMode || data.mode || "tout";
+  quizMode = playMode;
   examMode = !!data.examMode;
-  $("modeSelect").value = (quizMode==="math" || quizMode==="exam") ? "cadet" : (quizMode || "cadet");
-  $("sourceSelect").value = data.source || "all";
-  rebuildFilters();
-  $("catSelect").value = data.cat || "all";
-  if(quizMode==="math"){
-    $("mathCountSelect").value = data.count ?? "0";
-    $("mathShuffleChk").checked = data.shuffle !== false;
-  } else {
-    $("countSelect").value = data.count ?? "0";
-    $("shuffleChk").checked = data.shuffle !== false;
+  if(data.filtres){
+    saveFiltresPrefs(data.filtres);
+    loadFiltresPrefsToUI();
+    rebuildFiltresSelects();
+  }
+  if(data.mathPrefs){
+    $("mathCountSelect").value = data.mathPrefs.count ?? "0";
+    $("mathShuffleChk").checked = data.mathPrefs.shuffle !== false;
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
@@ -1463,28 +1661,41 @@ function applySessionData(data){
   }
 }
 
-function restoreSession(){
-  const data = peekSession();
+function restoreSession(mode){
+  const data = peekSession(mode);
   if(!data) return false;
   applySessionData(data);
   $("start").classList.add("hide");
   if(data.screen==="result"){
     $("quiz").classList.add("hide");
     $("result").classList.remove("hide");
-    const correct = nCorrect();
-    const pct = Math.round((correct/pool.length)*100);
-    $("finalScore").textContent = `${correct} / ${pool.length}`;
-    $("finalBar").style.width = `${pct}%`;
-    const answered = nAnswered();
-    const reste = pool.length - answered;
-    const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
-    let msg;
-    if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
-    else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
-    else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
-    else msg = "📚 Reprends les fiches et recommence.";
-    $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
-    $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+    if(data.examMode){
+      const total = examScoreFromPool(data.pool);
+      const max = data.pool.length * EXAM_MAX_PTS;
+      const pct = Math.max(0, Math.round((total / max) * 100));
+      const correct = data.pool.filter(q=>q._examPoints > 0).length;
+      const wrong = data.pool.filter(q=>q._examPoints === EXAM_WRONG_PTS).length;
+      const skipped = data.pool.filter(q=>q._examPoints === 0).length;
+      $("finalScore").textContent = `${total.toFixed(1)} / ${max} pts`;
+      $("finalBar").style.width = `${Math.min(100, pct)}%`;
+      $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/data.pool.length).toFixed(2)} pts/Q`;
+      $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
+    } else {
+      const correct = data.pool.filter(isQuestionCorrect).length;
+      const answered = data.pool.filter(isQuestionAnswered).length;
+      const pct = Math.round((correct/data.pool.length)*100);
+      $("finalScore").textContent = `${correct} / ${data.pool.length}`;
+      $("finalBar").style.width = `${pct}%`;
+      const reste = data.pool.length - answered;
+      const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
+      let msg;
+      if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+      else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
+      else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
+      else msg = "📚 Reprends les fiches et recommence.";
+      $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+      $("reviewWrongBtn").style.display = data.pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+    }
   } else {
     $("result").classList.add("hide");
     $("quiz").classList.remove("hide");
@@ -1537,43 +1748,82 @@ function correctAnswerLabel(q){
   return q.o[q.a];
 }
 
-let quizMode = "cadet";
+function baseQcmPool(){
+  return activeQuestions().filter(q=>!isMathQuestion(q) && !isInputQuestion(q));
+}
+
+function erreursPool(){
+  return reviewQuestions().filter(q=>!isInputQuestion(q));
+}
+
+function questionsForPreset(preset){
+  const base = activeQuestions().filter(q=>!isMathQuestion(q) && !isInputQuestion(q));
+  if(preset==="bia") return base.filter(isBiaQuestion);
+  if(preset==="english") return base.filter(isEnglishQuestion);
+  if(preset==="cadet") return base.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
+  return base;
+}
 
 function questionsForMode(mode){
-  const base = activeQuestions();
-  if(mode==="math") return base.filter(isMathQuestion);
-  const withoutMath = base.filter(q=>!isMathQuestion(q));
-  if(mode==="bia") return withoutMath.filter(isBiaQuestion);
-  if(mode==="english") return withoutMath.filter(isEnglishQuestion);
-  if(mode==="review") return withoutMath.filter(q=>isInReviewPool(q));
-  if(mode==="cadet") return withoutMath.filter(q=>!isBiaQuestion(q) && !isEnglishQuestion(q));
-  return withoutMath;
+  if(mode==="math") return activeQuestions().filter(isMathQuestion);
+  return baseQcmPool();
 }
 
 function initStart(){
-  rebuildFilters();
-  updateMathTab();
-  updateResumeUI();
+  migrateLegacySession();
+  loadFiltresPrefsToUI();
+  rebuildFiltresSelects();
+  updateModeCards();
   renderHiddenTab();
   renderShortcuts();
-  $("modeSelect").onchange = rebuildFilters;
-  $("sourceSelect").onchange = rebuildCatSelect;
+  $("filtrePreset").onchange = rebuildFiltresSelects;
+  $("filtreSource").onchange = ()=>{ rebuildFiltresCatSelect(); updateModeCards(); };
+  $("filtreCat").onchange = updateModeCards;
+  $("filtreCount").onchange = updateModeCards;
+  $("filtreShuffle").onchange = updateModeCards;
+  document.querySelectorAll(".mode-start").forEach(btn=>{
+    btn.onclick = ()=>startPlay(btn.dataset.mode, { resume:false });
+  });
+  document.querySelectorAll(".mode-resume").forEach(btn=>{
+    btn.onclick = ()=>startPlay(btn.dataset.mode, { resume:true });
+  });
+  document.querySelectorAll(".mode-card").forEach(card=>{
+    card.addEventListener("click", e=>{
+      if(e.target.closest("button")) return;
+      document.querySelectorAll(".mode-card").forEach(c=>c.classList.remove("is-selected"));
+      card.classList.add("is-selected");
+      if(card.id === "modeCardFiltres") $("filtresPanel").scrollIntoView({ behavior:"smooth", block:"nearest" });
+    });
+  });
 }
 
 function updateMathTab(){
   $("mathTotalCount").textContent = questionsForMode("math").length;
+  const data = peekSession("math");
+  const resumeBtn = $("resumeMathBtn");
+  const hint = $("mathResumeHint");
+  if(data){
+    const answered = data.pool.filter(isQuestionAnswered).length;
+    resumeBtn.classList.remove("hide");
+    hint.classList.remove("hide");
+    hint.textContent = `Partie en cours : ${answered}/${data.pool.length} répondues`;
+  } else {
+    resumeBtn.classList.add("hide");
+    hint.classList.add("hide");
+    hint.textContent = "";
+  }
 }
 
-function rebuildSourceSelect(){
-  const mode = $("modeSelect").value;
-  const base = questionsForMode(mode);
+function rebuildFiltresSourceSelect(){
+  const preset = $("filtrePreset").value;
+  const base = questionsForPreset(preset);
   const counts = {};
   base.forEach(q=>{ counts[q._src] = (counts[q._src] || 0) + 1; });
-  const sel = $("sourceSelect");
+  const sel = $("filtreSource");
   const prev = sel.value;
   sel.innerHTML = '<option value="all">Toutes les sources</option>';
   const biaCount = base.filter(q=>q._src.startsWith("bia")).length;
-  if(biaCount > 0 && (mode === "all" || mode === "bia")){
+  if(biaCount > 0 && (preset === "all" || preset === "bia")){
     const o = document.createElement("option");
     o.value = "bia-all";
     o.textContent = `Toutes les annales BIA (${biaCount})`;
@@ -1590,10 +1840,38 @@ function rebuildSourceSelect(){
   sel.value = [...sel.options].some(o=>o.value===prev) ? prev : "all";
 }
 
-function rebuildFilters(){
-  rebuildSourceSelect();
-  rebuildCatSelect();
-  updateExamWrongBtn();
+function rebuildFiltresCatSelect(){
+  const preset = $("filtrePreset").value;
+  let base = questionsForPreset(preset);
+  base = filterBySource(base, $("filtreSource").value);
+  const sel = $("filtreCat");
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">Toutes les catégories</option>';
+  [...new Set(base.map(q=>q.c))].sort((a,b)=>a.localeCompare(b,"fr")).forEach(c=>{
+    const n = base.filter(q=>q.c===c).length;
+    const o = document.createElement("option");
+    o.value = c; o.textContent = `${c} (${n})`;
+    sel.appendChild(o);
+  });
+  sel.value = [...sel.options].some(o=>o.value===prev) ? prev : "all";
+  updateHiddenBadge();
+}
+
+function rebuildFiltresSelects(){
+  rebuildFiltresSourceSelect();
+  rebuildFiltresCatSelect();
+}
+
+function buildFiltresPool(opts={}){
+  const fresh = opts.fresh !== false;
+  if(fresh) saveFiltresPrefs();
+  let arr = questionsForPreset($("filtrePreset").value);
+  arr = filterBySource(arr, $("filtreSource").value);
+  if($("filtreCat").value !== "all") arr = arr.filter(q=>q.c === $("filtreCat").value);
+  if(fresh && $("filtreShuffle").checked) shuffle(arr);
+  const n = parseInt($("filtreCount").value, 10);
+  if(n > 0) arr = arr.slice(0, n);
+  return fresh ? arr.map(resetQuestionState) : arr;
 }
 
 function switchStartTab(tab){
@@ -1613,59 +1891,27 @@ function updateHiddenBadge(){
   $("hiddenTabCount").textContent = n ? `(${n})` : "";
 }
 
-function rebuildCatSelect(){
-  const mode = $("modeSelect").value;
-  let base = questionsForMode(mode);
-  base = filterBySource(base, $("sourceSelect").value);
-  $("totalCount").textContent = base.length;
-  $("reviewHint").classList.toggle("hide", mode!=="review");
-  $("startBtn").disabled = !base.length;
-  $("startBtn").textContent = !base.length
-    ? (mode==="review" ? "Aucune erreur à revoir" : "Aucune question")
-    : "Nouvelle partie ▶";
-  updateHiddenBadge();
-  const sel = $("catSelect");
-  sel.innerHTML = '<option value="all">Toutes les catégories</option>';
-  const cats = [...new Set(base.map(q=>q.c))].sort((a,b)=>a.localeCompare(b,"fr"));
-  cats.forEach(c=>{
-    const n = base.filter(q=>q.c===c).length;
-    const o = document.createElement("option");
-    o.value = c; o.textContent = `${c} (${n})`;
-    sel.appendChild(o);
-  });
-}
-
-function buildPool(){
-  const mode = $("modeSelect").value;
-  const cat = $("catSelect").value;
-  let arr = questionsForMode(mode);
-  arr = filterBySource(arr, $("sourceSelect").value);
-  arr = arr.map((q,i)=>({...q,_id:i}));
-  if(cat!=="all") arr = arr.filter(q=>q.c===cat);
-  const shuffleOn = mode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked;
-  if(shuffleOn) shuffle(arr);
-  const countEl = mode==="math" ? $("mathCountSelect") : $("countSelect");
-  const n = parseInt(countEl.value,10);
-  if(n>0) arr = arr.slice(0,n);
-  // Réinitialise l'état de chaque question
-  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null}));
-}
-
 function resetQuestionState(q){
   return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
 }
 
 function isExamActive(){ return examMode; }
 
-function examSpeedFactor(sec){
-  if(sec <= EXAM_FAST_SEC) return 1;
-  if(sec >= EXAM_TIME_SEC) return 0;
-  return (EXAM_TIME_SEC - sec) / (EXAM_TIME_SEC - EXAM_FAST_SEC);
+function examTimeForQuestion(q){
+  const len = (q.q || "").length + (q.annexe || "").length;
+  return len > EXAM_LONG_CHARS ? EXAM_TIME_LONG : EXAM_TIME_SHORT;
 }
 
-function examPointsForAnswer(correct, timeSec){
+function examSpeedFactor(sec, limit){
+  if(sec <= EXAM_FAST_SEC) return 1;
+  if(sec >= limit) return 0;
+  return (limit - sec) / (limit - EXAM_FAST_SEC);
+}
+
+function examPointsForAnswer(correct, timeSec, limit){
   if(!correct) return EXAM_WRONG_PTS;
-  return EXAM_MAX_PTS * 0.6 + EXAM_MAX_PTS * 0.4 * examSpeedFactor(timeSec);
+  const lim = limit ?? EXAM_TIME_SHORT;
+  return EXAM_MAX_PTS * 0.6 + EXAM_MAX_PTS * 0.4 * examSpeedFactor(timeSec, lim);
 }
 
 function examQuestionPoints(q){
@@ -1712,98 +1958,30 @@ function pickExamQuestions(candidates, n=EXAM_SIZE){
   return shuffle(picked).slice(0, n).map(resetQuestionState);
 }
 
-function examCandidatesFromFilters(){
-  let arr = questionsForMode($("modeSelect").value);
-  arr = filterBySource(arr, $("sourceSelect").value);
-  if($("catSelect").value !== "all") arr = arr.filter(q=>q.c === $("catSelect").value);
-  return arr.filter(q=>!isInputQuestion(q));
-}
-
-function examCandidatesFromWrong(){
-  return reviewQuestions().filter(q=>!isInputQuestion(q));
-}
-
-function buildExamPool(candidates){
-  return pickExamQuestions(candidates, EXAM_SIZE);
-}
-
 function setExamUI(active){
   examMode = active;
-  if(active) quizMode = "exam";
   $("quiz").classList.toggle("exam-mode", active);
   $("quizMain").classList.toggle("exam-mode", active);
   $("examTimerWrap").classList.toggle("hide", !active);
   $("examTimerChip").classList.toggle("hide", !active);
   $("examScoreChip").classList.toggle("hide", !active);
   $("scoreChip").classList.toggle("hide", active);
-  const inQuiz = !$("quiz").classList.contains("hide");
-  $("examFromQuizBtn").classList.toggle("hide", active || !inQuiz || quizMode === "math");
   if(!active){
     $("navToggle").style.display = "";
     $("navGrid").style.display = "";
   }
 }
 
-function updateExamWrongBtn(){
-  const n = examCandidatesFromWrong().length;
-  const btn = $("startExamWrongBtn");
-  if(btn){
-    btn.disabled = n < 1;
-    btn.title = n < 1 ? "Aucune erreur QCM à revoir" : "";
-    btn.textContent = n < EXAM_SIZE ? `Examen sur mes erreurs (${n})` : "Examen sur mes erreurs";
-  }
-}
-
-function startExamFromCandidates(candidates){
-  const picked = buildExamPool(candidates);
-  if(!picked.length){
-    alert("Pas assez de questions QCM disponibles pour un examen (hors saisie libre).");
-    return;
-  }
-  clearSession();
-  clearExamTimer();
-  pool = picked;
-  idx = 0;
-  setExamUI(true);
-  $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">0</b> / ${picked.length * EXAM_MAX_PTS}`;
-  $("start").classList.add("hide");
-  $("result").classList.add("hide");
-  $("quiz").classList.remove("hide");
-  buildGrid();
-  render();
-  saveSession();
-}
-
-function startExam(){
-  startExamFromCandidates(examCandidatesFromFilters());
-}
-
-function startExamWrong(){
-  startExamFromCandidates(examCandidatesFromWrong());
-}
-
-function startExamFromTraining(){
-  if(!pool.length){
-    alert("Lance d'abord un entraînement ou configure les filtres à l'accueil.");
-    return;
-  }
-  const base = pool.filter(q=>!isInputQuestion(q));
-  if(!base.length){
-    alert("Ce jeu ne contient pas de QCM classiques (saisie libre exclue de l'examen).");
-    return;
-  }
-  startExamFromCandidates(base);
-}
-
 function startExamTimer(){
   clearExamTimer();
   const q = pool[idx];
   if(!examMode || q._chosen != null) return;
+  const limit = examTimeForQuestion(q);
   examQuestionStart = performance.now();
   const tick = ()=>{
     const elapsed = (performance.now() - examQuestionStart) / 1000;
-    const left = Math.max(0, EXAM_TIME_SEC - elapsed);
-    const pct = (left / EXAM_TIME_SEC) * 100;
+    const left = Math.max(0, limit - elapsed);
+    const pct = (left / limit) * 100;
     $("examTimerText").textContent = left.toFixed(1);
     $("examTimerBar").style.width = `${pct}%`;
     $("examTimerWrap").classList.toggle("urgent", left <= 2);
@@ -1812,26 +1990,27 @@ function startExamTimer(){
   };
   tick();
   examTimerInterval = setInterval(tick, 50);
-  examTimeoutTimer = setTimeout(()=>examTimeout(), EXAM_TIME_SEC * 1000 + 20);
+  examTimeoutTimer = setTimeout(()=>examTimeout(), limit * 1000 + 20);
 }
 
 function finalizeExamAnswer(q, timeSec){
+  const limit = examTimeForQuestion(q);
   q._examTimeSec = timeSec;
-  if(isQuestionCorrect(q)) q._examPoints = examPointsForAnswer(true, timeSec);
+  if(isQuestionCorrect(q)) q._examPoints = examPointsForAnswer(true, timeSec, limit);
   else q._examPoints = EXAM_WRONG_PTS;
   clearExamTimer();
   const live = $("examLiveScore");
   if(live) live.textContent = examTotalScore().toFixed(1);
   saveSession();
-  render();
-  setTimeout(()=>examAdvance(), 400);
+  examAdvance();
 }
 
 function examTimeout(){
   const q = pool[idx];
   if(!examMode || q._chosen != null) return;
+  const limit = examTimeForQuestion(q);
   q._examTimedOut = true;
-  q._examTimeSec = EXAM_TIME_SEC;
+  q._examTimeSec = limit;
   q._examPoints = 0;
   clearExamTimer();
   $("examLiveScore").textContent = examTotalScore().toFixed(1);
@@ -1849,7 +2028,6 @@ function examAdvance(){
 }
 
 function buildMathPool(){
-  quizMode = "math";
   let arr = questionsForMode("math").map((q,i)=>({...q,_id:i}));
   if($("mathShuffleChk").checked) shuffle(arr);
   const n = parseInt($("mathCountSelect").value,10);
@@ -1860,25 +2038,52 @@ function buildMathPool(){
 const nCorrect = () => pool.filter(isQuestionCorrect).length;
 const nAnswered = () => pool.filter(isQuestionAnswered).length;
 
-function start(){
-  clearSession();
+function startPlay(mode, opts={}){
+  if(opts.resume && restoreSession(mode)) return;
+  clearSession(mode);
   clearExamTimer();
-  setExamUI(false);
-  quizMode = $("modeSelect").value;
-  pool = buildPool();
-  if(!pool.length){
-    if($("modeSelect").value==="review") rebuildFilters();
+  playMode = mode;
+  quizMode = mode;
+
+  if(mode === "examen"){
+    const picked = pickExamQuestions(baseQcmPool(), EXAM_SIZE);
+    if(!picked.length){
+      alert("Pas assez de questions QCM pour lancer un examen.");
+      return;
+    }
+    pool = picked;
+    idx = 0;
+    setExamUI(true);
+    $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">0</b> / ${picked.length * EXAM_MAX_PTS}`;
+    launchQuiz();
     return;
   }
-  launchQuiz();
-}
 
-function startMath(){
-  clearSession();
-  pool = buildMathPool();
+  setExamUI(false);
+  if(mode === "math"){
+    pool = buildMathPool();
+  } else if(mode === "tout"){
+    pool = shuffle([...baseQcmPool()]).map(resetQuestionState);
+  } else if(mode === "erreurs"){
+    pool = erreursPool().map(resetQuestionState);
+    if(!pool.length){
+      alert("Aucune erreur à revoir pour le moment.");
+      updateModeCards();
+      return;
+    }
+  } else if(mode === "filtres"){
+    pool = buildFiltresPool();
+    if(!pool.length){
+      alert("Aucune question avec ces filtres.");
+      return;
+    }
+  }
+
   if(!pool.length) return;
   launchQuiz();
 }
+
+function startMath(){ startPlay("math", { resume:false }); }
 
 function launchQuiz(){
   idx=0;
@@ -1886,7 +2091,6 @@ function launchQuiz(){
   $("start").classList.add("hide");
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
-  $("examFromQuizBtn").classList.toggle("hide", examMode || quizMode === "math");
   buildGrid();
   render();
   saveSession();
@@ -1931,7 +2135,6 @@ function render(){
   $("prevBtn").disabled = examMode || (idx===0);
   $("nextBtn").disabled = examMode || (idx===pool.length-1);
   $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
-  $("examFromQuizBtn").classList.toggle("hide", examMode || quizMode === "math");
 
   const box = $("choices"); box.innerHTML="";
   if(isInputQuestion(q)){
@@ -1970,8 +2173,10 @@ function render(){
       b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
       if(locked){
         b.classList.add("locked");
-        if(i===q._correctIdx) b.classList.add("correct");
-        else if(i===q._chosen) b.classList.add("wrong");
+        if(!examMode){
+          if(i===q._correctIdx) b.classList.add("correct");
+          else if(i===q._chosen) b.classList.add("wrong");
+        }
       } else {
         b.onclick = ()=>choose(i);
       }
@@ -2001,7 +2206,7 @@ function choose(i){
   const q = pool[idx];
   if(q._chosen!=null) return;
   clearTimeout(autoTimer);
-  const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, EXAM_TIME_SEC) : null;
+  const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, examTimeForQuestion(q)) : null;
   q._chosen = i;
   const correct = i === q._correctIdx;
   const wasInReview = isInReviewPool(q);
@@ -2108,10 +2313,8 @@ function finish(){
     $("finalBar").style.width = `${Math.min(100, pct)}%`;
     $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/pool.length).toFixed(2)} pts/Q`;
     $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
-    $("examFromResultBtn").classList.remove("hide");
     setExamUI(false);
     examMode = false;
-    quizMode = "exam";
   } else {
     const correct = nCorrect();
     const answered = nAnswered();
@@ -2127,15 +2330,8 @@ function finish(){
     const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
     $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
     $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
-    $("examFromResultBtn").classList.add("hide");
   }
   saveSession();
-}
-
-function startExamFromResultWrong(){
-  const wrong = pool.filter(q=>q._examPoints != null && q._examPoints <= 0)
-    .map(q=>bankQuestion(q._bankId));
-  startExamFromCandidates(wrong.length ? wrong : examCandidatesFromWrong());
 }
 
 function reviewWrong(){
@@ -2161,8 +2357,7 @@ function home(){
   $("quiz").classList.add("hide");
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
-  updateResumeUI();
-  rebuildFilters();
+  updateModeCards();
 }
 
 /* ---------- Édition & raccourcis ---------- */
@@ -2254,7 +2449,7 @@ function saveQuestionEdit(){
     buildGrid();
   }
   closeEditModal();
-  rebuildFilters();
+  updateModeCards();
   renderHiddenTab();
   if(currentScreen()==="quiz") render();
   saveSession();
@@ -2270,7 +2465,7 @@ function resetQuestionEdit(){
   delete hidden[id];
   saveHiddenMap(hidden);
   openEditModal(id);
-  rebuildFilters();
+  updateModeCards();
   renderHiddenTab();
 }
 
@@ -2280,7 +2475,7 @@ function unhideQuestion(id){
   const hidden = loadHiddenMap();
   delete hidden[id];
   saveHiddenMap(hidden);
-  rebuildFilters();
+  updateModeCards();
   renderHiddenTab();
 }
 
@@ -2344,12 +2539,8 @@ function addShortcut(){
   renderShortcuts();
 }
 
-$("startBtn").onclick = start;
-$("startExamBtn").onclick = startExam;
-$("startExamWrongBtn").onclick = startExamWrong;
 $("startMathBtn").onclick = startMath;
-$("examFromQuizBtn").onclick = startExamFromTraining;
-$("examFromResultBtn").onclick = startExamFromResultWrong;
+$("resumeMathBtn").onclick = ()=>startPlay("math", { resume:true });
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
 $("quitBtn").onclick = ()=>{
@@ -2357,12 +2548,7 @@ $("quitBtn").onclick = ()=>{
   home();
 };
 $("finishBtn").onclick = finish;
-$("restartBtn").onclick = ()=>{
-  const wasExam = pool.some(q=>q._examPoints != null);
-  if(wasExam) startExamFromCandidates(pool.map(q=>bankQuestion(q._bankId)));
-  else if(quizMode === "math") startMath();
-  else start();
-};
+$("restartBtn").onclick = ()=>startPlay(playMode, { resume:false });
 $("reviewWrongBtn").onclick = reviewWrong;
 $("homeBtn").onclick = home;
 $("navToggle").onclick = openNav;
@@ -2374,8 +2560,6 @@ $("editSaveBtn").onclick = saveQuestionEdit;
 $("editCancelBtn").onclick = closeEditModal;
 $("editResetBtn").onclick = resetQuestionEdit;
 $("editModal").onclick = e=>{ if(e.target===$("editModal")) closeEditModal(); };
-$("resumeBtn").onclick = ()=>{ if(restoreSession()) updateResumeUI(); };
-$("discardBtn").onclick = ()=>{ clearSession(); };
 $("addShortcutBtn").onclick = addShortcut;
 document.querySelectorAll(".tab-btn").forEach(b=>b.onclick = ()=>switchStartTab(b.dataset.tab));
 
