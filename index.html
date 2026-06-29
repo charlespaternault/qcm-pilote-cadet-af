@@ -319,6 +319,7 @@
           <option value="review">Mode Révision (mes erreurs)</option>
           <option value="all">Tout</option>
         </select>
+        <select id="sourceSelect"><option value="all">Toutes les sources</option></select>
         <select id="catSelect"><option value="all">Toutes les catégories</option></select>
         <select id="countSelect">
           <option value="0">Toutes les questions</option>
@@ -1261,7 +1262,44 @@ function mergeQuestion(q, i){
   if("annexe" in edits){ if(edits.annexe) merged.annexe = edits.annexe; else delete merged.annexe; }
   if(edits.hidden != null) merged._hidden = !!edits.hidden;
   else merged._hidden = isHiddenId(id);
+  merged._src = merged.src || inferQuestionSource(merged);
   return merged;
+}
+
+const SOURCE_CATALOG = [
+  { id: "cadet", label: "Cadet AF / Retours candidats" },
+  { id: "bia", label: "BIA (source non précisée)" },
+  { id: "bia-2022", label: "BIA 2022" },
+  { id: "bia-2023", label: "BIA 2023" },
+  { id: "bia-2024", label: "BIA 2024" },
+  { id: "bia-2026", label: "BIA 2026" },
+  { id: "english", label: "English AF Cadets 2022" },
+  { id: "psychotechnique", label: "Problèmes mathématiques" },
+];
+
+function inferQuestionSource(q){
+  if(q.src) return q.src;
+  if(q.c === "Problèmes mathématiques") return "psychotechnique";
+  if(q.c === "English") return "english";
+  if(q.c?.startsWith("BIA")){
+    const hay = `${q.e || ""} ${q.img || ""}`;
+    if(/BIA 2026|bia-2026/i.test(hay)) return "bia-2026";
+    if(/BIA 2024|bia-2024/i.test(hay)) return "bia-2024";
+    if(/BIA 2023|bia-2023/i.test(hay)) return "bia-2023";
+    if(/BIA 2022|bia-2022/i.test(hay)) return "bia-2022";
+    return "bia";
+  }
+  return "cadet";
+}
+
+function sourceLabel(id){
+  return SOURCE_CATALOG.find(s=>s.id===id)?.label || id;
+}
+
+function filterBySource(arr, src){
+  if(!src || src === "all") return arr;
+  if(src === "bia-all") return arr.filter(q=>q._src.startsWith("bia"));
+  return arr.filter(q=>q._src === src);
 }
 
 function bankQuestion(id){ return mergeQuestion(QUESTIONS[Number(id)], Number(id)); }
@@ -1301,7 +1339,7 @@ function recordReviewAnswer(q, correct){
     if(data[key].streak >= REVIEW_MASTER_STREAK) delete data[key];
     saveReviewData(data);
   }
-  if(currentScreen()==="start") rebuildCatSelect();
+  if(currentScreen()==="start") rebuildFilters();
 }
 
 function currentScreen(){
@@ -1315,6 +1353,7 @@ function saveSession(){
   const data = {
     mode: quizMode,
     cat: $("catSelect").value,
+    source: $("sourceSelect").value,
     count: quizMode==="math" ? $("mathCountSelect").value : $("countSelect").value,
     shuffle: quizMode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked,
     idx,
@@ -1354,14 +1393,16 @@ function updateResumeUI(){
   const answered = data.pool.filter(isQuestionAnswered).length;
   const correct = data.pool.filter(isQuestionCorrect).length;
   const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", all:"Tout" };
-  $("resumeDesc").textContent = `${labels[data.mode]||data.mode} · ${answered}/${data.pool.length} répondues · score ${correct}`;
+  const srcTxt = data.source === "bia-all" ? " · Toutes BIA" : (data.source && data.source !== "all" ? ` · ${sourceLabel(data.source)}` : "");
+  $("resumeDesc").textContent = `${labels[data.mode]||data.mode}${srcTxt} · ${answered}/${data.pool.length} répondues · score ${correct}`;
   box.classList.remove("hide");
 }
 
 function applySessionData(data){
   quizMode = data.mode || "cadet";
   $("modeSelect").value = quizMode==="math" ? "cadet" : (quizMode || "cadet");
-  rebuildCatSelect();
+  $("sourceSelect").value = data.source || "all";
+  rebuildFilters();
   $("catSelect").value = data.cat || "all";
   if(quizMode==="math"){
     $("mathCountSelect").value = data.count ?? "0";
@@ -1465,16 +1506,48 @@ function questionsForMode(mode){
 }
 
 function initStart(){
-  rebuildCatSelect();
+  rebuildFilters();
   updateMathTab();
   updateResumeUI();
   renderHiddenTab();
   renderShortcuts();
-  $("modeSelect").onchange = rebuildCatSelect;
+  $("modeSelect").onchange = rebuildFilters;
+  $("sourceSelect").onchange = rebuildCatSelect;
 }
 
 function updateMathTab(){
   $("mathTotalCount").textContent = questionsForMode("math").length;
+}
+
+function rebuildSourceSelect(){
+  const mode = $("modeSelect").value;
+  const base = questionsForMode(mode);
+  const counts = {};
+  base.forEach(q=>{ counts[q._src] = (counts[q._src] || 0) + 1; });
+  const sel = $("sourceSelect");
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">Toutes les sources</option>';
+  const biaCount = base.filter(q=>q._src.startsWith("bia")).length;
+  if(biaCount > 0 && (mode === "all" || mode === "bia")){
+    const o = document.createElement("option");
+    o.value = "bia-all";
+    o.textContent = `Toutes les annales BIA (${biaCount})`;
+    sel.appendChild(o);
+  }
+  SOURCE_CATALOG.forEach(s=>{
+    const n = counts[s.id];
+    if(!n) return;
+    const o = document.createElement("option");
+    o.value = s.id;
+    o.textContent = `${s.label} (${n})`;
+    sel.appendChild(o);
+  });
+  sel.value = [...sel.options].some(o=>o.value===prev) ? prev : "all";
+}
+
+function rebuildFilters(){
+  rebuildSourceSelect();
+  rebuildCatSelect();
 }
 
 function switchStartTab(tab){
@@ -1496,11 +1569,14 @@ function updateHiddenBadge(){
 
 function rebuildCatSelect(){
   const mode = $("modeSelect").value;
-  const base = questionsForMode(mode);
+  let base = questionsForMode(mode);
+  base = filterBySource(base, $("sourceSelect").value);
   $("totalCount").textContent = base.length;
   $("reviewHint").classList.toggle("hide", mode!=="review");
-  $("startBtn").disabled = mode==="review" && !base.length;
-  $("startBtn").textContent = (mode==="review" && !base.length) ? "Aucune erreur à revoir" : "Nouvelle partie ▶";
+  $("startBtn").disabled = !base.length;
+  $("startBtn").textContent = !base.length
+    ? (mode==="review" ? "Aucune erreur à revoir" : "Aucune question")
+    : "Nouvelle partie ▶";
   updateHiddenBadge();
   const sel = $("catSelect");
   sel.innerHTML = '<option value="all">Toutes les catégories</option>';
@@ -1516,7 +1592,9 @@ function rebuildCatSelect(){
 function buildPool(){
   const mode = $("modeSelect").value;
   const cat = $("catSelect").value;
-  let arr = questionsForMode(mode).map((q,i)=>({...q,_id:i}));
+  let arr = questionsForMode(mode);
+  arr = filterBySource(arr, $("sourceSelect").value);
+  arr = arr.map((q,i)=>({...q,_id:i}));
   if(cat!=="all") arr = arr.filter(q=>q.c===cat);
   const shuffleOn = mode==="math" ? $("mathShuffleChk").checked : $("shuffleChk").checked;
   if(shuffleOn) shuffle(arr);
@@ -1544,7 +1622,7 @@ function start(){
   quizMode = $("modeSelect").value;
   pool = buildPool();
   if(!pool.length){
-    if($("modeSelect").value==="review") rebuildCatSelect();
+    if($("modeSelect").value==="review") rebuildFilters();
     return;
   }
   launchQuiz();
@@ -1577,7 +1655,7 @@ function render(){
   const q = pool[idx];
   prepare(q);
   const locked = q._chosen!=null;
-  $("qCat").textContent = q.c;
+  $("qCat").textContent = `${q.c} · ${sourceLabel(q._src)}`;
   $("liveScore").textContent = nCorrect();
   $("qNum").textContent = `Q${idx+1}/${pool.length}`;
   $("qText").textContent = q.q;
@@ -1789,7 +1867,7 @@ function home(){
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
   updateResumeUI();
-  rebuildCatSelect();
+  rebuildFilters();
 }
 
 /* ---------- Édition & raccourcis ---------- */
@@ -1881,7 +1959,7 @@ function saveQuestionEdit(){
     buildGrid();
   }
   closeEditModal();
-  rebuildCatSelect();
+  rebuildFilters();
   renderHiddenTab();
   if(currentScreen()==="quiz") render();
   saveSession();
@@ -1897,7 +1975,7 @@ function resetQuestionEdit(){
   delete hidden[id];
   saveHiddenMap(hidden);
   openEditModal(id);
-  rebuildCatSelect();
+  rebuildFilters();
   renderHiddenTab();
 }
 
@@ -1907,7 +1985,7 @@ function unhideQuestion(id){
   const hidden = loadHiddenMap();
   delete hidden[id];
   saveHiddenMap(hidden);
-  rebuildCatSelect();
+  rebuildFilters();
   renderHiddenTab();
 }
 
