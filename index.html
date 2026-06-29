@@ -241,6 +241,27 @@
   .result .sub { color: var(--muted); margin-bottom: 18px; }
   .scorebar { height: 12px; background: var(--card2); border-radius:999px; overflow:hidden; border:1px solid var(--line); margin: 14px 0; }
   .scorebar > i { display:block; height:100%; background: linear-gradient(90deg, var(--bad), var(--gold), var(--good)); }
+  .exam-recap { margin: 20px 0 8px; text-align: left; }
+  .exam-recap h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .exam-recap-list { max-height: min(52vh, 480px); overflow-y: auto; display: grid; gap: 8px; padding-right: 4px; }
+  .exam-recap-item {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px 12px; align-items: start;
+    padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2);
+  }
+  .exam-recap-item .num { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 28px; padding-top: 2px; }
+  .exam-recap-item .body { min-width: 0; }
+  .exam-recap-item .q-text { font-size: 14px; font-weight: 600; line-height: 1.4; margin: 0 0 4px; }
+  .exam-recap-item .q-meta { font-size: 11px; color: var(--muted); margin: 0; }
+  .exam-recap-item .q-detail { font-size: 12px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+  .exam-recap-item .badge {
+    font-size: 12px; font-weight: 700; white-space: nowrap; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: #0e1626;
+  }
+  .exam-recap-item.ok { border-color: #1f5c44; background: var(--good-bg); }
+  .exam-recap-item.ok .badge { color: var(--good); border-color: var(--good); }
+  .exam-recap-item.ko { border-color: #6b2830; background: var(--bad-bg); }
+  .exam-recap-item.ko .badge { color: var(--bad); border-color: var(--bad); }
+  .exam-recap-item.skip .badge { color: var(--muted); }
 
   .hide { display:none !important; }
   footer { text-align:center; color:#5d6b88; font-size:12px; padding: 0 0 30px; }
@@ -580,6 +601,10 @@
     <div class="big" id="finalScore">0 / 0</div>
     <div class="scorebar"><i id="finalBar"></i></div>
     <div class="sub" id="finalMsg"></div>
+    <div id="examRecap" class="exam-recap hide">
+      <h3>Détail des questions</h3>
+      <div class="exam-recap-list" id="examRecapList"></div>
+    </div>
     <div class="controls">
       <button class="primary" id="restartBtn">↻ Recommencer</button>
       <button id="reviewWrongBtn">Revoir mes erreurs</button>
@@ -1680,6 +1705,7 @@ function restoreSession(mode){
       $("finalBar").style.width = `${Math.min(100, pct)}%`;
       $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/data.pool.length).toFixed(2)} pts/Q`;
       $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
+      renderExamRecap(data.pool);
     } else {
       const correct = data.pool.filter(isQuestionCorrect).length;
       const answered = data.pool.filter(isQuestionAnswered).length;
@@ -1695,6 +1721,7 @@ function restoreSession(mode){
       else msg = "📚 Reprends les fiches et recommence.";
       $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
       $("reviewWrongBtn").style.display = data.pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+      hideExamRecap();
     }
   } else {
     $("result").classList.add("hide");
@@ -1924,6 +1951,72 @@ function examTotalScore(){
 }
 
 function examMaxScore(){ return pool.length * EXAM_MAX_PTS; }
+
+function ensureQuestionOrder(q){
+  if(isInputQuestion(q) || q._order) return;
+  q._order = q.o.map((opt,i)=>({opt, correct:i===q.a}));
+  q._correctIdx = q._order.findIndex(o=>o.correct);
+}
+
+function examChosenLabel(q){
+  if(q._chosen == null) return null;
+  if(isInputQuestion(q)) return q._inputVal || "—";
+  return q._order?.[q._chosen]?.opt || "—";
+}
+
+function examRecapEntry(q, i){
+  ensureQuestionOrder(q);
+  let cls, badge, detail = "";
+  if(q._examTimedOut || (q._examPoints === 0 && q._chosen == null)){
+    cls = "skip";
+    badge = "0 pt";
+    detail = `Bonne réponse : ${correctAnswerLabel(q)}`;
+  } else if(q._examPoints > 0){
+    cls = "ok";
+    badge = `+${q._examPoints.toFixed(1)} pt`;
+    const chosen = examChosenLabel(q);
+    if(chosen) detail = `Réponse : ${chosen}`;
+  } else {
+    cls = "ko";
+    badge = "−2 pts";
+    const chosen = examChosenLabel(q);
+    detail = `Ta réponse : ${chosen || "—"} · Bonne réponse : ${correctAnswerLabel(q)}`;
+  }
+  return { cls, badge, detail, num: i + 1, q };
+}
+
+function renderExamRecap(questions){
+  const box = $("examRecap");
+  const list = $("examRecapList");
+  if(!box || !list) return;
+  const isExam = playMode === "examen" || questions.some(q=>q._examPoints != null || q._examTimedOut);
+  if(!isExam){
+    box.classList.add("hide");
+    list.innerHTML = "";
+    return;
+  }
+  list.innerHTML = "";
+  questions.forEach((q,i)=>{
+    const e = examRecapEntry(q, i);
+    const row = document.createElement("article");
+    row.className = `exam-recap-item ${e.cls}`;
+    row.innerHTML = `
+      <div class="num">Q${e.num}</div>
+      <div class="body">
+        <p class="q-text">${e.q.q}</p>
+        <p class="q-meta">${e.q.c}</p>
+        ${e.detail ? `<p class="q-detail">${e.detail}</p>` : ""}
+      </div>
+      <div class="badge">${e.badge}</div>`;
+    list.appendChild(row);
+  });
+  box.classList.remove("hide");
+}
+
+function hideExamRecap(){
+  $("examRecap")?.classList.add("hide");
+  if($("examRecapList")) $("examRecapList").innerHTML = "";
+}
 
 function clearExamTimer(){
   clearInterval(examTimerInterval);
@@ -2313,6 +2406,7 @@ function finish(){
     $("finalBar").style.width = `${Math.min(100, pct)}%`;
     $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/pool.length).toFixed(2)} pts/Q`;
     $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
+    renderExamRecap(pool);
     setExamUI(false);
     examMode = false;
   } else {
@@ -2330,6 +2424,7 @@ function finish(){
     const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
     $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
     $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+    hideExamRecap();
   }
   saveSession();
 }
@@ -2357,6 +2452,7 @@ function home(){
   $("quiz").classList.add("hide");
   $("result").classList.add("hide");
   $("start").classList.remove("hide");
+  hideExamRecap();
   updateModeCards();
 }
 
