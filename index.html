@@ -125,7 +125,19 @@
   .input-answer input[type=text]:focus { outline: none; border-color: var(--accent); }
   .input-answer.correct { border-color: var(--good); background: var(--good-bg); }
   .input-answer.wrong { border-color: var(--bad); background: var(--bad-bg); }
-  .input-answer.locked input { opacity: .85; }
+  .exam-timer-wrap.urgent .exam-timer-bar i { background: var(--bad); }
+  .exam-box {
+    margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+    border: 1px solid var(--gold); background: rgba(212,175,55,.06);
+  }
+  .exam-box h3 { margin: 0 0 6px; font-size: 15px; color: var(--gold); }
+  .exam-box p { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+  .exam-box .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  #examTimerChip.hide, #examScoreChip.hide, #examTimerWrap.hide { display: none !important; }
+  .quiz-main.exam-mode .nav-left button:not(#quitBtn),
+  .quiz-main.exam-mode .nav-right button:not(#quitBtn) { display: none; }
+  .quiz-layout.exam-mode .navgrid { display: none !important; }
+  .quiz-layout.exam-mode ~ .navToggle { display: none !important; }
   .choice.locked { cursor: default; }
 
   .explain {
@@ -332,6 +344,15 @@
       <div style="text-align:center; margin-top:8px;">
         <button class="primary" id="startBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
       </div>
+      <div class="exam-box">
+        <h3>⏱ Mode examen</h3>
+        <p>35 questions QCM · 8 s par question · score : <b>+3</b> (bon + rapidité) · <b>0</b> (non répondu) · <b>−2</b> (faux)<br>
+        Bonne réponse : 60 % fixe + 40 % selon la vitesse (100 % si &lt; 1,5 s, dégressif jusqu'à 8 s).</p>
+        <div class="actions">
+          <button type="button" class="primary" id="startExamBtn">Examen (filtres actuels)</button>
+          <button type="button" id="startExamWrongBtn">Examen sur mes erreurs</button>
+        </div>
+      </div>
       <p id="reviewHint" class="hide" style="color:var(--gold); font-size:13px; text-align:center; margin-top:14px;">
         Questions où tu t'es trompé au moins une fois (tous modes confondus). <b>3 bonnes réponses d'affilée</b> retirent la question de cette liste.
       </p>
@@ -400,10 +421,15 @@
 
   <!-- QUIZ SCREEN -->
   <div id="quiz" class="quiz-layout hide">
-    <div class="panel quiz-main">
+    <div class="panel quiz-main" id="quizMain">
       <div class="topbar">
         <span class="cat-tag" id="qCat">—</span>
-        <span class="chip">Score : <b id="liveScore">0</b></span>
+        <span class="chip" id="scoreChip">Score : <b id="liveScore">0</b></span>
+        <span class="chip hide" id="examScoreChip">Points : <b id="examLiveScore">0</b> / 105</span>
+        <span class="chip hide" id="examTimerChip"><b id="examTimerText">8.0</b> s</span>
+      </div>
+      <div class="exam-timer-wrap hide" id="examTimerWrap">
+        <div class="exam-timer-bar"><i id="examTimerBar"></i></div>
       </div>
       <div class="progress"><i id="bar"></i></div>
       <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
@@ -418,6 +444,7 @@
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
         <div class="nav-right">
+          <button type="button" id="examFromQuizBtn" class="hide">⏱ Examen</button>
           <button id="quitBtn">✕ Quitter</button>
           <button class="primary" id="nextBtn">Suivant →</button>
         </div>
@@ -448,6 +475,7 @@
     <div class="sub" id="finalMsg"></div>
     <div class="controls">
       <button class="primary" id="restartBtn">↻ Recommencer</button>
+      <button type="button" id="examFromResultBtn" class="hide">⏱ Examen sur mes erreurs</button>
       <button id="reviewWrongBtn">Revoir mes erreurs</button>
       <button id="homeBtn">🏠 Accueil</button>
     </div>
@@ -1233,6 +1261,15 @@ const QUESTIONS = [
    =========================================================== */
 const $ = id => document.getElementById(id);
 let pool = [], idx = 0, autoTimer = null;
+let examMode = false;
+let examTimerInterval = null;
+let examTimeoutTimer = null;
+let examQuestionStart = 0;
+const EXAM_SIZE = 35;
+const EXAM_TIME_SEC = 8;
+const EXAM_FAST_SEC = 1.5;
+const EXAM_MAX_PTS = 3;
+const EXAM_WRONG_PTS = -2;
 const SESSION_KEY = "qcm-pilote-cadet-af-v1";
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
@@ -1352,6 +1389,7 @@ function saveSession(){
   if(!pool.length || currentScreen()==="start") return;
   const data = {
     mode: quizMode,
+    examMode,
     cat: $("catSelect").value,
     source: $("sourceSelect").value,
     count: quizMode==="math" ? $("mathCountSelect").value : $("countSelect").value,
@@ -1361,7 +1399,8 @@ function saveSession(){
     pool: pool.map(q=>({
       _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe,
       _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
-      _inputVal:q._inputVal, _inputOk:q._inputOk
+      _inputVal:q._inputVal, _inputOk:q._inputOk,
+      _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
     }))
   };
   try{ localStorage.setItem(SESSION_KEY, JSON.stringify(data)); }catch(_){}
@@ -1392,15 +1431,17 @@ function updateResumeUI(){
   }
   const answered = data.pool.filter(isQuestionAnswered).length;
   const correct = data.pool.filter(isQuestionCorrect).length;
-  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", all:"Tout" };
+  const labels = { cadet:"Cadet AF", bia:"BIA", english:"English", review:"Révision", math:"Problèmes maths", exam:"Examen", all:"Tout" };
+  const modeLabel = data.examMode ? "Examen" : (labels[data.mode]||data.mode);
   const srcTxt = data.source === "bia-all" ? " · Toutes BIA" : (data.source && data.source !== "all" ? ` · ${sourceLabel(data.source)}` : "");
-  $("resumeDesc").textContent = `${labels[data.mode]||data.mode}${srcTxt} · ${answered}/${data.pool.length} répondues · score ${correct}`;
+  $("resumeDesc").textContent = `${modeLabel}${srcTxt} · ${answered}/${data.pool.length} répondues · score ${correct}`;
   box.classList.remove("hide");
 }
 
 function applySessionData(data){
   quizMode = data.mode || "cadet";
-  $("modeSelect").value = quizMode==="math" ? "cadet" : (quizMode || "cadet");
+  examMode = !!data.examMode;
+  $("modeSelect").value = (quizMode==="math" || quizMode==="exam") ? "cadet" : (quizMode || "cadet");
   $("sourceSelect").value = data.source || "all";
   rebuildFilters();
   $("catSelect").value = data.cat || "all";
@@ -1413,9 +1454,13 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
+  setExamUI(examMode);
+  if(examMode){
+    $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">${examTotalScore().toFixed(1)}</b> / ${examMaxScore()}`;
+  }
 }
 
 function restoreSession(){
@@ -1548,6 +1593,7 @@ function rebuildSourceSelect(){
 function rebuildFilters(){
   rebuildSourceSelect();
   rebuildCatSelect();
+  updateExamWrongBtn();
 }
 
 function switchStartTab(tab){
@@ -1605,13 +1651,210 @@ function buildPool(){
   return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null}));
 }
 
+function resetQuestionState(q){
+  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
+}
+
+function isExamActive(){ return examMode; }
+
+function examSpeedFactor(sec){
+  if(sec <= EXAM_FAST_SEC) return 1;
+  if(sec >= EXAM_TIME_SEC) return 0;
+  return (EXAM_TIME_SEC - sec) / (EXAM_TIME_SEC - EXAM_FAST_SEC);
+}
+
+function examPointsForAnswer(correct, timeSec){
+  if(!correct) return EXAM_WRONG_PTS;
+  return EXAM_MAX_PTS * 0.6 + EXAM_MAX_PTS * 0.4 * examSpeedFactor(timeSec);
+}
+
+function examQuestionPoints(q){
+  if(q._examPoints != null) return q._examPoints;
+  return 0;
+}
+
+function examTotalScore(){
+  return pool.reduce((s,q)=>s + examQuestionPoints(q), 0);
+}
+
+function examMaxScore(){ return pool.length * EXAM_MAX_PTS; }
+
+function clearExamTimer(){
+  clearInterval(examTimerInterval);
+  clearTimeout(examTimeoutTimer);
+  examTimerInterval = null;
+  examTimeoutTimer = null;
+}
+
+function pickExamQuestions(candidates, n=EXAM_SIZE){
+  const arr = candidates.filter(q=>!isInputQuestion(q));
+  if(!arr.length) return [];
+  if(arr.length <= n) return shuffle([...arr]).map(resetQuestionState);
+  const byCat = {};
+  arr.forEach(q=>{ (byCat[q.c] ||= []).push(q); });
+  const cats = shuffle([...Object.keys(byCat)]);
+  const picked = [];
+  let left = n;
+  const base = Math.floor(n / cats.length);
+  let extra = n - base * cats.length;
+  cats.forEach(c=>{
+    const take = Math.min(byCat[c].length, base + (extra > 0 ? 1 : 0));
+    if(extra > 0) extra--;
+    shuffle(byCat[c]);
+    picked.push(...byCat[c].slice(0, take));
+    left -= take;
+  });
+  if(picked.length < n){
+    const used = new Set(picked.map(q=>q._bankId));
+    const rest = shuffle(arr.filter(q=>!used.has(q._bankId)));
+    picked.push(...rest.slice(0, n - picked.length));
+  }
+  return shuffle(picked).slice(0, n).map(resetQuestionState);
+}
+
+function examCandidatesFromFilters(){
+  let arr = questionsForMode($("modeSelect").value);
+  arr = filterBySource(arr, $("sourceSelect").value);
+  if($("catSelect").value !== "all") arr = arr.filter(q=>q.c === $("catSelect").value);
+  return arr.filter(q=>!isInputQuestion(q));
+}
+
+function examCandidatesFromWrong(){
+  return reviewQuestions().filter(q=>!isInputQuestion(q));
+}
+
+function buildExamPool(candidates){
+  return pickExamQuestions(candidates, EXAM_SIZE);
+}
+
+function setExamUI(active){
+  examMode = active;
+  if(active) quizMode = "exam";
+  $("quiz").classList.toggle("exam-mode", active);
+  $("quizMain").classList.toggle("exam-mode", active);
+  $("examTimerWrap").classList.toggle("hide", !active);
+  $("examTimerChip").classList.toggle("hide", !active);
+  $("examScoreChip").classList.toggle("hide", !active);
+  $("scoreChip").classList.toggle("hide", active);
+  const inQuiz = !$("quiz").classList.contains("hide");
+  $("examFromQuizBtn").classList.toggle("hide", active || !inQuiz || quizMode === "math");
+  if(!active){
+    $("navToggle").style.display = "";
+    $("navGrid").style.display = "";
+  }
+}
+
+function updateExamWrongBtn(){
+  const n = examCandidatesFromWrong().length;
+  const btn = $("startExamWrongBtn");
+  if(btn){
+    btn.disabled = n < 1;
+    btn.title = n < 1 ? "Aucune erreur QCM à revoir" : "";
+    btn.textContent = n < EXAM_SIZE ? `Examen sur mes erreurs (${n})` : "Examen sur mes erreurs";
+  }
+}
+
+function startExamFromCandidates(candidates){
+  const picked = buildExamPool(candidates);
+  if(!picked.length){
+    alert("Pas assez de questions QCM disponibles pour un examen (hors saisie libre).");
+    return;
+  }
+  clearSession();
+  clearExamTimer();
+  pool = picked;
+  idx = 0;
+  setExamUI(true);
+  $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">0</b> / ${picked.length * EXAM_MAX_PTS}`;
+  $("start").classList.add("hide");
+  $("result").classList.add("hide");
+  $("quiz").classList.remove("hide");
+  buildGrid();
+  render();
+  saveSession();
+}
+
+function startExam(){
+  startExamFromCandidates(examCandidatesFromFilters());
+}
+
+function startExamWrong(){
+  startExamFromCandidates(examCandidatesFromWrong());
+}
+
+function startExamFromTraining(){
+  if(!pool.length){
+    alert("Lance d'abord un entraînement ou configure les filtres à l'accueil.");
+    return;
+  }
+  const base = pool.filter(q=>!isInputQuestion(q));
+  if(!base.length){
+    alert("Ce jeu ne contient pas de QCM classiques (saisie libre exclue de l'examen).");
+    return;
+  }
+  startExamFromCandidates(base);
+}
+
+function startExamTimer(){
+  clearExamTimer();
+  const q = pool[idx];
+  if(!examMode || q._chosen != null) return;
+  examQuestionStart = performance.now();
+  const tick = ()=>{
+    const elapsed = (performance.now() - examQuestionStart) / 1000;
+    const left = Math.max(0, EXAM_TIME_SEC - elapsed);
+    const pct = (left / EXAM_TIME_SEC) * 100;
+    $("examTimerText").textContent = left.toFixed(1);
+    $("examTimerBar").style.width = `${pct}%`;
+    $("examTimerWrap").classList.toggle("urgent", left <= 2);
+    $("examTimerChip").classList.toggle("urgent", left <= 2);
+    if(left <= 0) clearInterval(examTimerInterval);
+  };
+  tick();
+  examTimerInterval = setInterval(tick, 50);
+  examTimeoutTimer = setTimeout(()=>examTimeout(), EXAM_TIME_SEC * 1000 + 20);
+}
+
+function finalizeExamAnswer(q, timeSec){
+  q._examTimeSec = timeSec;
+  if(isQuestionCorrect(q)) q._examPoints = examPointsForAnswer(true, timeSec);
+  else q._examPoints = EXAM_WRONG_PTS;
+  clearExamTimer();
+  const live = $("examLiveScore");
+  if(live) live.textContent = examTotalScore().toFixed(1);
+  saveSession();
+  render();
+  setTimeout(()=>examAdvance(), 400);
+}
+
+function examTimeout(){
+  const q = pool[idx];
+  if(!examMode || q._chosen != null) return;
+  q._examTimedOut = true;
+  q._examTimeSec = EXAM_TIME_SEC;
+  q._examPoints = 0;
+  clearExamTimer();
+  $("examLiveScore").textContent = examTotalScore().toFixed(1);
+  saveSession();
+  examAdvance();
+}
+
+function examAdvance(){
+  if(idx < pool.length - 1){
+    idx++;
+    render();
+  } else {
+    finish();
+  }
+}
+
 function buildMathPool(){
   quizMode = "math";
   let arr = questionsForMode("math").map((q,i)=>({...q,_id:i}));
   if($("mathShuffleChk").checked) shuffle(arr);
   const n = parseInt($("mathCountSelect").value,10);
   if(n>0) arr = arr.slice(0,n);
-  return arr.map(q=>({...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null}));
+  return arr.map(q=>resetQuestionState(q));
 }
 
 const nCorrect = () => pool.filter(isQuestionCorrect).length;
@@ -1619,6 +1862,8 @@ const nAnswered = () => pool.filter(isQuestionAnswered).length;
 
 function start(){
   clearSession();
+  clearExamTimer();
+  setExamUI(false);
   quizMode = $("modeSelect").value;
   pool = buildPool();
   if(!pool.length){
@@ -1637,9 +1882,11 @@ function startMath(){
 
 function launchQuiz(){
   idx=0;
+  if(!examMode) setExamUI(false);
   $("start").classList.add("hide");
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
+  $("examFromQuizBtn").classList.toggle("hide", examMode || quizMode === "math");
   buildGrid();
   render();
   saveSession();
@@ -1656,8 +1903,15 @@ function render(){
   prepare(q);
   const locked = q._chosen!=null;
   $("qCat").textContent = `${q.c} · ${sourceLabel(q._src)}`;
-  $("liveScore").textContent = nCorrect();
-  $("qNum").textContent = `Q${idx+1}/${pool.length}`;
+  if(examMode){
+    $("liveScore").textContent = examTotalScore().toFixed(1);
+    $("qNum").textContent = `Examen · Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${((idx + (locked ? 1 : 0)) / pool.length) * 100}%`;
+  } else {
+    $("liveScore").textContent = nCorrect();
+    $("qNum").textContent = `Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
+  }
   $("qText").textContent = q.q;
   if(q.annexe){
     $("annexeBox").classList.remove("hide");
@@ -1674,10 +1928,10 @@ function render(){
     $("qMedia").classList.add("hide");
     $("qImg").removeAttribute("src");
   }
-  $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
-  $("prevBtn").disabled = (idx===0);
-  $("nextBtn").disabled = (idx===pool.length-1);
+  $("prevBtn").disabled = examMode || (idx===0);
+  $("nextBtn").disabled = examMode || (idx===pool.length-1);
   $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
+  $("examFromQuizBtn").classList.toggle("hide", examMode || quizMode === "math");
 
   const box = $("choices"); box.innerHTML="";
   if(isInputQuestion(q)){
@@ -1725,7 +1979,7 @@ function render(){
     });
   }
 
-  if(locked){
+  if(locked && !examMode){
     let reviewNote = "";
     const m = q._reviewMeta;
     if(m?.added) reviewNote = ` <span style="color:var(--bad)">· Ajoutée à tes erreurs à revoir</span>`;
@@ -1740,16 +1994,23 @@ function render(){
   }
   updateGrid();
   saveSession();
+  if(examMode && !locked) startExamTimer();
 }
 
 function choose(i){
   const q = pool[idx];
   if(q._chosen!=null) return;
   clearTimeout(autoTimer);
+  const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, EXAM_TIME_SEC) : null;
   q._chosen = i;
   const correct = i === q._correctIdx;
   const wasInReview = isInReviewPool(q);
   recordReviewAnswer(q, correct);
+  if(examMode){
+    if(!correct) q._reviewMeta = { added: true };
+    finalizeExamAnswer(q, elapsed);
+    return;
+  }
   if(!correct) q._reviewMeta = { added: true };
   else if(isInReviewPool(q)) q._reviewMeta = { streak: getReviewStreak(q) };
   else if(wasInReview) q._reviewMeta = { mastered: true };
@@ -1802,15 +2063,21 @@ function updateGrid(){
   pool.forEach((q,i)=>{
     const c = cells[i]; if(!c) return;
     c.classList.remove("correct","wrong","current");
-    if(q._chosen!=null) c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
+    if(examMode){
+      if(q._examPoints > 0) c.classList.add("correct");
+      else if(q._examPoints === EXAM_WRONG_PTS) c.classList.add("wrong");
+    } else if(q._chosen!=null) {
+      c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
+    }
     if(i===idx) c.classList.add("current");
   });
-  const stat = `${nAnswered()}/${pool.length}`;
+  const stat = examMode ? `${idx+1}/${pool.length}` : `${nAnswered()}/${pool.length}`;
   $("navStats").textContent = stat;
   $("toggleStat").textContent = stat;
 }
 
 function gotoQ(i){
+  if(examMode) return;
   clearTimeout(autoTimer);
   idx = Math.max(0, Math.min(pool.length-1, i));
   render();
@@ -1818,32 +2085,57 @@ function gotoQ(i){
   saveSession();
 }
 
-function next(){ clearTimeout(autoTimer); if(idx<pool.length-1){ idx++; render(); saveSession(); } }
-function prev(){ clearTimeout(autoTimer); if(idx>0){ idx--; render(); saveSession(); } }
+function next(){ if(examMode) return; clearTimeout(autoTimer); if(idx<pool.length-1){ idx++; render(); saveSession(); } }
+function prev(){ if(examMode) return; clearTimeout(autoTimer); if(idx>0){ idx--; render(); saveSession(); } }
 
-function openNav(){ $("navGrid").classList.add("open"); $("scrim").classList.add("open"); }
+function openNav(){ if(examMode) return; $("navGrid").classList.add("open"); $("scrim").classList.add("open"); }
 function closeNav(){ $("navGrid").classList.remove("open"); $("scrim").classList.remove("open"); }
 
 function finish(){
   clearTimeout(autoTimer);
+  clearExamTimer();
   closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.remove("hide");
-  const correct = nCorrect();
-  const answered = nAnswered();
-  const pct = Math.round((correct/pool.length)*100);
-  $("finalScore").textContent = `${correct} / ${pool.length}`;
-  $("finalBar").style.width = `${pct}%`;
-  let msg;
-  if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
-  else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
-  else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
-  else msg = "📚 Reprends les fiches et recommence.";
-  const reste = pool.length - answered;
-  const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
-  $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
-  $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+  if(examMode){
+    const total = examTotalScore();
+    const max = examMaxScore();
+    const pct = Math.max(0, Math.round((total / max) * 100));
+    const correct = pool.filter(q=>q._examPoints > 0).length;
+    const wrong = pool.filter(q=>q._examPoints === EXAM_WRONG_PTS).length;
+    const skipped = pool.filter(q=>q._examPoints === 0).length;
+    $("finalScore").textContent = `${total.toFixed(1)} / ${max} pts`;
+    $("finalBar").style.width = `${Math.min(100, pct)}%`;
+    $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/pool.length).toFixed(2)} pts/Q`;
+    $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
+    $("examFromResultBtn").classList.remove("hide");
+    setExamUI(false);
+    examMode = false;
+    quizMode = "exam";
+  } else {
+    const correct = nCorrect();
+    const answered = nAnswered();
+    const pct = Math.round((correct/pool.length)*100);
+    $("finalScore").textContent = `${correct} / ${pool.length}`;
+    $("finalBar").style.width = `${pct}%`;
+    let msg;
+    if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+    else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
+    else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
+    else msg = "📚 Reprends les fiches et recommence.";
+    const reste = pool.length - answered;
+    const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
+    $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+    $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
+    $("examFromResultBtn").classList.add("hide");
+  }
   saveSession();
+}
+
+function startExamFromResultWrong(){
+  const wrong = pool.filter(q=>q._examPoints != null && q._examPoints <= 0)
+    .map(q=>bankQuestion(q._bankId));
+  startExamFromCandidates(wrong.length ? wrong : examCandidatesFromWrong());
 }
 
 function reviewWrong(){
@@ -1860,6 +2152,9 @@ function reviewWrong(){
 
 function home(){
   clearTimeout(autoTimer);
+  clearExamTimer();
+  examMode = false;
+  setExamUI(false);
   closeNav();
   closeEditModal();
   saveSession();
@@ -2050,12 +2345,24 @@ function addShortcut(){
 }
 
 $("startBtn").onclick = start;
+$("startExamBtn").onclick = startExam;
+$("startExamWrongBtn").onclick = startExamWrong;
 $("startMathBtn").onclick = startMath;
+$("examFromQuizBtn").onclick = startExamFromTraining;
+$("examFromResultBtn").onclick = startExamFromResultWrong;
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
-$("quitBtn").onclick = home;
+$("quitBtn").onclick = ()=>{
+  if(examMode && !confirm("Abandonner l'examen en cours ?")) return;
+  home();
+};
 $("finishBtn").onclick = finish;
-$("restartBtn").onclick = start;
+$("restartBtn").onclick = ()=>{
+  const wasExam = pool.some(q=>q._examPoints != null);
+  if(wasExam) startExamFromCandidates(pool.map(q=>bankQuestion(q._bankId)));
+  else if(quizMode === "math") startMath();
+  else start();
+};
 $("reviewWrongBtn").onclick = reviewWrong;
 $("homeBtn").onclick = home;
 $("navToggle").onclick = openNav;
@@ -2080,8 +2387,8 @@ document.addEventListener("keydown", e=>{
     const i = parseInt(e.key,10)-1;
     const all = [...document.querySelectorAll(".choice")];
     if(all[i] && pool[idx]._chosen==null) all[i].click();
-  } else if(e.key==="ArrowRight"){ next(); }
-  else if(e.key==="ArrowLeft"){ prev(); }
+  } else if(!examMode && e.key==="ArrowRight"){ next(); }
+  else if(!examMode && e.key==="ArrowLeft"){ prev(); }
 });
 
 initStart();
