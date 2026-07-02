@@ -568,7 +568,9 @@
       <div class="quick-add">
         <h4>Ajouter une question rapidement</h4>
         <div class="grid">
-          <input id="newQCat" type="text" placeholder="Catégorie (ex. Compagnie)" />
+          <select id="newQCat">
+            <option value="">Catégorie</option>
+          </select>
           <textarea id="newQQ" placeholder="Énoncé de la question"></textarea>
           <div class="row">
             <input id="newQA" type="text" placeholder="Réponse A" />
@@ -1751,6 +1753,7 @@ function updateModeCardProgress(mode, data){
 }
 
 function updateModeCards(){
+  rebuildNewQuestionCategories();
   const toutPool = baseQcmPool();
   $("toutMeta").textContent = `${toutPool.length} questions`;
   updateModeCardProgress("tout", peekSession("tout"));
@@ -1773,6 +1776,27 @@ function updateModeCards(){
   updateModeCardProgress("filtres", peekSession("filtres"));
 
   updateMathTab();
+}
+
+function rebuildNewQuestionCategories(){
+  const sel = $("newQCat");
+  if(!sel) return;
+  const prev = sel.value;
+  const cats = [...new Set(activeQuestions({ includeHidden:true }).map(q=>q.c))]
+    .filter(Boolean)
+    .sort((a,b)=>a.localeCompare(b, "fr"));
+  sel.innerHTML = "";
+  cats.forEach(c=>{
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    sel.appendChild(o);
+  });
+  const divers = document.createElement("option");
+  divers.value = "Divers";
+  divers.textContent = "Divers";
+  sel.appendChild(divers);
+  sel.value = [...sel.options].some(o=>o.value===prev) ? prev : (cats[0] || "Divers");
 }
 
 function applySessionData(data){
@@ -2817,7 +2841,7 @@ function addShortcut(){
 }
 
 function addQuestionFromForm(){
-  const c = $("newQCat").value.trim() || "Divers";
+  const c = $("newQCat").value || "Divers";
   const q = $("newQQ").value.trim();
   const o = [
     $("newQA").value.trim(),
@@ -2838,7 +2862,7 @@ function addQuestionFromForm(){
     c, q, o, a, e, src, hidden: false
   }));
   saveUserQuestions(list);
-  $("newQCat").value = "";
+  $("newQCat").selectedIndex = 0;
   $("newQQ").value = "";
   $("newQA").value = "";
   $("newQB").value = "";
