@@ -297,6 +297,28 @@
   .hidden-item .hi-cat { font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; }
   .hidden-item .hi-q { font-size:14px; margin:6px 0 10px; }
   .hidden-item .hi-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .quick-add {
+    margin: 0 0 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #0e1626;
+    border: 1px solid var(--line);
+  }
+  .quick-add h4 { margin: 0 0 10px; font-size: 13px; color: var(--accent2); }
+  .quick-add .grid { display: grid; gap: 8px; }
+  .quick-add .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 620px) { .quick-add .row { grid-template-columns: 1fr; } }
+  .quick-add input, .quick-add textarea, .quick-add select {
+    width: 100%;
+    font: inherit;
+    color: var(--txt);
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .quick-add textarea { min-height: 78px; resize: vertical; }
+  .quick-add small { color: var(--muted); font-size: 12px; }
 
   .modal-scrim {
     position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:80;
@@ -543,6 +565,33 @@
 
     <div id="paneHidden" class="start-pane">
       <p style="color:var(--muted); font-size:14px; margin:0 0 12px;">Questions masquées du QCM. Tu peux les réafficher ou les modifier.</p>
+      <div class="quick-add">
+        <h4>Ajouter une question rapidement</h4>
+        <div class="grid">
+          <input id="newQCat" type="text" placeholder="Catégorie (ex. Compagnie)" />
+          <textarea id="newQQ" placeholder="Énoncé de la question"></textarea>
+          <div class="row">
+            <input id="newQA" type="text" placeholder="Réponse A" />
+            <input id="newQB" type="text" placeholder="Réponse B" />
+          </div>
+          <div class="row">
+            <input id="newQC" type="text" placeholder="Réponse C" />
+            <input id="newQD" type="text" placeholder="Réponse D" />
+          </div>
+          <div class="row">
+            <select id="newQCorrect">
+              <option value="0">Bonne réponse : A</option>
+              <option value="1">Bonne réponse : B</option>
+              <option value="2">Bonne réponse : C</option>
+              <option value="3">Bonne réponse : D</option>
+            </select>
+            <input id="newQSource" type="text" placeholder="Source (optionnel, ex. custom)" />
+          </div>
+          <textarea id="newQExplain" placeholder="Explication (optionnel)"></textarea>
+          <button type="button" class="primary" id="addQuestionBtn">+ Ajouter cette question</button>
+          <small>La question est sauvegardée localement sur ce navigateur.</small>
+        </div>
+      </div>
       <div id="hiddenList" class="hidden-list"></div>
       <p id="hiddenEmpty" class="hide" style="text-align:center; color:var(--muted); padding:24px 0;">Aucune question cachée.</p>
     </div>
@@ -1415,6 +1464,7 @@ const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
 const SHORTCUTS_KEY = "qcm-pilote-cadet-af-shortcuts-v1";
+const USER_QUESTIONS_KEY = "qcm-pilote-cadet-af-user-questions-v1";
 const REVIEW_MASTER_STREAK = 3;
 let editingBankId = null;
 
@@ -1430,6 +1480,44 @@ function saveEdits(data){ saveJson(EDITS_KEY, data); }
 function loadHiddenMap(){ return loadJson(HIDDEN_KEY, {}); }
 function saveHiddenMap(data){ saveJson(HIDDEN_KEY, data); }
 function isHiddenId(id){ return !!loadHiddenMap()[id]; }
+
+function makeUserUid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function normalizeUserQuestion(q){
+  const uid = q?.uid || makeUserUid();
+  return {
+    uid,
+    c: (q?.c || "Divers").trim() || "Divers",
+    q: String(q?.q || "").trim(),
+    o: Array.isArray(q?.o) ? q.o.slice(0,4).map(v=>String(v || "").trim()) : ["","","",""],
+    a: Number.isInteger(q?.a) ? q.a : parseInt(q?.a ?? "0", 10) || 0,
+    e: String(q?.e || "").trim(),
+    annexe: String(q?.annexe || "").trim(),
+    img: String(q?.img || "").trim(),
+    src: String(q?.src || "custom").trim() || "custom",
+    hidden: !!q?.hidden
+  };
+}
+
+function loadUserQuestions(){
+  const raw = loadJson(USER_QUESTIONS_KEY, []);
+  if(!Array.isArray(raw)) return [];
+  let changed = false;
+  const list = raw.map(q=>{
+    const n = normalizeUserQuestion(q);
+    if(n.uid !== q?.uid) changed = true;
+    return n;
+  }).filter(q=>q.q && q.o.every(Boolean));
+  if(changed) saveJson(USER_QUESTIONS_KEY, list);
+  return list;
+}
+function saveUserQuestions(list){ saveJson(USER_QUESTIONS_KEY, list.map(normalizeUserQuestion)); }
+
+function findUserQuestion(uid){
+  return loadUserQuestions().find(q=>q.uid === uid) || null;
+}
 
 function mergeQuestion(q, i){
   const id = String(i);
@@ -1452,10 +1540,12 @@ const SOURCE_CATALOG = [
   { id: "bia-2026", label: "BIA 2026" },
   { id: "english", label: "English AF Cadets 2022" },
   { id: "psychotechnique", label: "Problèmes mathématiques" },
+  { id: "custom", label: "Questions ajoutées" },
 ];
 
 function inferQuestionSource(q){
   if(q.src) return q.src;
+  if(String(q._bankId || "").startsWith("u:")) return "custom";
   if(q.c === "Problèmes mathématiques") return "psychotechnique";
   if(q.c === "English") return "english";
   if(q.c?.startsWith("BIA")){
@@ -1479,12 +1569,35 @@ function filterBySource(arr, src){
   return arr.filter(q=>q._src === src);
 }
 
-function bankQuestion(id){ return mergeQuestion(QUESTIONS[Number(id)], Number(id)); }
+function bankQuestion(id){
+  const sid = String(id);
+  if(sid.startsWith("u:")){
+    const uid = sid.slice(2);
+    const q = findUserQuestion(uid);
+    if(!q) return null;
+    return {
+      ...q,
+      _bankId: sid,
+      _hidden: !!q.hidden || isHiddenId(sid),
+      _src: q.src || inferQuestionSource(q)
+    };
+  }
+  return mergeQuestion(QUESTIONS[Number(sid)], Number(sid));
+}
 
 function activeQuestions(opts={}){
   const { includeHidden=false, onlyHidden=false } = opts;
-  return QUESTIONS.map((q,i)=>{
+  const base = QUESTIONS.map((q,i)=>{
     const m = mergeQuestion(q, i);
+    return m;
+  });
+  const user = loadUserQuestions().map(q=>{
+    const id = `u:${q.uid}`;
+    const m = { ...q, _bankId:id, _hidden: !!q.hidden || isHiddenId(id) };
+    m._src = m.src || inferQuestionSource(m);
+    return m;
+  });
+  return [...base, ...user].map(m=>{
     if(onlyHidden) return m._hidden ? m : null;
     if(m._hidden && !includeHidden) return null;
     return m;
@@ -2520,6 +2633,31 @@ function saveQuestionEdit(){
     hidden: $("editHide").checked
   };
   if(!patch.q || patch.o.some(o=>!o)){ alert("Remplis l'énoncé et les 4 réponses."); return; }
+  if(String(id).startsWith("u:")){
+    const uid = String(id).slice(2);
+    const list = loadUserQuestions();
+    const at = list.findIndex(q=>q.uid === uid);
+    if(at < 0){ alert("Question personnalisée introuvable."); return; }
+    list[at] = normalizeUserQuestion({ ...list[at], ...patch, hidden: patch.hidden });
+    saveUserQuestions(list);
+    const hidden = loadHiddenMap();
+    if(patch.hidden) hidden[id] = true; else delete hidden[id];
+    saveHiddenMap(hidden);
+    const refreshed = bankQuestion(id);
+    pool = pool.map(q=>q._bankId===id ? { ...refreshed, _order:null, _correctIdx:0, _chosen:q._chosen } : q);
+    if(refreshed?._hidden && currentScreen()==="quiz"){
+      pool = pool.filter(q=>q._bankId!==id);
+      if(!pool.length){ home(); clearSession(); }
+      else idx = Math.min(idx, pool.length-1);
+      buildGrid();
+    }
+    closeEditModal();
+    updateModeCards();
+    renderHiddenTab();
+    if(currentScreen()==="quiz") render();
+    saveSession();
+    return;
+  }
   const edits = loadEdits();
   const prev = edits[id] || {};
   edits[id] = {
@@ -2554,6 +2692,10 @@ function saveQuestionEdit(){
 function resetQuestionEdit(){
   if(editingBankId == null) return;
   const id = editingBankId;
+  if(String(id).startsWith("u:")){
+    openEditModal(id);
+    return;
+  }
   const edits = loadEdits();
   delete edits[id];
   saveEdits(edits);
@@ -2566,6 +2708,15 @@ function resetQuestionEdit(){
 }
 
 function unhideQuestion(id){
+  if(String(id).startsWith("u:")){
+    const uid = String(id).slice(2);
+    const list = loadUserQuestions();
+    const at = list.findIndex(q=>q.uid === uid);
+    if(at >= 0){
+      list[at].hidden = false;
+      saveUserQuestions(list);
+    }
+  }
   const edits = loadEdits();
   if(edits[id]){ edits[id].hidden = false; saveEdits(edits); }
   const hidden = loadHiddenMap();
@@ -2573,6 +2724,28 @@ function unhideQuestion(id){
   saveHiddenMap(hidden);
   updateModeCards();
   renderHiddenTab();
+}
+
+function deleteUserQuestion(id){
+  const uid = String(id).slice(2);
+  const list = loadUserQuestions();
+  const next = list.filter(q=>q.uid !== uid);
+  if(next.length === list.length) return;
+  saveUserQuestions(next);
+  const review = loadReviewData();
+  delete review[`id:u:${uid}`];
+  saveReviewData(review);
+  const hidden = loadHiddenMap();
+  delete hidden[`u:${uid}`];
+  saveHiddenMap(hidden);
+  pool = pool.filter(q=>q._bankId !== `u:${uid}`);
+  if(idx >= pool.length) idx = Math.max(0, pool.length - 1);
+  updateModeCards();
+  renderHiddenTab();
+  if(currentScreen()==="quiz"){
+    if(!pool.length) home();
+    else { buildGrid(); render(); }
+  }
 }
 
 function renderHiddenTab(){
@@ -2593,6 +2766,14 @@ function renderHiddenTab(){
     btnEdit.textContent = "Modifier";
     btnEdit.onclick = ()=>openEditModal(q._bankId);
     actions.append(btnShow, btnEdit);
+    if(String(q._bankId).startsWith("u:")){
+      const btnDel = document.createElement("button");
+      btnDel.textContent = "Supprimer";
+      btnDel.onclick = ()=>{
+        if(confirm("Supprimer cette question personnalisée ?")) deleteUserQuestion(q._bankId);
+      };
+      actions.appendChild(btnDel);
+    }
     box.appendChild(div);
   });
 }
@@ -2635,6 +2816,42 @@ function addShortcut(){
   renderShortcuts();
 }
 
+function addQuestionFromForm(){
+  const c = $("newQCat").value.trim() || "Divers";
+  const q = $("newQQ").value.trim();
+  const o = [
+    $("newQA").value.trim(),
+    $("newQB").value.trim(),
+    $("newQC").value.trim(),
+    $("newQD").value.trim()
+  ];
+  const a = parseInt($("newQCorrect").value, 10) || 0;
+  const e = $("newQExplain").value.trim();
+  const src = $("newQSource").value.trim() || "custom";
+  if(!q || o.some(v=>!v)){
+    alert("Renseigne l'énoncé et les 4 réponses.");
+    return;
+  }
+  const list = loadUserQuestions();
+  list.push(normalizeUserQuestion({
+    uid: makeUserUid(),
+    c, q, o, a, e, src, hidden: false
+  }));
+  saveUserQuestions(list);
+  $("newQCat").value = "";
+  $("newQQ").value = "";
+  $("newQA").value = "";
+  $("newQB").value = "";
+  $("newQC").value = "";
+  $("newQD").value = "";
+  $("newQCorrect").value = "0";
+  $("newQSource").value = "";
+  $("newQExplain").value = "";
+  updateModeCards();
+  renderHiddenTab();
+  alert("Question ajoutée. Elle est disponible dans les modes QCM.");
+}
+
 $("startMathBtn").onclick = startMath;
 $("resumeMathBtn").onclick = ()=>startPlay("math", { resume:true });
 $("nextBtn").onclick = next;
@@ -2657,6 +2874,7 @@ $("editCancelBtn").onclick = closeEditModal;
 $("editResetBtn").onclick = resetQuestionEdit;
 $("editModal").onclick = e=>{ if(e.target===$("editModal")) closeEditModal(); };
 $("addShortcutBtn").onclick = addShortcut;
+$("addQuestionBtn").onclick = addQuestionFromForm;
 document.querySelectorAll(".tab-btn").forEach(b=>b.onclick = ()=>switchStartTab(b.dataset.tab));
 
 document.addEventListener("keydown", e=>{
