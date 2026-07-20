@@ -450,25 +450,6 @@
           </div>
         </article>
 
-        <article class="mode-card" id="modeCardOuvert">
-          <div class="mode-card-head">
-            <div class="mode-icon">✏️</div>
-            <div>
-              <h3>Questions ouvertes</h3>
-              <p class="mode-desc">Saisie libre : tu tapes la réponse, même si la question était un QCM.</p>
-            </div>
-          </div>
-          <div class="mode-meta"><span id="ouvertMeta">—</span></div>
-          <div class="mode-progress hide" id="ouvertProgress">
-            <small id="ouvertProgressLabel">—</small>
-            <div class="progress"><i id="ouvertProgressBar"></i></div>
-          </div>
-          <div class="mode-actions">
-            <button type="button" class="mode-resume hide" data-mode="ouvert">Reprendre</button>
-            <button type="button" class="primary mode-start" data-mode="ouvert">Commencer</button>
-          </div>
-        </article>
-
         <article class="mode-card" id="modeCardFiltres">
           <div class="mode-card-head">
             <div class="mode-icon">⚙️</div>
@@ -554,6 +535,10 @@
         Problèmes de logique, proportionnalité, vitesses, pourcentages et calcul mental — avec explications détaillées après chaque réponse.
       </p>
       <div class="controls">
+        <select id="mathFormatSelect">
+          <option value="qcm">Choix multiples</option>
+          <option value="ouvert">Questions ouvertes</option>
+        </select>
         <select id="mathSourceSelect">
           <option value="all">Toutes les sources</option>
           <option value="pilotest">Pilotest</option>
@@ -573,7 +558,8 @@
       </div>
       <p id="mathResumeHint" class="hide" style="color:var(--muted); font-size:13px; text-align:center; margin-top:10px;"></p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
-        Astuce : saisie libre ou touches <kbd>1</kbd>–<kbd>5</kbd> (QCM), <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
+        En <b>questions ouvertes</b>, tu tapes la réponse même si c’était un QCM.
+        Sinon : touches <kbd>1</kbd>–<kbd>5</kbd>, <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
     </div>
 
@@ -1476,9 +1462,9 @@ const EXAM_WRONG_PTS = -2;
 const SESSION_KEY_LEGACY = "qcm-pilote-cadet-af-v1";
 const SESSION_KEY_PREFIX = "qcm-pilote-cadet-af-session-";
 const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
-const PLAY_MODES = ["tout", "examen", "erreurs", "ouvert", "filtres", "math"];
-const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", ouvert:"Questions ouvertes", filtres:"Filtres", math:"Maths" };
-const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", ouvert:"modeCardOuvert", filtres:"modeCardFiltres" };
+const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math"];
+const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths" };
+const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
@@ -1719,7 +1705,7 @@ function saveSession(){
     idx,
     screen: currentScreen(),
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
-    mathPrefs: playMode === "math" ? { source:$("mathSourceSelect").value, count:$("mathCountSelect").value, shuffle:$("mathShuffleChk").checked } : undefined,
+    mathPrefs: playMode === "math" ? { format:$("mathFormatSelect").value, source:$("mathSourceSelect").value, count:$("mathCountSelect").value, shuffle:$("mathShuffleChk").checked } : undefined,
     pool: poolSnapshot()
   };
   try{ localStorage.setItem(sessionKey(playMode), JSON.stringify(data)); }catch(_){}
@@ -1786,9 +1772,6 @@ function updateModeCards(){
   $("erreursMeta").textContent = erreurs.length ? `${erreurs.length} à revoir` : "—";
   updateModeCardProgress("erreurs", peekSession("erreurs"));
 
-  $("ouvertMeta").textContent = `${toutPool.length} questions`;
-  updateModeCardProgress("ouvert", peekSession("ouvert"));
-
   rebuildFiltresSelects();
   const filtresN = buildFiltresPool({ fresh:false }).length;
   $("filtresMeta").textContent = filtresN ? `${filtresN} questions` : "Aucune question";
@@ -1830,6 +1813,7 @@ function applySessionData(data){
     rebuildFiltresSelects();
   }
   if(data.mathPrefs){
+    $("mathFormatSelect").value = data.mathPrefs.format || "qcm";
     $("mathSourceSelect").value = data.mathPrefs.source || "all";
     $("mathCountSelect").value = data.mathPrefs.count ?? "0";
     $("mathShuffleChk").checked = data.mathPrefs.shuffle !== false;
@@ -1949,7 +1933,6 @@ function toOpenQuestion(q){
   if(isInputQuestion(q)) return resetQuestionState({ ...q });
   const correct = (q.o && q.o[q.a] != null) ? String(q.o[q.a]) : "";
   const variants = [correct];
-  // Accepte aussi la valeur numérique / le début de la réponse si c'est une option longue
   const num = correct.match(/-?\d+(?:[.,]\d+)?/);
   if(num) variants.push(num[0], num[0].replace(",", "."));
   return resetQuestionState({
@@ -1960,8 +1943,8 @@ function toOpenQuestion(q){
   });
 }
 
-function buildOuvertPool(){
-  return shuffle([...baseQcmPool()]).map(toOpenQuestion);
+function isMathOpenFormat(){
+  return $("mathFormatSelect")?.value === "ouvert";
 }
 
 function erreursPool(){
@@ -1993,6 +1976,7 @@ function initStart(){
   $("filtreCat").onchange = updateModeCards;
   $("filtreCount").onchange = updateModeCards;
   $("filtreShuffle").onchange = updateModeCards;
+  $("mathFormatSelect").onchange = updateMathTab;
   $("mathSourceSelect").onchange = updateMathTab;
   document.querySelectorAll(".mode-start").forEach(btn=>{
     btn.onclick = ()=>startPlay(btn.dataset.mode, { resume:false });
@@ -2315,11 +2299,14 @@ function examAdvance(){
 }
 
 function buildMathPool(){
-  let arr = filterMathBySource(questionsForMode("math"), $("mathSourceSelect").value).map((q,i)=>({...q,_id:i}));
+  let arr = filterMathBySource(questionsForMode("math"), $("mathSourceSelect").value);
+  if(isMathOpenFormat()) arr = arr.map(toOpenQuestion);
+  else arr = arr.map(resetQuestionState);
+  arr = arr.map((q,i)=>({...q,_id:i}));
   if($("mathShuffleChk").checked) shuffle(arr);
   const n = parseInt($("mathCountSelect").value,10);
   if(n>0) arr = arr.slice(0,n);
-  return arr.map(q=>resetQuestionState(q));
+  return arr;
 }
 
 const nCorrect = () => pool.filter(isQuestionCorrect).length;
@@ -2351,8 +2338,6 @@ function startPlay(mode, opts={}){
     pool = buildMathPool();
   } else if(mode === "tout"){
     pool = shuffle([...baseQcmPool()]).map(resetQuestionState);
-  } else if(mode === "ouvert"){
-    pool = buildOuvertPool();
   } else if(mode === "erreurs"){
     pool = erreursPool().map(resetQuestionState);
     if(!pool.length){
@@ -2395,7 +2380,7 @@ function render(){
   const q = pool[idx];
   prepare(q);
   const locked = q._chosen!=null;
-  $("qCat").textContent = playMode === "ouvert"
+  $("qCat").textContent = (playMode === "math" && isInputQuestion(q))
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
   if(examMode){
