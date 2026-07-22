@@ -179,6 +179,8 @@
   }
   .explain.show { display:block; }
   .explain b { color: var(--accent2); }
+  .explain-actions { margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap; }
+  .explain-actions button { padding:7px 12px; font-size:13px; }
 
   .nav { display:flex; justify-content: space-between; align-items:center; margin-top: 18px; gap: 10px; flex-wrap: wrap; }
   .nav .nav-left, .nav .nav-right { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -681,18 +683,24 @@
       <label for="editQ">Énoncé</label>
       <textarea id="editQ"></textarea>
     </div>
-    <div class="form-field">
+    <div class="form-field" id="editOptionsBlock">
       <label>Réponses (coche la bonne)</label>
       <div class="opt-list">
         <div class="opt-row"><input type="radio" name="editA" value="0" id="editA0"><span class="opt-key">A</span><input type="text" id="editO0" placeholder="Réponse A"></div>
         <div class="opt-row"><input type="radio" name="editA" value="1" id="editA1"><span class="opt-key">B</span><input type="text" id="editO1" placeholder="Réponse B"></div>
         <div class="opt-row"><input type="radio" name="editA" value="2" id="editA2"><span class="opt-key">C</span><input type="text" id="editO2" placeholder="Réponse C"></div>
         <div class="opt-row"><input type="radio" name="editA" value="3" id="editA3"><span class="opt-key">D</span><input type="text" id="editO3" placeholder="Réponse D"></div>
+        <div class="opt-row hide" id="editO4Row"><input type="radio" name="editA" value="4" id="editA4"><span class="opt-key">E</span><input type="text" id="editO4" placeholder="Réponse E"></div>
       </div>
     </div>
+    <div class="form-field hide" id="editAnsBlock">
+      <label for="editAns">Réponse(s) attendue(s) — séparées par |</label>
+      <input type="text" id="editAns" placeholder="ex. 625 | 625 ouvriers">
+    </div>
     <div class="form-field">
-      <label for="editE">Explication</label>
-      <textarea id="editE"></textarea>
+      <label for="editE">Explication / notes personnelles</label>
+      <textarea id="editE" placeholder="Explication + tes notes de révision…"></textarea>
+      <small style="color:var(--muted); font-size:12px;">Sauvegardé localement sur ce navigateur.</small>
     </div>
     <div class="form-field">
       <label for="editAnnexe">Annexe (texte complémentaire affiché sous la question)</label>
@@ -1563,6 +1571,8 @@ function mergeQuestion(q, i){
   const merged = { ...q, _bankId: id, ...edits };
   if("img" in edits){ if(edits.img) merged.img = edits.img; else delete merged.img; }
   if("annexe" in edits){ if(edits.annexe) merged.annexe = edits.annexe; else delete merged.annexe; }
+  if("ans" in edits && edits.ans != null) merged.ans = edits.ans;
+  if(edits.t) merged.t = edits.t;
   if(edits.hidden != null) merged._hidden = !!edits.hidden;
   else merged._hidden = isHiddenId(id);
   merged._src = merged.src || inferQuestionSource(merged);
@@ -2500,8 +2510,10 @@ function render(){
     else if(m?.mastered) reviewNote = ` <span style="color:var(--good)">· Question maîtrisée ✓</span>`;
     else if(m?.streak != null) reviewNote = ` <span style="color:var(--gold)">· Maîtrise ${m.streak}/${REVIEW_MASTER_STREAK}</span>`;
     const wrongNote = isInputQuestion(q) && !q._inputOk ? ` <span style="color:var(--bad)">(ta réponse : ${q._inputVal || "—"})</span>` : "";
-    $("explain").innerHTML = `<b>${correctAnswerLabel(q)}</b> — ${q.e}${wrongNote}${reviewNote}`;
+    $("explain").innerHTML = `<b>${correctAnswerLabel(q)}</b> — ${q.e || ""}${wrongNote}${reviewNote}`
+      + `<div class="explain-actions"><button type="button" id="editExplainBtn">✎ Modifier l'explication / notes</button></div>`;
     $("explain").classList.add("show");
+    $("editExplainBtn").onclick = openEditCurrent;
   } else {
     $("explain").classList.remove("show");
     $("explain").innerHTML="";
@@ -2676,14 +2688,32 @@ function home(){
 function openEditModal(bankId){
   editingBankId = bankId;
   const q = bankQuestion(bankId);
-  $("editQ").value = q.q;
-  q.o.forEach((opt,i)=>{ $(`editO${i}`).value = opt; });
-  document.querySelector(`input[name="editA"][value="${q.a}"]`).checked = true;
+  if(!q){ alert("Question introuvable."); return; }
+  $("editModalTitle").textContent = isMathQuestion(q) ? "Modifier / notes (maths)" : "Modifier la question";
+  $("editQ").value = q.q || "";
   $("editE").value = q.e || "";
   $("editAnnexe").value = q.annexe || "";
   $("editImg").value = q.img || "";
   $("editHide").checked = !!q._hidden;
+
+  const inputMode = isInputQuestion(q);
+  $("editOptionsBlock").classList.toggle("hide", inputMode);
+  $("editAnsBlock").classList.toggle("hide", !inputMode);
+
+  if(inputMode){
+    $("editAns").value = acceptedAnswers(q).join(" | ");
+  } else {
+    const opts = q.o || [];
+    [0,1,2,3].forEach(i=>{ $(`editO${i}`).value = opts[i] || ""; });
+    const hasE = opts.length > 4;
+    $("editO4Row").classList.toggle("hide", !hasE);
+    $("editO4").value = opts[4] || "";
+    const a = Math.max(0, Math.min(opts.length - 1, q.a ?? 0));
+    const radio = document.querySelector(`input[name="editA"][value="${a}"]`);
+    if(radio) radio.checked = true;
+  }
   $("editModal").classList.add("open");
+  setTimeout(()=>$("editE").focus(), 0);
 }
 
 function openEditCurrent(){ if(pool[idx]?._bankId != null) openEditModal(pool[idx]._bankId); }
@@ -2691,6 +2721,120 @@ function openEditCurrent(){ if(pool[idx]?._bankId != null) openEditModal(pool[id
 function closeEditModal(){
   editingBankId = null;
   $("editModal").classList.remove("open");
+}
+
+function applyEditToPool(id, refreshed){
+  pool = pool.map(q=>{
+    if(q._bankId !== id) return q;
+    return {
+      ...refreshed,
+      _order: null,
+      _correctIdx: 0,
+      _chosen: q._chosen,
+      _inputVal: q._inputVal,
+      _inputOk: q._inputOk,
+      _examPoints: q._examPoints,
+      _examTimeSec: q._examTimeSec,
+      _examTimedOut: q._examTimedOut,
+      _openFromQcm: q._openFromQcm,
+      // En mode ouvert maths, conserve la forme saisie libre
+      ...(q._openFromQcm || (playMode === "math" && isMathOpenFormat())
+        ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
+        : {})
+    };
+  });
+}
+
+function saveQuestionEdit(){
+  if(editingBankId == null) return;
+  const id = editingBankId;
+  const base = bankQuestion(id);
+  if(!base){ alert("Question introuvable."); return; }
+  const inputMode = isInputQuestion(base);
+  const qText = $("editQ").value.trim();
+  const e = $("editE").value.trim();
+  const annexe = $("editAnnexe").value.trim();
+  const img = $("editImg").value.trim();
+  const hidden = $("editHide").checked;
+
+  if(!qText){ alert("Remplis l'énoncé."); return; }
+
+  let patch;
+  if(inputMode){
+    const ans = $("editAns").value.split("|").map(s=>s.trim()).filter(Boolean);
+    if(!ans.length){ alert("Indique au moins une réponse attendue."); return; }
+    patch = { q: qText, e, annexe, img, hidden, t: "input", ans, o: undefined, a: undefined };
+  } else {
+    const hasE = !$("editO4Row").classList.contains("hide");
+    const o = [0,1,2,3].map(i=>$(`editO${i}`).value.trim());
+    if(hasE) o.push($("editO4").value.trim());
+    const a = parseInt(document.querySelector('input[name="editA"]:checked')?.value ?? "0", 10);
+    if(o.some(x=>!x)){ alert(hasE ? "Remplis les 5 réponses." : "Remplis les 4 réponses."); return; }
+    patch = { q: qText, o, a, e, annexe, img, hidden };
+  }
+
+  if(String(id).startsWith("u:")){
+    const uid = String(id).slice(2);
+    const list = loadUserQuestions();
+    const at = list.findIndex(q=>q.uid === uid);
+    if(at < 0){ alert("Question personnalisée introuvable."); return; }
+    const next = { ...list[at], q: patch.q, e: patch.e, annexe: patch.annexe, img: patch.img, hidden: patch.hidden };
+    if(inputMode){ next.ans = patch.ans; delete next.o; delete next.a; }
+    else { next.o = patch.o; next.a = patch.a; delete next.ans; }
+    list[at] = normalizeUserQuestion(next);
+    saveUserQuestions(list);
+    const hiddenMap = loadHiddenMap();
+    if(hidden) hiddenMap[id] = true; else delete hiddenMap[id];
+    saveHiddenMap(hiddenMap);
+    const refreshed = bankQuestion(id);
+    applyEditToPool(id, refreshed);
+    if(refreshed?._hidden && currentScreen()==="quiz"){
+      pool = pool.filter(q=>q._bankId!==id);
+      if(!pool.length){ home(); clearSession(playMode); }
+      else idx = Math.min(idx, pool.length-1);
+      buildGrid();
+    }
+    closeEditModal();
+    updateModeCards();
+    renderHiddenTab();
+    if(currentScreen()==="quiz") render();
+    saveSession();
+    return;
+  }
+
+  const edits = loadEdits();
+  const prev = edits[id] || {};
+  edits[id] = { ...prev, q: patch.q, e: patch.e, hidden: patch.hidden };
+  if(inputMode){
+    edits[id].ans = patch.ans;
+    edits[id].t = "input";
+    delete edits[id].o;
+    delete edits[id].a;
+  } else {
+    edits[id].o = patch.o;
+    edits[id].a = patch.a;
+  }
+  if(annexe) edits[id].annexe = annexe; else delete edits[id].annexe;
+  if(img) edits[id].img = img; else edits[id].img = "";
+  saveEdits(edits);
+
+  const hiddenMap = loadHiddenMap();
+  if(hidden) hiddenMap[id] = true; else delete hiddenMap[id];
+  saveHiddenMap(hiddenMap);
+
+  const refreshed = bankQuestion(id);
+  applyEditToPool(id, refreshed);
+  if(refreshed._hidden && currentScreen()==="quiz"){
+    pool = pool.filter(q=>q._bankId!==id);
+    if(!pool.length){ home(); clearSession(playMode); }
+    else idx = Math.min(idx, pool.length-1);
+    buildGrid();
+  }
+  closeEditModal();
+  updateModeCards();
+  renderHiddenTab();
+  if(currentScreen()==="quiz") render();
+  saveSession();
 }
 
 function buildChatGPTPrompt(q){
@@ -2720,76 +2864,6 @@ function askChatGPT(){
   const prompt = buildChatGPTPrompt(pool[idx]);
   const url = "https://chatgpt.com/?q=" + encodeURIComponent(prompt);
   window.open(url, "_blank", "noopener,noreferrer");
-}
-
-function saveQuestionEdit(){
-  if(editingBankId == null) return;
-  const id = editingBankId;
-  const a = parseInt(document.querySelector('input[name="editA"]:checked')?.value ?? "0", 10);
-  const patch = {
-    q: $("editQ").value.trim(),
-    o: [0,1,2,3].map(i=>$(`editO${i}`).value.trim()),
-    a,
-    e: $("editE").value.trim(),
-    annexe: $("editAnnexe").value.trim(),
-    img: $("editImg").value.trim(),
-    hidden: $("editHide").checked
-  };
-  if(!patch.q || patch.o.some(o=>!o)){ alert("Remplis l'énoncé et les 4 réponses."); return; }
-  if(String(id).startsWith("u:")){
-    const uid = String(id).slice(2);
-    const list = loadUserQuestions();
-    const at = list.findIndex(q=>q.uid === uid);
-    if(at < 0){ alert("Question personnalisée introuvable."); return; }
-    list[at] = normalizeUserQuestion({ ...list[at], ...patch, hidden: patch.hidden });
-    saveUserQuestions(list);
-    const hidden = loadHiddenMap();
-    if(patch.hidden) hidden[id] = true; else delete hidden[id];
-    saveHiddenMap(hidden);
-    const refreshed = bankQuestion(id);
-    pool = pool.map(q=>q._bankId===id ? { ...refreshed, _order:null, _correctIdx:0, _chosen:q._chosen } : q);
-    if(refreshed?._hidden && currentScreen()==="quiz"){
-      pool = pool.filter(q=>q._bankId!==id);
-      if(!pool.length){ home(); clearSession(); }
-      else idx = Math.min(idx, pool.length-1);
-      buildGrid();
-    }
-    closeEditModal();
-    updateModeCards();
-    renderHiddenTab();
-    if(currentScreen()==="quiz") render();
-    saveSession();
-    return;
-  }
-  const edits = loadEdits();
-  const prev = edits[id] || {};
-  edits[id] = {
-    ...prev,
-    q: patch.q,
-    o: patch.o,
-    a: patch.a,
-    e: patch.e,
-    hidden: patch.hidden
-  };
-  if(patch.annexe) edits[id].annexe = patch.annexe; else delete edits[id].annexe;
-  if(patch.img) edits[id].img = patch.img; else edits[id].img = "";
-  saveEdits(edits);
-  const hidden = loadHiddenMap();
-  if(patch.hidden) hidden[id] = true; else delete hidden[id];
-  saveHiddenMap(hidden);
-  const refreshed = bankQuestion(id);
-  pool = pool.map(q=>q._bankId===id ? { ...refreshed, _order:null, _correctIdx:0, _chosen:q._chosen } : q);
-  if(refreshed._hidden && currentScreen()==="quiz"){
-    pool = pool.filter(q=>q._bankId!==id);
-    if(!pool.length){ home(); clearSession(); }
-    else idx = Math.min(idx, pool.length-1);
-    buildGrid();
-  }
-  closeEditModal();
-  updateModeCards();
-  renderHiddenTab();
-  if(currentScreen()==="quiz") render();
-  saveSession();
 }
 
 function resetQuestionEdit(){
