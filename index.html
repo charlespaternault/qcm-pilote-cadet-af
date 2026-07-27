@@ -321,6 +321,28 @@
   }
   .quick-add textarea { min-height: 78px; resize: vertical; }
   .quick-add small { color: var(--muted); font-size: 12px; }
+  .sync-box {
+    background:#0e1626; border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin-bottom:14px;
+  }
+  .sync-box h3 { margin:0 0 8px; font-size:16px; }
+  .sync-box p { margin:0 0 12px; font-size:13px; color:var(--muted); line-height:1.5; }
+  .sync-box .sync-status {
+    font-size:13px; margin:10px 0 12px; padding:10px 12px; border-radius:10px;
+    background:var(--card2); border:1px solid var(--line); color:var(--muted);
+  }
+  .sync-box .sync-status.ok { border-color:#1f5c44; color:var(--good); }
+  .sync-box .sync-status.err { border-color:#6b2830; color:var(--bad); }
+  .sync-box .sync-status.warn { border-color:var(--gold); color:var(--gold); }
+  .sync-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .sync-box input[type=password], .sync-box input[type=text] {
+    width:100%; font:inherit; color:var(--txt); background:var(--card2);
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  }
+  .sync-box label { display:block; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:5px; }
+  .sync-box a { color:var(--accent2); }
+  .sync-box details { margin-top:12px; font-size:13px; color:var(--muted); }
+  .sync-box details summary { cursor:pointer; color:var(--accent2); font-weight:600; }
 
   .modal-scrim {
     position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:80;
@@ -386,6 +408,7 @@
       <button type="button" class="tab-btn" data-tab="airways">Airways PLAY!</button>
       <button type="button" class="tab-btn" data-tab="shortcuts">Raccourcis web</button>
       <button type="button" class="tab-btn" data-tab="hidden">Questions cachées <b id="hiddenTabCount"></b></button>
+      <button type="button" class="tab-btn" data-tab="sync">Sync</button>
     </div>
 
     <div id="paneQuiz" class="start-pane active">
@@ -608,6 +631,40 @@
       </div>
       <div id="hiddenList" class="hidden-list"></div>
       <p id="hiddenEmpty" class="hide" style="text-align:center; color:var(--muted); padding:24px 0;">Aucune question cachée.</p>
+    </div>
+
+    <div id="paneSync" class="start-pane">
+      <div class="sync-box">
+        <h3>Synchronisation multi-appareils</h3>
+        <p>
+          Tes notes, questions ajoutées, erreurs et progressions sont synchronisées via un
+          <b>Gist GitHub privé</b>. Au premier branchement, les données de cet appareil (ex. Safari)
+          sont envoyées dans le cloud sans être effacées.
+        </p>
+        <label for="syncPat">Token GitHub (PAT) — permission <code>gist</code></label>
+        <input type="password" id="syncPat" placeholder="ghp_…" autocomplete="off" />
+        <div class="sync-actions">
+          <button type="button" class="primary" id="syncConnectBtn">Connecter &amp; synchroniser</button>
+          <button type="button" id="syncNowBtn">Synchroniser maintenant</button>
+          <button type="button" id="syncDisconnectBtn">Déconnecter</button>
+        </div>
+        <div class="sync-status" id="syncStatus">Non connecté</div>
+        <div class="sync-actions">
+          <button type="button" id="syncExportBtn">Exporter JSON</button>
+          <button type="button" id="syncImportBtn">Importer JSON</button>
+          <input type="file" id="syncImportFile" accept="application/json,.json" class="hide" />
+        </div>
+        <details>
+          <summary>Comment créer un token</summary>
+          <p style="margin:8px 0 0;">
+            1. Va sur
+            <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">GitHub → Settings → Tokens</a>
+            (Fine-grained ou classic).<br>
+            2. Crée un token avec la permission <b>gist</b> uniquement.<br>
+            3. Colle-le ici sur chaque appareil. Le token reste stocké localement sur l’appareil.
+          </p>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1511,15 +1568,587 @@ const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
 const SHORTCUTS_KEY = "qcm-pilote-cadet-af-shortcuts-v1";
 const USER_QUESTIONS_KEY = "qcm-pilote-cadet-af-user-questions-v1";
+const SYNC_META_KEY = "qcm-pilote-cadet-af-sync-meta-v1";
+const SYNC_GIST_FILENAME = "qcm-pilote-cadet-af-sync.json";
+const SYNC_GIST_DESC = "qcm-pilote-cadet-af sync (privé)";
+const SYNC_PUSH_DEBOUNCE_MS = 2000;
 const REVIEW_MASTER_STREAK = 3;
 let editingBankId = null;
+let syncPushTimer = null;
+let syncBusy = false;
+let syncApplyingRemote = false;
 
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
 
 function loadJson(key, fallback){
   try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }catch(_){ return fallback; }
 }
-function saveJson(key, data){ try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){} }
+function saveJson(key, data){
+  try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){}
+  if(!syncApplyingRemote) noteLocalChange(key);
+}
+
+/* ========== Sync multi-appareils (GitHub Gist) ========== */
+const SYNC_FIELD_KEYS = {
+  edits: EDITS_KEY,
+  hidden: HIDDEN_KEY,
+  review: REVIEW_KEY,
+  userQuestions: USER_QUESTIONS_KEY,
+  shortcuts: SHORTCUTS_KEY,
+  filtresPrefs: FILTRES_PREFS_KEY
+};
+
+function nowIso(){ return new Date().toISOString(); }
+
+function loadSyncMeta(){
+  return loadJson(SYNC_META_KEY, {
+    pat: "",
+    gistId: "",
+    lastSyncAt: "",
+    lastError: "",
+    fieldTimes: {},
+    sessionTimes: {}
+  });
+}
+function saveSyncMeta(meta){
+  try{ localStorage.setItem(SYNC_META_KEY, JSON.stringify(meta)); }catch(_){}
+}
+
+function noteLocalChange(key){
+  const field = Object.keys(SYNC_FIELD_KEYS).find(f=>SYNC_FIELD_KEYS[f]===key);
+  if(!field) return;
+  const meta = loadSyncMeta();
+  if(!meta.pat || !meta.gistId) return;
+  meta.fieldTimes = meta.fieldTimes || {};
+  meta.fieldTimes[field] = nowIso();
+  saveSyncMeta(meta);
+  scheduleSyncPush();
+}
+
+function noteSessionChange(mode){
+  const meta = loadSyncMeta();
+  if(!meta.pat || !meta.gistId) return;
+  meta.sessionTimes = meta.sessionTimes || {};
+  meta.sessionTimes[mode] = nowIso();
+  saveSyncMeta(meta);
+  scheduleSyncPush();
+}
+
+function collectLocalSnapshot(){
+  const meta = loadSyncMeta();
+  const fieldTimes = meta.fieldTimes || {};
+  const sessionTimes = meta.sessionTimes || {};
+  const fields = {};
+  for(const [field, key] of Object.entries(SYNC_FIELD_KEYS)){
+    const raw = localStorage.getItem(key);
+    let data = null;
+    if(raw != null){
+      try{ data = JSON.parse(raw); }catch(_){ data = null; }
+    } else {
+      data = (field === "userQuestions" || field === "shortcuts") ? [] : {};
+    }
+    fields[field] = {
+      updatedAt: fieldTimes[field] || meta.lastSyncAt || nowIso(),
+      data
+    };
+  }
+  const sessions = {};
+  const sessionModes = new Set([...PLAY_MODES, ...Object.keys(sessionTimes)]);
+  for(const mode of sessionModes){
+    const raw = localStorage.getItem(sessionKey(mode));
+    if(raw == null){
+      if(sessionTimes[mode]){
+        sessions[mode] = { updatedAt: sessionTimes[mode], data: null };
+      }
+      continue;
+    }
+    let data = null;
+    try{ data = JSON.parse(raw); }catch(_){ continue; }
+    sessions[mode] = {
+      updatedAt: sessionTimes[mode] || (data && data.updatedAt) || meta.lastSyncAt || nowIso(),
+      data
+    };
+  }
+  const updatedAt = [
+    ...Object.values(fields).map(f=>f.updatedAt),
+    ...Object.values(sessions).map(s=>s.updatedAt)
+  ].filter(Boolean).sort().pop() || nowIso();
+  return { version:1, updatedAt, fields, sessions };
+}
+
+function writeFieldLocal(field, data){
+  const key = SYNC_FIELD_KEYS[field];
+  if(!key) return;
+  try{
+    if(data == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(data));
+  }catch(_){}
+}
+
+function applySnapshotToLocal(snap){
+  if(!snap || !snap.fields) return;
+  syncApplyingRemote = true;
+  try{
+    const meta = loadSyncMeta();
+    meta.fieldTimes = meta.fieldTimes || {};
+    meta.sessionTimes = meta.sessionTimes || {};
+    for(const [field, pack] of Object.entries(snap.fields)){
+      if(!SYNC_FIELD_KEYS[field] || !pack) continue;
+      writeFieldLocal(field, pack.data);
+      if(pack.updatedAt) meta.fieldTimes[field] = pack.updatedAt;
+    }
+    if(snap.sessions){
+      for(const [mode, pack] of Object.entries(snap.sessions)){
+        if(!pack) continue;
+        try{
+          if(pack.data == null) localStorage.removeItem(sessionKey(mode));
+          else localStorage.setItem(sessionKey(mode), JSON.stringify(pack.data));
+        }catch(_){}
+        if(pack.updatedAt) meta.sessionTimes[mode] = pack.updatedAt;
+      }
+    }
+    meta.lastSyncAt = snap.updatedAt || nowIso();
+    saveSyncMeta(meta);
+  } finally {
+    syncApplyingRemote = false;
+  }
+}
+
+function mergeMaps(a, aAt, b, bAt){
+  const A = a && typeof a === "object" && !Array.isArray(a) ? a : {};
+  const B = b && typeof b === "object" && !Array.isArray(b) ? b : {};
+  const keys = new Set([...Object.keys(A), ...Object.keys(B)]);
+  const out = {};
+  const aNewer = String(aAt || "") >= String(bAt || "");
+  for(const k of keys){
+    const inA = k in A;
+    const inB = k in B;
+    if(inA && !inB) out[k] = A[k];
+    else if(!inA && inB) out[k] = B[k];
+    else if(JSON.stringify(A[k]) === JSON.stringify(B[k])) out[k] = A[k];
+    else out[k] = aNewer ? A[k] : B[k];
+  }
+  return out;
+}
+
+function mergeArrayById(a, aAt, b, bAt, idFn){
+  const A = Array.isArray(a) ? a : [];
+  const B = Array.isArray(b) ? b : [];
+  const map = new Map();
+  const aNewer = String(aAt || "") >= String(bAt || "");
+  const first = aNewer ? A : B;
+  const second = aNewer ? B : A;
+  for(const item of first){
+    const id = idFn(item);
+    if(id != null) map.set(id, item);
+  }
+  for(const item of second){
+    const id = idFn(item);
+    if(id == null) continue;
+    if(!map.has(id)) map.set(id, item);
+  }
+  return [...map.values()];
+}
+
+function mergeFieldPack(localPack, remotePack, kind){
+  const loc = localPack || { updatedAt:"", data: kind === "array" ? [] : {} };
+  const rem = remotePack || { updatedAt:"", data: kind === "array" ? [] : {} };
+  const newer = String(rem.updatedAt || "") >= String(loc.updatedAt || "") ? rem : loc;
+  const older = newer === rem ? loc : rem;
+  let data;
+  if(kind === "map"){
+    data = mergeMaps(loc.data, loc.updatedAt, rem.data, rem.updatedAt);
+  } else if(kind === "array-uid"){
+    data = mergeArrayById(loc.data, loc.updatedAt, rem.data, rem.updatedAt, x=>x && x.uid);
+  } else if(kind === "array-url"){
+    data = mergeArrayById(loc.data, loc.updatedAt, rem.data, rem.updatedAt, x=>x && (x.url || x.href || JSON.stringify(x)));
+  } else {
+    data = newer.data;
+  }
+  return {
+    updatedAt: String(rem.updatedAt || "") >= String(loc.updatedAt || "") ? (rem.updatedAt || loc.updatedAt) : (loc.updatedAt || rem.updatedAt),
+    data
+  };
+}
+
+function mergeSnapshots(localSnap, remoteSnap){
+  const local = localSnap || { fields:{}, sessions:{}, updatedAt:"" };
+  const remote = remoteSnap || { fields:{}, sessions:{}, updatedAt:"" };
+  const kinds = {
+    edits: "map",
+    hidden: "map",
+    review: "map",
+    userQuestions: "array-uid",
+    shortcuts: "array-url",
+    filtresPrefs: "plain"
+  };
+  const fields = {};
+  for(const field of Object.keys(SYNC_FIELD_KEYS)){
+    fields[field] = mergeFieldPack(
+      local.fields && local.fields[field],
+      remote.fields && remote.fields[field],
+      kinds[field] || "plain"
+    );
+  }
+  const sessions = {};
+  const modes = new Set([
+    ...Object.keys(local.sessions || {}),
+    ...Object.keys(remote.sessions || {})
+  ]);
+  for(const mode of modes){
+    const loc = (local.sessions || {})[mode];
+    const rem = (remote.sessions || {})[mode];
+    if(loc && !rem) sessions[mode] = loc;
+    else if(!loc && rem) sessions[mode] = rem;
+    else if(loc && rem){
+      sessions[mode] = String(rem.updatedAt || "") >= String(loc.updatedAt || "") ? rem : loc;
+    }
+  }
+  const updatedAt = [
+    ...Object.values(fields).map(f=>f.updatedAt),
+    ...Object.values(sessions).map(s=>s.updatedAt)
+  ].filter(Boolean).sort().pop() || nowIso();
+  return { version:1, updatedAt, fields, sessions };
+}
+
+async function gistApi(path, { method="GET", pat, body } = {}){
+  const res = await fetch("https://api.github.com" + path, {
+    method,
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + pat,
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await res.text();
+  let json = null;
+  try{ json = text ? JSON.parse(text) : null; }catch(_){ json = null; }
+  if(!res.ok){
+    const msg = (json && (json.message || json.error)) || ("HTTP " + res.status);
+    throw new Error(msg);
+  }
+  return json;
+}
+
+function parseGistContent(gist){
+  const file = gist && gist.files && (gist.files[SYNC_GIST_FILENAME] || Object.values(gist.files || {})[0]);
+  if(!file || !file.content) return null;
+  try{ return JSON.parse(file.content); }catch(_){ return null; }
+}
+
+async function findSyncGist(pat){
+  let page = 1;
+  while(page <= 5){
+    const list = await gistApi("/gists?per_page=100&page=" + page, { pat });
+    if(!Array.isArray(list) || !list.length) break;
+    const hit = list.find(g=>{
+      if(g.public) return false;
+      const files = g.files || {};
+      return !!files[SYNC_GIST_FILENAME] || (g.description || "").includes("qcm-pilote-cadet-af sync");
+    });
+    if(hit) return hit;
+    if(list.length < 100) break;
+    page++;
+  }
+  return null;
+}
+
+async function createSyncGist(pat, snapshot){
+  return gistApi("/gists", {
+    method: "POST",
+    pat,
+    body: {
+      description: SYNC_GIST_DESC,
+      public: false,
+      files: {
+        [SYNC_GIST_FILENAME]: { content: JSON.stringify(snapshot, null, 2) }
+      }
+    }
+  });
+}
+
+async function updateSyncGist(pat, gistId, snapshot){
+  return gistApi("/gists/" + gistId, {
+    method: "PATCH",
+    pat,
+    body: {
+      description: SYNC_GIST_DESC,
+      files: {
+        [SYNC_GIST_FILENAME]: { content: JSON.stringify(snapshot, null, 2) }
+      }
+    }
+  });
+}
+
+async function fetchSyncGist(pat, gistId){
+  return gistApi("/gists/" + gistId, { pat });
+}
+
+function setSyncStatus(msg, kind){
+  const el = $("syncStatus");
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.remove("ok", "err", "warn");
+  if(kind) el.classList.add(kind);
+}
+
+function formatSyncTime(iso){
+  if(!iso) return "jamais";
+  try{
+    return new Date(iso).toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" });
+  }catch(_){ return iso; }
+}
+
+function refreshSyncUI(){
+  const meta = loadSyncMeta();
+  const patInput = $("syncPat");
+  if(patInput && document.activeElement !== patInput){
+    patInput.value = meta.pat || "";
+  }
+  if(!meta.pat){
+    setSyncStatus("Non connecté — saisis un token GitHub (permission gist).", "warn");
+    return;
+  }
+  if(!meta.gistId){
+    setSyncStatus("Token enregistré — clique « Connecter & synchroniser » pour créer ou retrouver le Gist.", "warn");
+    return;
+  }
+  if(meta.lastError){
+    setSyncStatus("Dernière erreur : " + meta.lastError + " · Dernière sync : " + formatSyncTime(meta.lastSyncAt), "err");
+    return;
+  }
+  setSyncStatus("Connecté · Gist " + meta.gistId.slice(0,8) + "… · Dernière sync : " + formatSyncTime(meta.lastSyncAt), "ok");
+}
+
+function scheduleSyncPush(){
+  const meta = loadSyncMeta();
+  if(!meta.pat || !meta.gistId) return;
+  clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(()=>{ syncPush({ quiet:true }); }, SYNC_PUSH_DEBOUNCE_MS);
+}
+
+async function syncPull({ quiet } = {}){
+  const meta = loadSyncMeta();
+  if(!meta.pat || !meta.gistId) return null;
+  if(syncBusy) return null;
+  syncBusy = true;
+  if(!quiet) setSyncStatus("Récupération du cloud…", "warn");
+  try{
+    const gist = await fetchSyncGist(meta.pat, meta.gistId);
+    const remote = parseGistContent(gist);
+    if(!remote){
+      meta.lastError = "Gist vide ou illisible";
+      saveSyncMeta(meta);
+      if(!quiet) refreshSyncUI();
+      return null;
+    }
+    const local = collectLocalSnapshot();
+    const cloudNewer = String(remote.updatedAt || "") > String(local.updatedAt || "");
+    const localNewer = String(local.updatedAt || "") > String(remote.updatedAt || "");
+    if(cloudNewer || localNewer){
+      const merged = mergeSnapshots(local, remote);
+      applySnapshotToLocal(merged);
+      if(localNewer || JSON.stringify(merged) !== JSON.stringify(remote)){
+        await updateSyncGist(meta.pat, meta.gistId, merged);
+      }
+      const m2 = loadSyncMeta();
+      m2.lastSyncAt = merged.updatedAt;
+      m2.lastError = "";
+      saveSyncMeta(m2);
+      if(typeof updateModeCards === "function") updateModeCards();
+      if(typeof updateHiddenBadge === "function") updateHiddenBadge();
+      if(typeof loadFiltresPrefsToUI === "function") loadFiltresPrefsToUI();
+    } else {
+      meta.lastSyncAt = remote.updatedAt || meta.lastSyncAt || nowIso();
+      meta.lastError = "";
+      saveSyncMeta(meta);
+    }
+    if(!quiet) refreshSyncUI();
+    else refreshSyncUI();
+    return remote;
+  } catch(err){
+    const m = loadSyncMeta();
+    m.lastError = err.message || String(err);
+    saveSyncMeta(m);
+    if(!quiet) refreshSyncUI();
+    else refreshSyncUI();
+    return null;
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function syncPush({ quiet } = {}){
+  const meta = loadSyncMeta();
+  if(!meta.pat || !meta.gistId) return null;
+  if(syncBusy){
+    scheduleSyncPush();
+    return null;
+  }
+  syncBusy = true;
+  if(!quiet) setSyncStatus("Envoi vers le cloud…", "warn");
+  try{
+    let remote = null;
+    try{
+      const gist = await fetchSyncGist(meta.pat, meta.gistId);
+      remote = parseGistContent(gist);
+    }catch(_){ remote = null; }
+    const local = collectLocalSnapshot();
+    const merged = remote ? mergeSnapshots(local, remote) : local;
+    await updateSyncGist(meta.pat, meta.gistId, merged);
+    applySnapshotToLocal(merged);
+    const m2 = loadSyncMeta();
+    m2.lastSyncAt = merged.updatedAt;
+    m2.lastError = "";
+    saveSyncMeta(m2);
+    refreshSyncUI();
+    return merged;
+  } catch(err){
+    const m = loadSyncMeta();
+    m.lastError = err.message || String(err);
+    saveSyncMeta(m);
+    refreshSyncUI();
+    return null;
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function syncConnect(){
+  const pat = ($("syncPat").value || "").trim();
+  if(!pat){
+    setSyncStatus("Saisis un token GitHub avec la permission gist.", "err");
+    return;
+  }
+  setSyncStatus("Connexion…", "warn");
+  syncBusy = true;
+  try{
+    // Validate token
+    await gistApi("/user", { pat });
+    let gist = await findSyncGist(pat);
+    const local = collectLocalSnapshot();
+    let snapshot;
+    if(!gist){
+      // First device: push local Safari data as cloud base (never wipe local)
+      snapshot = local;
+      gist = await createSyncGist(pat, snapshot);
+    } else {
+      const remote = parseGistContent(gist) || { fields:{}, sessions:{}, updatedAt:"" };
+      // Merge local + remote so Safari data is preserved and becomes part of the cloud base
+      snapshot = mergeSnapshots(local, remote);
+      gist = await updateSyncGist(pat, gist.id, snapshot);
+    }
+    applySnapshotToLocal(snapshot);
+    const meta = loadSyncMeta();
+    meta.pat = pat;
+    meta.gistId = gist.id;
+    meta.lastSyncAt = snapshot.updatedAt;
+    meta.lastError = "";
+    saveSyncMeta(meta);
+    if(typeof updateModeCards === "function") updateModeCards();
+    if(typeof updateHiddenBadge === "function") updateHiddenBadge();
+    if(typeof loadFiltresPrefsToUI === "function") loadFiltresPrefsToUI();
+    setSyncStatus("Connecté · données synchronisées · " + formatSyncTime(snapshot.updatedAt), "ok");
+    refreshSyncUI();
+  } catch(err){
+    const meta = loadSyncMeta();
+    meta.pat = pat;
+    meta.lastError = err.message || String(err);
+    saveSyncMeta(meta);
+    setSyncStatus("Erreur : " + (err.message || err), "err");
+  } finally {
+    syncBusy = false;
+  }
+}
+
+function syncDisconnect(){
+  const meta = loadSyncMeta();
+  meta.pat = "";
+  meta.gistId = "";
+  meta.lastError = "";
+  saveSyncMeta(meta);
+  if($("syncPat")) $("syncPat").value = "";
+  clearTimeout(syncPushTimer);
+  setSyncStatus("Déconnecté. Les données restent sur cet appareil.", "warn");
+}
+
+function syncExport(){
+  const snap = collectLocalSnapshot();
+  const blob = new Blob([JSON.stringify(snap, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "qcm-pilote-cadet-af-backup-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  setSyncStatus("Export téléchargé · " + formatSyncTime(snap.updatedAt), "ok");
+}
+
+function syncImportFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const remote = JSON.parse(String(reader.result || ""));
+      if(!remote || typeof remote !== "object") throw new Error("JSON invalide");
+      const local = collectLocalSnapshot();
+      const merged = mergeSnapshots(local, remote.fields ? remote : {
+        version:1,
+        updatedAt: nowIso(),
+        fields: remote,
+        sessions: {}
+      });
+      applySnapshotToLocal(merged);
+      if(typeof updateModeCards === "function") updateModeCards();
+      if(typeof updateHiddenBadge === "function") updateHiddenBadge();
+      if(typeof loadFiltresPrefsToUI === "function") loadFiltresPrefsToUI();
+      if(typeof renderHiddenTab === "function") renderHiddenTab();
+      if(typeof renderShortcuts === "function") renderShortcuts();
+      const meta = loadSyncMeta();
+      if(meta.pat && meta.gistId) scheduleSyncPush();
+      setSyncStatus("Import fusionné · " + formatSyncTime(merged.updatedAt), "ok");
+    }catch(err){
+      setSyncStatus("Import échoué : " + (err.message || err), "err");
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function initSync(){
+  refreshSyncUI();
+  const meta = loadSyncMeta();
+  if(meta.pat && meta.gistId){
+    await syncPull({ quiet:true });
+  }
+}
+
+function wireSyncUI(){
+  const connectBtn = $("syncConnectBtn");
+  const nowBtn = $("syncNowBtn");
+  const discBtn = $("syncDisconnectBtn");
+  const expBtn = $("syncExportBtn");
+  const impBtn = $("syncImportBtn");
+  const impFile = $("syncImportFile");
+  if(connectBtn) connectBtn.onclick = ()=>syncConnect();
+  if(nowBtn) nowBtn.onclick = async ()=>{
+    const meta = loadSyncMeta();
+    if(!meta.pat){ setSyncStatus("Saisis un token puis clique Connecter.", "err"); return; }
+    if(!meta.gistId){ await syncConnect(); return; }
+    await syncPull({ quiet:false });
+    await syncPush({ quiet:false });
+  };
+  if(discBtn) discBtn.onclick = ()=>syncDisconnect();
+  if(expBtn) expBtn.onclick = ()=>syncExport();
+  if(impBtn) impBtn.onclick = ()=>impFile && impFile.click();
+  if(impFile) impFile.onchange = ()=>{
+    const f = impFile.files && impFile.files[0];
+    syncImportFile(f);
+    impFile.value = "";
+  };
+}
+
+/* ========== Fin sync ========== */
 
 function loadEdits(){ return loadJson(EDITS_KEY, {}); }
 function saveEdits(data){ saveJson(EDITS_KEY, data); }
@@ -1752,12 +2381,14 @@ function saveSession(){
     pool: poolSnapshot()
   };
   try{ localStorage.setItem(sessionKey(playMode), JSON.stringify(data)); }catch(_){}
+  if(!syncApplyingRemote) noteSessionChange(playMode);
   updateModeCards();
 }
 
 function clearSession(mode){
   const m = mode || playMode;
   try{ localStorage.removeItem(sessionKey(m)); }catch(_){}
+  if(!syncApplyingRemote) noteSessionChange(m);
   updateModeCards();
 }
 
@@ -2129,9 +2760,11 @@ function switchStartTab(tab){
   $("paneAirways").classList.toggle("active", tab==="airways");
   $("paneShortcuts").classList.toggle("active", tab==="shortcuts");
   $("paneHidden").classList.toggle("active", tab==="hidden");
+  $("paneSync").classList.toggle("active", tab==="sync");
   if(tab==="math") updateMathTab();
   if(tab==="hidden") renderHiddenTab();
   if(tab==="shortcuts") renderShortcuts();
+  if(tab==="sync") refreshSyncUI();
 }
 
 function updateHiddenBadge(){
@@ -3066,9 +3699,17 @@ document.addEventListener("keydown", e=>{
   else if(!examMode && e.key==="ArrowLeft"){ prev(); }
 });
 
+wireSyncUI();
 initStart();
+initSync();
 window.addEventListener("pagehide", saveSession);
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") saveSession(); });
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="hidden") saveSession();
+  if(document.visibilityState==="visible"){
+    const meta = loadSyncMeta();
+    if(meta.pat && meta.gistId) syncPull({ quiet:true });
+  }
+});
 </script>
 </body>
 </html>
