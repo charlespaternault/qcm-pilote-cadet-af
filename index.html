@@ -84,6 +84,26 @@
   .filtres-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
   .filtres-grid label { display:block; font-size:11px; color:var(--muted); margin-bottom:4px; font-weight:600; }
   .filtres-grid select { width:100%; padding:9px 10px; font-size:13px; }
+  .template-save {
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px;
+  }
+  .template-save input[type=text] {
+    flex:1 1 180px; min-width:0; font:inherit; color:var(--txt); background:var(--card2);
+    border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+  }
+  .templates-block { margin-top:16px; }
+  .templates-block h4 { margin:0 0 10px; font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .templates-list { display:flex; flex-direction:column; gap:8px; }
+  .template-card {
+    background:var(--card2); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .template-card .template-info { flex:1 1 160px; min-width:0; }
+  .template-card h5 { margin:0 0 3px; font-size:14px; font-weight:700; }
+  .template-card p { margin:0; font-size:12px; color:var(--muted); }
+  .template-card .mode-actions { padding-top:0; flex:0 0 auto; }
+  .template-card .mode-actions button { flex:0 0 auto; }
+  .templates-empty { margin:0; font-size:12px; color:var(--muted); }
   .home-foot { text-align:center; font-size:12px; color:var(--muted); margin-top:8px; line-height:1.6; }
 
   .panel {
@@ -528,6 +548,15 @@
         <label class="chip" style="cursor:pointer; display:inline-flex; margin-top:12px;">
           <input type="checkbox" id="filtreShuffle" checked style="accent-color:var(--accent); margin-right:8px;"> Mélanger les questions
         </label>
+        <div class="template-save">
+          <input type="text" id="templateNameInput" placeholder="Nom du template (ex. Météo 25 Q)" maxlength="80" />
+          <button type="button" id="saveFiltresTemplateBtn">Enregistrer la sélection</button>
+        </div>
+        <div class="templates-block">
+          <h4>Mes templates</h4>
+          <div id="templatesList" class="templates-list"></div>
+          <p id="templatesEmpty" class="templates-empty">Aucun template. Configure les filtres puis enregistre la liste.</p>
+        </div>
       </div>
 
       <p class="home-foot">
@@ -690,6 +719,7 @@
         <div class="nav-left">
           <button id="prevBtn">← Précédent</button>
           <button id="editBtn">✎ Modifier</button>
+          <button type="button" id="savePoolTemplateBtn">Enregistrer la liste</button>
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
         <div class="nav-right">
@@ -728,6 +758,7 @@
     <div class="controls">
       <button class="primary" id="restartBtn">↻ Recommencer</button>
       <button id="reviewWrongBtn">Revoir mes erreurs</button>
+      <button type="button" id="saveResultTemplateBtn">Enregistrer la liste</button>
       <button id="homeBtn">🏠 Accueil</button>
     </div>
   </div>
@@ -1560,6 +1591,7 @@ const EXAM_WRONG_PTS = -2;
 const SESSION_KEY_LEGACY = "qcm-pilote-cadet-af-v1";
 const SESSION_KEY_PREFIX = "qcm-pilote-cadet-af-session-";
 const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
+const TEMPLATES_KEY = "qcm-pilote-cadet-af-templates-v1";
 const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math"];
 const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths" };
 const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
@@ -1595,7 +1627,8 @@ const SYNC_FIELD_KEYS = {
   review: REVIEW_KEY,
   userQuestions: USER_QUESTIONS_KEY,
   shortcuts: SHORTCUTS_KEY,
-  filtresPrefs: FILTRES_PREFS_KEY
+  filtresPrefs: FILTRES_PREFS_KEY,
+  templates: TEMPLATES_KEY
 };
 
 function nowIso(){ return new Date().toISOString(); }
@@ -1645,7 +1678,7 @@ function collectLocalSnapshot(){
     if(raw != null){
       try{ data = JSON.parse(raw); }catch(_){ data = null; }
     } else {
-      data = (field === "userQuestions" || field === "shortcuts") ? [] : {};
+      data = (field === "userQuestions" || field === "shortcuts" || field === "templates") ? [] : {};
     }
     fields[field] = {
       updatedAt: fieldTimes[field] || meta.lastSyncAt || nowIso(),
@@ -1654,6 +1687,14 @@ function collectLocalSnapshot(){
   }
   const sessions = {};
   const sessionModes = new Set([...PLAY_MODES, ...Object.keys(sessionTimes)]);
+  try{
+    for(let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(SESSION_KEY_PREFIX + "tpl:")){
+        sessionModes.add(k.slice(SESSION_KEY_PREFIX.length));
+      }
+    }
+  }catch(_){}
   for(const mode of sessionModes){
     const raw = localStorage.getItem(sessionKey(mode));
     if(raw == null){
@@ -1780,7 +1821,8 @@ function mergeSnapshots(localSnap, remoteSnap){
     review: "map",
     userQuestions: "array-uid",
     shortcuts: "array-url",
-    filtresPrefs: "plain"
+    filtresPrefs: "plain",
+    templates: "array-uid"
   };
   const fields = {};
   for(const field of Object.keys(SYNC_FIELD_KEYS)){
@@ -2050,6 +2092,7 @@ async function syncConnect(){
     if(typeof updateModeCards === "function") updateModeCards();
     if(typeof updateHiddenBadge === "function") updateHiddenBadge();
     if(typeof loadFiltresPrefsToUI === "function") loadFiltresPrefsToUI();
+    if(typeof renderTemplates === "function") renderTemplates();
     setSyncStatus("Connecté · données synchronisées · " + formatSyncTime(snapshot.updatedAt), "ok");
     refreshSyncUI();
   } catch(err){
@@ -2105,6 +2148,7 @@ function syncImportFile(file){
       if(typeof loadFiltresPrefsToUI === "function") loadFiltresPrefsToUI();
       if(typeof renderHiddenTab === "function") renderHiddenTab();
       if(typeof renderShortcuts === "function") renderShortcuts();
+      if(typeof renderTemplates === "function") renderTemplates();
       const meta = loadSyncMeta();
       if(meta.pat && meta.gistId) scheduleSyncPush();
       setSyncStatus("Import fusionné · " + formatSyncTime(merged.updatedAt), "ok");
@@ -2260,7 +2304,9 @@ function bankQuestion(id){
       _src: q.src || inferQuestionSource(q)
     };
   }
-  return mergeQuestion(QUESTIONS[Number(sid)], Number(sid));
+  const n = Number(sid);
+  if(!Number.isInteger(n) || !QUESTIONS[n]) return null;
+  return mergeQuestion(QUESTIONS[n], n);
 }
 
 function activeQuestions(opts={}){
@@ -2337,6 +2383,153 @@ function loadFiltresPrefsToUI(){
   $("filtreCat").value = p.cat || "all";
   $("filtreCount").value = p.count ?? "0";
   $("filtreShuffle").checked = p.shuffle !== false;
+}
+
+function isTemplateMode(mode){ return String(mode || "").startsWith("tpl:"); }
+function templateMode(uid){ return "tpl:" + uid; }
+function templateUidFromMode(mode){ return String(mode || "").slice(4); }
+
+function loadTemplates(){
+  const raw = loadJson(TEMPLATES_KEY, []);
+  return Array.isArray(raw) ? raw.filter(t=>t && t.uid && Array.isArray(t.ids)) : [];
+}
+function saveTemplates(list){ saveJson(TEMPLATES_KEY, list); }
+
+function currentFiltresSnapshot(){
+  return {
+    preset: $("filtrePreset")?.value || "all",
+    source: $("filtreSource")?.value || "all",
+    cat: $("filtreCat")?.value || "all",
+    count: $("filtreCount")?.value || "0",
+    shuffle: $("filtreShuffle")?.checked !== false
+  };
+}
+
+function defaultTemplateName(ids, filtres){
+  const presetLabels = { all:"Tout", cadet:"Cadet AF", bia:"BIA", english:"English" };
+  const parts = [];
+  if(filtres){
+    if(filtres.preset && filtres.preset !== "all") parts.push(presetLabels[filtres.preset] || filtres.preset);
+    if(filtres.source && filtres.source !== "all"){
+      parts.push(filtres.source === "bia-all" ? "Annales BIA" : sourceLabel(filtres.source));
+    }
+    if(filtres.cat && filtres.cat !== "all") parts.push(filtres.cat);
+  }
+  parts.push((ids?.length || 0) + " Q");
+  return parts.join(" · ") || "Template";
+}
+
+function questionsFromIds(ids){
+  return (ids || []).map(id=>{
+    const q = bankQuestion(id);
+    if(!q || !q.q) return null;
+    if(q._hidden) return null;
+    return resetQuestionState(q);
+  }).filter(Boolean);
+}
+
+function saveQuestionTemplate(ids, opts={}){
+  const cleanIds = [...new Set((ids || []).map(String).filter(Boolean))];
+  if(!cleanIds.length){
+    alert("Aucune question à enregistrer.");
+    return null;
+  }
+  const filtres = opts.filtres || null;
+  const suggested = (opts.name || "").trim() || defaultTemplateName(cleanIds, filtres);
+  const name = (opts.name || "").trim() || (prompt("Nom du template :", suggested) || "").trim();
+  if(!name) return null;
+  const list = loadTemplates();
+  const tpl = {
+    uid: makeUserUid(),
+    name,
+    ids: cleanIds,
+    filtres,
+    createdAt: nowIso()
+  };
+  list.unshift(tpl);
+  saveTemplates(list);
+  renderTemplates();
+  if($("templateNameInput")) $("templateNameInput").value = "";
+  return tpl;
+}
+
+function saveCurrentFiltresTemplate(){
+  const arr = buildFiltresPool({ fresh:true });
+  saveQuestionTemplate(arr.map(q=>q._bankId), {
+    name: $("templateNameInput")?.value || "",
+    filtres: currentFiltresSnapshot()
+  });
+}
+
+function saveCurrentPoolTemplate(){
+  if(!pool.length){
+    alert("Aucune question en cours.");
+    return;
+  }
+  const filtres = playMode === "filtres" ? loadFiltresPrefs() : (isTemplateMode(playMode) ? (loadTemplates().find(t=>t.uid===templateUidFromMode(playMode))?.filtres || null) : null);
+  saveQuestionTemplate(pool.map(q=>q._bankId).filter(id=>id != null), {
+    filtres
+  });
+}
+
+function deleteTemplate(uid){
+  if(!confirm("Supprimer ce template ?")) return;
+  saveTemplates(loadTemplates().filter(t=>t.uid !== uid));
+  clearSession(templateMode(uid));
+  renderTemplates();
+}
+
+function renderTemplates(){
+  const listEl = $("templatesList");
+  const emptyEl = $("templatesEmpty");
+  if(!listEl) return;
+  const list = loadTemplates();
+  listEl.innerHTML = "";
+  if(emptyEl) emptyEl.classList.toggle("hide", list.length > 0);
+  list.forEach(tpl=>{
+    const mode = templateMode(tpl.uid);
+    const session = peekSession(mode);
+    const available = questionsFromIds(tpl.ids).length;
+    const card = document.createElement("article");
+    card.className = "template-card";
+    const info = document.createElement("div");
+    info.className = "template-info";
+    const h = document.createElement("h5");
+    h.textContent = tpl.name;
+    const p = document.createElement("p");
+    p.textContent = available ? `${available} question${available>1?"s":""}` : "Questions introuvables";
+    if(session){
+      const answered = session.pool.filter(isQuestionAnswered).length;
+      p.textContent += ` · ${answered}/${session.pool.length} en cours`;
+    }
+    info.appendChild(h);
+    info.appendChild(p);
+    const actions = document.createElement("div");
+    actions.className = "mode-actions";
+    if(session){
+      const resume = document.createElement("button");
+      resume.type = "button";
+      resume.className = "mode-resume";
+      resume.textContent = "Reprendre";
+      resume.onclick = ()=>startPlay(mode, { resume:true });
+      actions.appendChild(resume);
+    }
+    const start = document.createElement("button");
+    start.type = "button";
+    start.className = "primary";
+    start.textContent = session ? "Recommencer" : "Commencer";
+    start.disabled = !available;
+    start.onclick = ()=>startPlay(mode, { resume:false });
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "Supprimer";
+    del.onclick = ()=>deleteTemplate(tpl.uid);
+    actions.appendChild(start);
+    actions.appendChild(del);
+    card.appendChild(info);
+    card.appendChild(actions);
+    listEl.appendChild(card);
+  });
 }
 
 function migrateLegacySession(){
@@ -2454,6 +2647,7 @@ function updateModeCards(){
   updateModeCardProgress("filtres", peekSession("filtres"));
 
   updateMathTab();
+  renderTemplates();
 }
 
 function rebuildNewQuestionCategories(){
@@ -2546,6 +2740,7 @@ function restoreSession(mode){
     buildGrid();
     render();
   }
+  toggleTemplateSaveButtons();
   return true;
 }
 
@@ -2650,6 +2845,8 @@ function initStart(){
   $("filtreCat").onchange = updateModeCards;
   $("filtreCount").onchange = updateModeCards;
   $("filtreShuffle").onchange = updateModeCards;
+  $("saveFiltresTemplateBtn").onclick = saveCurrentFiltresTemplate;
+  $("templateNameInput").onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); saveCurrentFiltresTemplate(); } };
   $("mathFormatSelect").onchange = updateMathTab;
   $("mathSourceSelect").onchange = updateMathTab;
   document.querySelectorAll(".mode-start").forEach(btn=>{
@@ -3027,6 +3224,19 @@ function startPlay(mode, opts={}){
       alert("Aucune question avec ces filtres.");
       return;
     }
+  } else if(isTemplateMode(mode)){
+    const tpl = loadTemplates().find(t=>t.uid === templateUidFromMode(mode));
+    if(!tpl){
+      alert("Template introuvable.");
+      updateModeCards();
+      return;
+    }
+    pool = questionsFromIds(tpl.ids);
+    if(!pool.length){
+      alert("Aucune question disponible pour ce template.");
+      updateModeCards();
+      return;
+    }
   }
 
   if(!pool.length) return;
@@ -3035,12 +3245,19 @@ function startPlay(mode, opts={}){
 
 function startMath(){ startPlay("math", { resume:false }); }
 
+function toggleTemplateSaveButtons(){
+  const show = playMode !== "math" && pool.length > 0;
+  $("savePoolTemplateBtn")?.classList.toggle("hide", !show);
+  $("saveResultTemplateBtn")?.classList.toggle("hide", !show);
+}
+
 function launchQuiz(){
   idx=0;
   if(!examMode) setExamUI(false);
   $("start").classList.add("hide");
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
+  toggleTemplateSaveButtons();
   buildGrid();
   render();
   saveSession();
@@ -3287,6 +3504,7 @@ function finish(){
     $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
     hideExamRecap();
   }
+  toggleTemplateSaveButtons();
   saveSession();
 }
 
@@ -3673,6 +3891,8 @@ $("quitBtn").onclick = ()=>{
 $("finishBtn").onclick = finish;
 $("restartBtn").onclick = ()=>startPlay(playMode, { resume:false });
 $("reviewWrongBtn").onclick = reviewWrong;
+$("savePoolTemplateBtn").onclick = saveCurrentPoolTemplate;
+$("saveResultTemplateBtn").onclick = saveCurrentPoolTemplate;
 $("homeBtn").onclick = home;
 $("navToggle").onclick = openNav;
 $("navClose").onclick = closeNav;
