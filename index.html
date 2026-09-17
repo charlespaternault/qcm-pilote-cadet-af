@@ -187,10 +187,18 @@
   .exam-timer-wrap.urgent .exam-timer-bar i { background: var(--bad); }
   #examTimerChip.hide, #examScoreChip.hide, #examTimerWrap.hide { display: none !important; }
   .quiz-main.exam-mode .nav-left button:not(#quitBtn),
-  .quiz-main.exam-mode .nav-right button:not(#quitBtn) { display: none; }
+  .quiz-main.exam-mode .nav-right button:not(#quitBtn),
+  .quiz-main.exam-mode #dontKnowBtn { display: none !important; }
   .quiz-layout.exam-mode .navgrid { display: none !important; }
   .quiz-layout.exam-mode ~ .navToggle { display: none !important; }
   .choice.locked { cursor: default; }
+  .dont-know-btn {
+    display:block; width:100%; margin-top:10px; padding:11px 14px;
+    background:transparent; border:1px dashed var(--line); color:var(--muted);
+    font-weight:600; border-radius:12px;
+  }
+  .dont-know-btn:hover { border-color:var(--bad); color:var(--bad); }
+  .dont-know-btn.hide { display:none !important; }
 
   .explain {
     margin-top: 16px; padding: 14px 16px; border-radius: 12px;
@@ -716,6 +724,7 @@
       <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
       <div class="q-media hide" id="qMedia"><img class="q-img" id="qImg" alt="" loading="lazy" /></div>
       <div class="choices" id="choices"></div>
+      <button type="button" id="dontKnowBtn" class="dont-know-btn">Je ne sais pas</button>
       <div class="explain" id="explain"></div>
       <div class="annexe-box hide" id="annexeBox"><b>Annexe</b><div id="annexeText"></div></div>
       <div class="nav">
@@ -2668,7 +2677,7 @@ function poolSnapshot(){
   return pool.map(q=>({
     _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe, t:q.t, ans:q.ans,
     _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
-    _inputVal:q._inputVal, _inputOk:q._inputOk,
+    _inputVal:q._inputVal, _inputOk:q._inputOk, _dontKnow:q._dontKnow,
     _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
   }));
 }
@@ -2799,7 +2808,7 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
@@ -3123,7 +3132,7 @@ function updateHiddenBadge(){
 }
 
 function resetQuestionState(q){
-  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
+  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
 }
 
 function isExamActive(){ return examMode; }
@@ -3498,7 +3507,7 @@ function render(){
         b.classList.add("locked");
         if(!examMode){
           if(i===q._correctIdx) b.classList.add("correct");
-          else if(i===q._chosen) b.classList.add("wrong");
+          else if(q._chosen >= 0 && i===q._chosen) b.classList.add("wrong");
         }
       } else {
         b.onclick = ()=>choose(i);
@@ -3507,13 +3516,23 @@ function render(){
     });
   }
 
+  const dontKnowBtn = $("dontKnowBtn");
+  if(dontKnowBtn){
+    dontKnowBtn.classList.toggle("hide", examMode || locked);
+  }
+
   if(locked && !examMode){
     let reviewNote = "";
     const m = q._reviewMeta;
     if(m?.added) reviewNote = ` <span style="color:var(--bad)">· Ajoutée à tes erreurs à revoir</span>`;
     else if(m?.mastered) reviewNote = ` <span style="color:var(--good)">· Question maîtrisée ✓</span>`;
     else if(m?.streak != null) reviewNote = ` <span style="color:var(--gold)">· Maîtrise ${m.streak}/${REVIEW_MASTER_STREAK}</span>`;
-    const wrongNote = isInputQuestion(q) && !q._inputOk ? ` <span style="color:var(--bad)">(ta réponse : ${q._inputVal || "—"})</span>` : "";
+    let wrongNote = "";
+    if(q._dontKnow || q._chosen === -1){
+      wrongNote = ` <span style="color:var(--bad)">(Je ne sais pas)</span>`;
+    } else if(isInputQuestion(q) && !q._inputOk){
+      wrongNote = ` <span style="color:var(--bad)">(ta réponse : ${q._inputVal || "—"})</span>`;
+    }
     $("explain").innerHTML = `<div class="explain-head"><b></b><span class="explain-sep"> —</span>${wrongNote}${reviewNote}</div>`
       + `<div class="explain-body"></div>`
       + `<div class="explain-actions"><button type="button" id="editExplainBtn">✎ Modifier l'explication / notes</button></div>`;
@@ -3536,6 +3555,7 @@ function choose(i){
   clearTimeout(autoTimer);
   const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, examTimeForQuestion(q)) : null;
   q._chosen = i;
+  q._dontKnow = false;
   const correct = i === q._correctIdx;
   const wasInReview = isInReviewPool(q);
   recordReviewAnswer(q, correct);
@@ -3557,10 +3577,27 @@ function choose(i){
   }
 }
 
+function markDontKnow(){
+  if(examMode) return;
+  const q = pool[idx];
+  if(!q || q._chosen != null) return;
+  clearTimeout(autoTimer);
+  q._dontKnow = true;
+  q._chosen = -1;
+  if(isInputQuestion(q)){
+    q._inputVal = "";
+    q._inputOk = false;
+  }
+  recordReviewAnswer(q, false);
+  q._reviewMeta = { added: true };
+  render();
+}
+
 function submitInput(val){
   const q = pool[idx];
   if(q._chosen!=null) return;
   clearTimeout(autoTimer);
+  q._dontKnow = false;
   q._inputVal = val.trim();
   q._inputOk = answersMatch(val, q);
   q._chosen = 0;
@@ -3668,7 +3705,7 @@ function finish(){
 function reviewWrong(){
   const wrong = pool.filter(q=>isQuestionAnswered(q) && !isQuestionCorrect(q));
   if(!wrong.length) return;
-  pool = wrong.map(q=>({...q,_order:null,_correctIdx:0,_chosen:null,_inputVal:null,_inputOk:null}));
+  pool = wrong.map(q=>({...q,_order:null,_correctIdx:0,_chosen:null,_inputVal:null,_inputOk:null,_dontKnow:null}));
   idx=0;
   $("result").classList.add("hide");
   $("quiz").classList.remove("hide");
@@ -4055,6 +4092,7 @@ $("navToggle").onclick = openNav;
 $("navClose").onclick = closeNav;
 $("scrim").onclick = closeNav;
 $("editBtn").onclick = openEditCurrent;
+$("dontKnowBtn").onclick = markDontKnow;
 $("chatgptBtn").onclick = askChatGPT;
 $("editSaveBtn").onclick = saveQuestionEdit;
 $("editCancelBtn").onclick = closeEditModal;
