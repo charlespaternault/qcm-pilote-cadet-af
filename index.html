@@ -616,13 +616,18 @@
           <option value="40">40 questions</option>
         </select>
         <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathShuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
+        <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathMarkedOnlyChk" style="accent-color:var(--accent)"> Uniquement questions marquées (<b id="mathMarkedCount">0</b>)</label>
       </div>
       <div style="text-align:center; margin-top:12px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
         <button type="button" class="hide" id="resumeMathBtn">Reprendre</button>
         <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
+        <button type="button" id="startMathBrBtn" style="padding:12px 22px; font-size:15px;">Battle Royal ⚔</button>
       </div>
       <p id="mathResumeHint" class="hide" style="color:var(--muted); font-size:13px; text-align:center; margin-top:10px;"></p>
-      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px;">
+      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:12px; line-height:1.5;">
+        <b>Battle Royal</b> : toutes les questions. Bonne réponse → éliminée. Échec → 6 autres réponses avant de la retenter.
+      </p>
+      <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:8px;">
         En <b>questions ouvertes</b>, tu tapes la réponse même si c’était un QCM.
         Sinon : touches <kbd>1</kbd>–<kbd>5</kbd>, <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
@@ -714,6 +719,7 @@
       <div class="topbar">
         <span class="cat-tag" id="qCat">—</span>
         <span class="chip" id="scoreChip">Score : <b id="liveScore">0</b></span>
+        <span class="chip hide" id="brChip">BR : <b id="brLiveStat">—</b></span>
         <span class="chip hide" id="examScoreChip">Points : <b id="examLiveScore">0</b> / 105</span>
         <span class="chip hide" id="examTimerChip"><b id="examTimerText">8.0</b> s</span>
       </div>
@@ -731,6 +737,7 @@
         <div class="nav-left">
           <button id="prevBtn">← Précédent</button>
           <button id="editBtn">✎ Modifier</button>
+          <button type="button" id="markMathBtn" class="hide">☆ Marquer</button>
           <button type="button" id="savePoolTemplateBtn">Enregistrer la liste</button>
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
@@ -1712,8 +1719,10 @@ const SESSION_KEY_LEGACY = "qcm-pilote-cadet-af-v1";
 const SESSION_KEY_PREFIX = "qcm-pilote-cadet-af-session-";
 const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
 const TEMPLATES_KEY = "qcm-pilote-cadet-af-templates-v1";
-const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math"];
-const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths" };
+const MATH_MARKED_KEY = "qcm-pilote-cadet-af-math-marked-v1";
+const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math", "math-br"];
+const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal" };
+const BR_COOLDOWN = 6;
 const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
@@ -1748,7 +1757,8 @@ const SYNC_FIELD_KEYS = {
   userQuestions: USER_QUESTIONS_KEY,
   shortcuts: SHORTCUTS_KEY,
   filtresPrefs: FILTRES_PREFS_KEY,
-  templates: TEMPLATES_KEY
+  templates: TEMPLATES_KEY,
+  mathMarked: MATH_MARKED_KEY
 };
 
 function nowIso(){ return new Date().toISOString(); }
@@ -1942,7 +1952,8 @@ function mergeSnapshots(localSnap, remoteSnap){
     userQuestions: "array-uid",
     shortcuts: "array-url",
     filtresPrefs: "plain",
-    templates: "array-uid"
+    templates: "array-uid",
+    mathMarked: "map"
   };
   const fields = {};
   for(const field of Object.keys(SYNC_FIELD_KEYS)){
@@ -2320,6 +2331,20 @@ function loadHiddenMap(){ return loadJson(HIDDEN_KEY, {}); }
 function saveHiddenMap(data){ saveJson(HIDDEN_KEY, data); }
 function isHiddenId(id){ return !!loadHiddenMap()[id]; }
 
+function loadMathMarked(){ return loadJson(MATH_MARKED_KEY, {}); }
+function saveMathMarked(data){ saveJson(MATH_MARKED_KEY, data); }
+function isMathMarked(id){ return !!loadMathMarked()[String(id)]; }
+function toggleMathMarked(id){
+  if(id == null) return false;
+  const key = String(id);
+  const data = loadMathMarked();
+  if(data[key]) delete data[key];
+  else data[key] = true;
+  saveMathMarked(data);
+  return !!data[key];
+}
+function mathMarkedCount(){ return Object.keys(loadMathMarked()).length; }
+
 function makeUserUid(){
   return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 }
@@ -2678,6 +2703,7 @@ function poolSnapshot(){
     _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe, t:q.t, ans:q.ans,
     _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
     _inputVal:q._inputVal, _inputOk:q._inputOk, _dontKnow:q._dontKnow,
+    _brCleared:q._brCleared, _brCooldown:q._brCooldown,
     _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
   }));
 }
@@ -2690,7 +2716,13 @@ function saveSession(){
     idx,
     screen: currentScreen(),
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
-    mathPrefs: playMode === "math" ? { format:$("mathFormatSelect").value, source:$("mathSourceSelect").value, count:$("mathCountSelect").value, shuffle:$("mathShuffleChk").checked } : undefined,
+    mathPrefs: (playMode === "math" || playMode === "math-br") ? {
+      format:$("mathFormatSelect").value,
+      source:$("mathSourceSelect").value,
+      count:$("mathCountSelect").value,
+      shuffle:$("mathShuffleChk").checked,
+      markedOnly: !!$("mathMarkedOnlyChk")?.checked
+    } : undefined,
     pool: poolSnapshot()
   };
   try{ localStorage.setItem(sessionKey(playMode), JSON.stringify(data)); }catch(_){}
@@ -2805,10 +2837,11 @@ function applySessionData(data){
     $("mathSourceSelect").value = data.mathPrefs.source || "all";
     $("mathCountSelect").value = data.mathPrefs.count ?? "0";
     $("mathShuffleChk").checked = data.mathPrefs.shuffle !== false;
+    if($("mathMarkedOnlyChk")) $("mathMarkedOnlyChk").checked = !!data.mathPrefs.markedOnly;
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
@@ -2837,6 +2870,17 @@ function restoreSession(mode){
       $("finalMsg").textContent = `${correct} bonnes · ${wrong} fausses · ${skipped} sans réponse · moy. ${(total/data.pool.length).toFixed(2)} pts/Q`;
       $("reviewWrongBtn").style.display = (wrong + skipped) > 0 ? "" : "none";
       renderExamRecap(data.pool);
+    } else if(data.playMode === "math-br"){
+      const total = data.pool.length;
+      const cleared = data.pool.filter(q=>q._brCleared).length;
+      const pct = total ? Math.round((cleared/total)*100) : 100;
+      $("finalScore").textContent = `${cleared} / ${total}`;
+      $("finalBar").style.width = `${pct}%`;
+      $("finalMsg").textContent = cleared === total
+        ? "Battle Royal terminé — toutes les questions éliminées."
+        : `Battle Royal stoppé — ${cleared} éliminée(s), ${total - cleared} restante(s).`;
+      $("reviewWrongBtn").style.display = "none";
+      hideExamRecap();
     } else {
       const correct = data.pool.filter(isQuestionCorrect).length;
       const answered = data.pool.filter(isQuestionAnswered).length;
@@ -2969,6 +3013,7 @@ function initStart(){
   $("templateNameInput").onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); saveCurrentFiltresTemplate(); } };
   $("mathFormatSelect").onchange = updateMathTab;
   $("mathSourceSelect").onchange = updateMathTab;
+  $("mathMarkedOnlyChk")?.addEventListener("change", updateMathTab);
   document.querySelectorAll(".mode-start").forEach(btn=>{
     btn.onclick = ()=>startPlay(btn.dataset.mode, { resume:false });
   });
@@ -2986,16 +3031,20 @@ function initStart(){
 }
 
 function updateMathTab(){
-  const filtered = filterMathBySource(questionsForMode("math"), $("mathSourceSelect")?.value || "all");
+  const filtered = filterMathQuestions(questionsForMode("math"));
   $("mathTotalCount").textContent = groupByMathStem(filtered).size;
-  const data = peekSession("math");
+  if($("mathMarkedCount")) $("mathMarkedCount").textContent = String(mathMarkedCount());
+  const data = peekSession("math") || peekSession("math-br");
   const resumeBtn = $("resumeMathBtn");
   const hint = $("mathResumeHint");
   if(data){
     const answered = data.pool.filter(isQuestionAnswered).length;
+    const cleared = data.pool.filter(q=>q._brCleared).length;
     resumeBtn.classList.remove("hide");
     hint.classList.remove("hide");
-    hint.textContent = `Partie en cours : ${answered}/${data.pool.length} répondues`;
+    hint.textContent = data.playMode === "math-br"
+      ? `Battle Royal en cours : ${cleared} éliminée(s) · ${data.pool.length - cleared} restante(s)`
+      : `Partie en cours : ${answered}/${data.pool.length} répondues`;
   } else {
     resumeBtn.classList.add("hide");
     hint.classList.add("hide");
@@ -3015,6 +3064,14 @@ function filterMathBySource(arr, src){
     return s !== "pilotest" && s !== "pilotest-tuto";
   });
   return arr;
+}
+
+function filterMathQuestions(arr){
+  let out = filterMathBySource(arr, $("mathSourceSelect")?.value || "all");
+  if($("mathMarkedOnlyChk")?.checked){
+    out = out.filter(q=>isMathMarked(q._bankId));
+  }
+  return out;
 }
 
 /** Même famille = même énoncé hors chiffres / unités normalisées. */
@@ -3132,7 +3189,7 @@ function updateHiddenBadge(){
 }
 
 function resetQuestionState(q){
-  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
+  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _brCleared:false, _brCooldown:0, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
 }
 
 function isExamActive(){ return examMode; }
@@ -3333,16 +3390,113 @@ function examAdvance(){
   }
 }
 
-function buildMathPool(){
-  let arr = filterMathBySource(questionsForMode("math"), $("mathSourceSelect").value);
+function buildMathPool(opts={}){
+  const battle = !!opts.battle;
+  let arr = filterMathQuestions(questionsForMode("math"));
   arr = pickMathVariants(arr);
   if(isMathOpenFormat()) arr = arr.map(toOpenQuestion);
   else arr = arr.map(resetQuestionState);
-  arr = arr.map((q,i)=>({...q,_id:i}));
-  if($("mathShuffleChk").checked) shuffle(arr);
-  const n = parseInt($("mathCountSelect").value,10);
-  if(n>0) arr = arr.slice(0,n);
+  arr = arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
+  if($("mathShuffleChk").checked || battle) shuffle(arr);
+  if(!battle){
+    const n = parseInt($("mathCountSelect").value,10);
+    if(n>0) arr = arr.slice(0,n);
+  }
   return arr;
+}
+
+function isBattleRoyale(){ return playMode === "math-br"; }
+
+function brRemaining(){ return pool.filter(q=>!q._brCleared).length; }
+function brClearedCount(){ return pool.filter(q=>q._brCleared).length; }
+function brPlayableIndices(){
+  return pool.map((q,i)=>({q,i})).filter(({q})=>!q._brCleared && !(q._brCooldown > 0)).map(({i})=>i);
+}
+function brTickCooldowns(skipId){
+  pool.forEach(q=>{
+    if(q._brCleared) return;
+    if(skipId != null && String(q._bankId) === String(skipId)) return;
+    if(q._brCooldown > 0) q._brCooldown--;
+  });
+}
+function updateBrHud(){
+  const chip = $("brChip");
+  if(!chip) return;
+  const on = isBattleRoyale();
+  chip.classList.toggle("hide", !on);
+  if(!on) return;
+  const left = brRemaining();
+  const cool = pool.filter(q=>!q._brCleared && q._brCooldown > 0).length;
+  $("brLiveStat").textContent = `${brClearedCount()} élim. · ${left} rest. · ${cool} en pause`;
+}
+function handleBattleRoyaleResult(correct){
+  if(!isBattleRoyale()) return;
+  const q = pool[idx];
+  if(correct){
+    q._brCleared = true;
+    q._brCooldown = 0;
+    brTickCooldowns(null);
+  } else {
+    q._brCooldown = BR_COOLDOWN;
+    brTickCooldowns(String(q._bankId));
+  }
+  updateBrHud();
+}
+function goToNextBattleQuestion(){
+  if(pool.every(q=>q._brCleared)){
+    finishBattleRoyale();
+    return;
+  }
+  let playable = brPlayableIndices();
+  if(!playable.length){
+    // Toutes en cooldown : libère la plus proche
+    let best = -1, bestCd = Infinity;
+    pool.forEach((q,i)=>{
+      if(q._brCleared) return;
+      const cd = q._brCooldown || 0;
+      if(cd < bestCd){ bestCd = cd; best = i; }
+    });
+    if(best >= 0){
+      pool[best]._brCooldown = 0;
+      playable = [best];
+    }
+  }
+  if(!playable.length){
+    finishBattleRoyale();
+    return;
+  }
+  const after = playable.find(i=>i > idx);
+  idx = after != null ? after : playable[0];
+  // Reset answer state for retry of a previously failed question
+  const q = pool[idx];
+  if(q._chosen != null && !q._brCleared){
+    q._chosen = null;
+    q._inputVal = null;
+    q._inputOk = null;
+    q._dontKnow = null;
+    q._order = null;
+    q._reviewMeta = null;
+  }
+  render();
+  saveSession();
+}
+function finishBattleRoyale(){
+  clearTimeout(autoTimer);
+  closeNav();
+  $("quiz").classList.add("hide");
+  $("result").classList.remove("hide");
+  const total = pool.length;
+  const cleared = brClearedCount();
+  const pct = total ? Math.round((cleared/total)*100) : 100;
+  $("finalScore").textContent = `${cleared} / ${total}`;
+  $("finalBar").style.width = `${pct}%`;
+  $("finalMsg").textContent = cleared === total
+    ? "Battle Royal terminé — toutes les questions éliminées."
+    : `Battle Royal stoppé — ${cleared} éliminée(s), ${total - cleared} restante(s).`;
+  $("reviewWrongBtn").style.display = "none";
+  hideExamRecap();
+  toggleTemplateSaveButtons();
+  saveSession();
 }
 
 const nCorrect = () => pool.filter(isQuestionCorrect).length;
@@ -3370,8 +3524,14 @@ function startPlay(mode, opts={}){
   }
 
   setExamUI(false);
-  if(mode === "math"){
-    pool = buildMathPool();
+  if(mode === "math" || mode === "math-br"){
+    pool = buildMathPool({ battle: mode === "math-br" });
+    if(!pool.length){
+      alert($("mathMarkedOnlyChk")?.checked
+        ? "Aucune question marquée avec ces filtres."
+        : "Aucune question mathématique avec ces filtres.");
+      return;
+    }
   } else if(mode === "tout"){
     pool = shuffle([...baseQcmPool()]).map(resetQuestionState);
   } else if(mode === "erreurs"){
@@ -3407,9 +3567,10 @@ function startPlay(mode, opts={}){
 }
 
 function startMath(){ startPlay("math", { resume:false }); }
+function startMathBattleRoyale(){ startPlay("math-br", { resume:false }); }
 
 function toggleTemplateSaveButtons(){
-  const show = playMode !== "math" && pool.length > 0;
+  const show = playMode !== "math" && playMode !== "math-br" && pool.length > 0;
   $("savePoolTemplateBtn")?.classList.toggle("hide", !show);
   $("saveResultTemplateBtn")?.classList.toggle("hide", !show);
 }
@@ -3434,15 +3595,27 @@ function prepare(q){
 
 function render(){
   const q = pool[idx];
+  if(isBattleRoyale() && q && !q._brCleared && !(q._brCooldown > 0) && q._chosen != null && !isQuestionCorrect(q)){
+    q._chosen = null;
+    q._inputVal = null;
+    q._inputOk = null;
+    q._dontKnow = null;
+    q._order = null;
+    q._reviewMeta = null;
+  }
   prepare(q);
-  const locked = q._chosen!=null;
-  $("qCat").textContent = (playMode === "math" && isInputQuestion(q))
+  const locked = q._chosen!=null || !!q._brCleared;
+  $("qCat").textContent = ((playMode === "math" || playMode === "math-br") && isInputQuestion(q))
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
   if(examMode){
     $("liveScore").textContent = examTotalScore().toFixed(1);
     $("qNum").textContent = `Examen · Q${idx+1}/${pool.length}`;
     $("bar").style.width = `${((idx + (locked ? 1 : 0)) / pool.length) * 100}%`;
+  } else if(isBattleRoyale()){
+    $("liveScore").textContent = brClearedCount();
+    $("qNum").textContent = `BR · ${brRemaining()} rest. · Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${(brClearedCount()/Math.max(1,pool.length))*100}%`;
   } else {
     $("liveScore").textContent = nCorrect();
     $("qNum").textContent = `Q${idx+1}/${pool.length}`;
@@ -3465,8 +3638,22 @@ function render(){
     $("qImg").removeAttribute("src");
   }
   $("prevBtn").disabled = examMode || (idx===0);
-  $("nextBtn").disabled = examMode || (idx===pool.length-1);
-  $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
+  if(isBattleRoyale()){
+    $("nextBtn").disabled = false;
+    $("nextBtn").textContent = brRemaining() === 0 ? "Fin" : "Suivant →";
+  } else {
+    $("nextBtn").disabled = examMode || (idx===pool.length-1);
+    $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
+  }
+
+  const markBtn = $("markMathBtn");
+  if(markBtn){
+    const mathPlay = playMode === "math" || playMode === "math-br";
+    markBtn.classList.toggle("hide", !mathPlay || q._bankId == null);
+    if(mathPlay && q._bankId != null){
+      markBtn.textContent = isMathMarked(q._bankId) ? "★ Marquée" : "☆ Marquer";
+    }
+  }
 
   const box = $("choices"); box.innerHTML="";
   if(isInputQuestion(q)){
@@ -3545,13 +3732,30 @@ function render(){
     $("explain").innerHTML="";
   }
   updateGrid();
+  updateBrHud();
   saveSession();
   if(examMode && !locked) startExamTimer();
 }
 
+function scheduleAutoNext(correct){
+  if(isBattleRoyale()){
+    const target = idx;
+    autoTimer = setTimeout(()=>{
+      if(idx===target && !$("quiz").classList.contains("hide")) goToNextBattleQuestion();
+    }, 1000);
+    return;
+  }
+  if(correct && idx < pool.length-1){
+    const target = idx;
+    autoTimer = setTimeout(()=>{
+      if(idx===target && !$("quiz").classList.contains("hide")) next();
+    }, 1000);
+  }
+}
+
 function choose(i){
   const q = pool[idx];
-  if(q._chosen!=null) return;
+  if(q._chosen!=null || q._brCleared) return;
   clearTimeout(autoTimer);
   const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, examTimeForQuestion(q)) : null;
   q._chosen = i;
@@ -3568,19 +3772,15 @@ function choose(i){
   else if(isInReviewPool(q)) q._reviewMeta = { streak: getReviewStreak(q) };
   else if(wasInReview) q._reviewMeta = { mastered: true };
   else q._reviewMeta = null;
+  handleBattleRoyaleResult(correct);
   render();
-  if(isQuestionCorrect(q) && idx < pool.length-1){
-    const target = idx;
-    autoTimer = setTimeout(()=>{
-      if(idx===target && !$("quiz").classList.contains("hide")) next();
-    }, 1000);
-  }
+  scheduleAutoNext(correct);
 }
 
 function markDontKnow(){
   if(examMode) return;
   const q = pool[idx];
-  if(!q || q._chosen != null) return;
+  if(!q || q._chosen != null || q._brCleared) return;
   clearTimeout(autoTimer);
   q._dontKnow = true;
   q._chosen = -1;
@@ -3590,12 +3790,14 @@ function markDontKnow(){
   }
   recordReviewAnswer(q, false);
   q._reviewMeta = { added: true };
+  handleBattleRoyaleResult(false);
   render();
+  scheduleAutoNext(false);
 }
 
 function submitInput(val){
   const q = pool[idx];
-  if(q._chosen!=null) return;
+  if(q._chosen!=null || q._brCleared) return;
   clearTimeout(autoTimer);
   q._dontKnow = false;
   q._inputVal = val.trim();
@@ -3608,13 +3810,9 @@ function submitInput(val){
   else if(isInReviewPool(q)) q._reviewMeta = { streak: getReviewStreak(q) };
   else if(wasInReview) q._reviewMeta = { mastered: true };
   else q._reviewMeta = null;
+  handleBattleRoyaleResult(correct);
   render();
-  if(correct && idx < pool.length-1){
-    const target = idx;
-    autoTimer = setTimeout(()=>{
-      if(idx===target && !$("quiz").classList.contains("hide")) next();
-    }, 1000);
-  }
+  scheduleAutoNext(correct);
 }
 
 /* ---------- Grille de navigation ---------- */
@@ -3636,12 +3834,18 @@ function updateGrid(){
     if(examMode){
       if(q._examPoints > 0) c.classList.add("correct");
       else if(q._examPoints === EXAM_WRONG_PTS) c.classList.add("wrong");
+    } else if(isBattleRoyale()){
+      if(q._brCleared) c.classList.add("correct");
+      else if(q._brCooldown > 0) c.classList.add("wrong");
+      else if(q._chosen!=null) c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
     } else if(q._chosen!=null) {
       c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
     }
     if(i===idx) c.classList.add("current");
   });
-  const stat = examMode ? `${idx+1}/${pool.length}` : `${nAnswered()}/${pool.length}`;
+  const stat = examMode ? `${idx+1}/${pool.length}`
+    : isBattleRoyale() ? `${brClearedCount()}/${pool.length} élim.`
+    : `${nAnswered()}/${pool.length}`;
   $("navStats").textContent = stat;
   $("toggleStat").textContent = stat;
 }
@@ -3655,13 +3859,26 @@ function gotoQ(i){
   saveSession();
 }
 
-function next(){ if(examMode) return; clearTimeout(autoTimer); if(idx<pool.length-1){ idx++; render(); saveSession(); } }
+function next(){
+  if(examMode) return;
+  clearTimeout(autoTimer);
+  if(isBattleRoyale()){
+    if(brRemaining() === 0) finishBattleRoyale();
+    else goToNextBattleQuestion();
+    return;
+  }
+  if(idx<pool.length-1){ idx++; render(); saveSession(); }
+}
 function prev(){ if(examMode) return; clearTimeout(autoTimer); if(idx>0){ idx--; render(); saveSession(); } }
 
 function openNav(){ if(examMode) return; $("navGrid").classList.add("open"); $("scrim").classList.add("open"); }
 function closeNav(){ $("navGrid").classList.remove("open"); $("scrim").classList.remove("open"); }
 
 function finish(){
+  if(isBattleRoyale()){
+    finishBattleRoyale();
+    return;
+  }
   clearTimeout(autoTimer);
   clearExamTimer();
   closeNav();
@@ -4075,7 +4292,18 @@ function addQuestionFromForm(){
 }
 
 $("startMathBtn").onclick = startMath;
-$("resumeMathBtn").onclick = ()=>startPlay("math", { resume:true });
+$("startMathBrBtn").onclick = startMathBattleRoyale;
+$("resumeMathBtn").onclick = ()=>{
+  const data = peekSession("math") || peekSession("math-br");
+  startPlay(data?.playMode || "math", { resume:true });
+};
+$("markMathBtn").onclick = ()=>{
+  const q = pool[idx];
+  if(!q || q._bankId == null) return;
+  const on = toggleMathMarked(q._bankId);
+  $("markMathBtn").textContent = on ? "★ Marquée" : "☆ Marquer";
+  updateMathTab();
+};
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
 $("quitBtn").onclick = ()=>{
