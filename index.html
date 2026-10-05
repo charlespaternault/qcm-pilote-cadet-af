@@ -433,15 +433,15 @@
   <!-- START SCREEN -->
   <div id="start" class="panel">
     <div class="start-tabs">
-      <button type="button" class="tab-btn active" data-tab="quiz">QCM</button>
-      <button type="button" class="tab-btn" data-tab="math">Problèmes mathématiques</button>
+      <button type="button" class="tab-btn" data-tab="quiz">QCM</button>
+      <button type="button" class="tab-btn active" data-tab="math">Problèmes mathématiques</button>
       <button type="button" class="tab-btn" data-tab="airways">Airways PLAY!</button>
       <button type="button" class="tab-btn" data-tab="shortcuts">Raccourcis web</button>
       <button type="button" class="tab-btn" data-tab="hidden">Questions cachées <b id="hiddenTabCount"></b></button>
       <button type="button" class="tab-btn" data-tab="sync">Sync</button>
     </div>
 
-    <div id="paneQuiz" class="start-pane active">
+    <div id="paneQuiz" class="start-pane">
       <div class="home-intro">
         <h2>Choisis un mode</h2>
         <p>Chaque mode conserve sa progression — tu peux quitter et revenir plus tard.</p>
@@ -483,6 +483,25 @@
           <div class="mode-actions">
             <button type="button" class="mode-resume hide" data-mode="examen">Reprendre</button>
             <button type="button" class="primary mode-start" data-mode="examen">Commencer</button>
+          </div>
+        </article>
+
+        <article class="mode-card" id="modeCardExamenBlanc">
+          <div class="mode-card-head">
+            <div class="mode-icon">📝</div>
+            <div>
+              <h3>Examen blanc</h3>
+              <p class="mode-desc">30 questions · 30 minutes · navigation libre · questions variées à chaque tirage.</p>
+            </div>
+          </div>
+          <div class="mode-meta">QCM chronométré global</div>
+          <div class="mode-progress hide" id="examen-blancProgress">
+            <small id="examen-blancProgressLabel">—</small>
+            <div class="progress"><i id="examen-blancProgressBar"></i></div>
+          </div>
+          <div class="mode-actions">
+            <button type="button" class="mode-resume hide" data-mode="examen-blanc">Reprendre</button>
+            <button type="button" class="primary mode-start" data-mode="examen-blanc">Commencer</button>
           </div>
         </article>
 
@@ -590,7 +609,7 @@
       </div>
     </div>
 
-    <div id="paneMath" class="start-pane">
+    <div id="paneMath" class="start-pane active">
       <div class="topbar">
         <span class="chip">Banque de <b id="mathTotalCount">0</b> types de problèmes</span>
         <span class="chip">Style tests psychotechniques pilote</span>
@@ -602,6 +621,7 @@
         <select id="mathFormatSelect">
           <option value="qcm">Choix multiples</option>
           <option value="ouvert">Questions ouvertes</option>
+          <option value="mixte">Mixte (25 % QCM · 75 % libre)</option>
         </select>
         <select id="mathSourceSelect">
           <option value="all">Toutes les sources</option>
@@ -629,6 +649,7 @@
       </p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:8px;">
         En <b>questions ouvertes</b>, tu tapes la réponse même si c’était un QCM.
+        En <b>mixte</b>, ~25 % restent en QCM, le reste en saisie libre.
         Sinon : touches <kbd>1</kbd>–<kbd>5</kbd>, <kbd>Entrée</kbd> pour valider, <kbd>←</kbd>/<kbd>→</kbd> pour naviguer.
       </p>
     </div>
@@ -1706,6 +1727,8 @@ let examMode = false;
 let examTimerInterval = null;
 let examTimeoutTimer = null;
 let examQuestionStart = 0;
+let blancDeadline = 0;
+let blancTimerInterval = null;
 let playMode = "tout";
 let quizMode = "tout";
 const EXAM_SIZE = 35;
@@ -1715,15 +1738,19 @@ const EXAM_LONG_CHARS = 120;
 const EXAM_FAST_SEC = 1.5;
 const EXAM_MAX_PTS = 3;
 const EXAM_WRONG_PTS = -2;
+const BLANC_SIZE = 30;
+const BLANC_MINUTES = 30;
+const BLANC_HISTORY_KEEP = 90;
 const SESSION_KEY_LEGACY = "qcm-pilote-cadet-af-v1";
 const SESSION_KEY_PREFIX = "qcm-pilote-cadet-af-session-";
 const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
 const TEMPLATES_KEY = "qcm-pilote-cadet-af-templates-v1";
 const MATH_MARKED_KEY = "qcm-pilote-cadet-af-math-marked-v1";
-const PLAY_MODES = ["tout", "examen", "erreurs", "filtres", "math", "math-br"];
-const MODE_LABELS = { tout:"Tout", examen:"Examen", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal" };
+const BLANC_HISTORY_KEY = "qcm-pilote-cadet-af-blanc-history-v1";
+const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br"];
+const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal" };
 const BR_COOLDOWN = 6;
-const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
+const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", "examen-blanc":"modeCardExamenBlanc", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
@@ -1758,7 +1785,8 @@ const SYNC_FIELD_KEYS = {
   shortcuts: SHORTCUTS_KEY,
   filtresPrefs: FILTRES_PREFS_KEY,
   templates: TEMPLATES_KEY,
-  mathMarked: MATH_MARKED_KEY
+  mathMarked: MATH_MARKED_KEY,
+  blancHistory: BLANC_HISTORY_KEY
 };
 
 function nowIso(){ return new Date().toISOString(); }
@@ -1808,7 +1836,7 @@ function collectLocalSnapshot(){
     if(raw != null){
       try{ data = JSON.parse(raw); }catch(_){ data = null; }
     } else {
-      data = (field === "userQuestions" || field === "shortcuts" || field === "templates") ? [] : {};
+      data = (field === "userQuestions" || field === "shortcuts" || field === "templates" || field === "blancHistory") ? [] : {};
     }
     fields[field] = {
       updatedAt: fieldTimes[field] || meta.lastSyncAt || nowIso(),
@@ -1953,7 +1981,8 @@ function mergeSnapshots(localSnap, remoteSnap){
     shortcuts: "array-url",
     filtresPrefs: "plain",
     templates: "array-uid",
-    mathMarked: "map"
+    mathMarked: "map",
+    blancHistory: "array"
   };
   const fields = {};
   for(const field of Object.keys(SYNC_FIELD_KEYS)){
@@ -2701,6 +2730,7 @@ function migrateLegacySession(){
 function poolSnapshot(){
   return pool.map(q=>({
     _bankId:q._bankId, c:q.c, q:q.q, o:q.o, a:q.a, e:q.e, img:q.img, annexe:q.annexe, t:q.t, ans:q.ans,
+    _openFromQcm:q._openFromQcm,
     _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
     _inputVal:q._inputVal, _inputOk:q._inputOk, _dontKnow:q._dontKnow,
     _brCleared:q._brCleared, _brCooldown:q._brCooldown,
@@ -2715,6 +2745,7 @@ function saveSession(){
     examMode,
     idx,
     screen: currentScreen(),
+    blancDeadline: isBlancMode() ? blancDeadline : undefined,
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
     mathPrefs: (playMode === "math" || playMode === "math-br") ? {
       format:$("mathFormatSelect").value,
@@ -2786,6 +2817,10 @@ function updateModeCards(){
   if(examStart) examStart.disabled = examAvail < 1;
   updateModeCardProgress("examen", peekSession("examen"));
 
+  const blancStart = document.querySelector('.mode-start[data-mode="examen-blanc"]');
+  if(blancStart) blancStart.disabled = examAvail < 1;
+  updateModeCardProgress("examen-blanc", peekSession("examen-blanc"));
+
   const erreurs = erreursPool();
   $("modeCardErreurs").classList.toggle("hide", !erreurs.length);
   $("erreursMeta").textContent = erreurs.length ? `${erreurs.length} à revoir` : "—";
@@ -2826,7 +2861,7 @@ function rebuildNewQuestionCategories(){
 function applySessionData(data){
   playMode = data.playMode || data.mode || "tout";
   quizMode = playMode;
-  examMode = !!data.examMode;
+  examMode = !!data.examMode && playMode === "examen";
   if(data.filtres){
     saveFiltresPrefs(data.filtres);
     loadFiltresPrefsToUI();
@@ -2841,12 +2876,18 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _openFromQcm:!!q._openFromQcm, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
   if(examMode){
     $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">${examTotalScore().toFixed(1)}</b> / ${examMaxScore()}`;
+  }
+  blancDeadline = isBlancMode() ? (data.blancDeadline || 0) : 0;
+  if(isBlancMode() && data.screen === "quiz") startBlancTimer();
+  else {
+    clearBlancTimer();
+    setBlancUI(false);
   }
 }
 
@@ -2890,11 +2931,19 @@ function restoreSession(mode){
       const reste = data.pool.length - answered;
       const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
       let msg;
-      if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
-      else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
-      else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
-      else msg = "📚 Reprends les fiches et recommence.";
-      $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+      if(data.playMode === "examen-blanc"){
+        msg = pct>=85 ? "Excellent examen blanc."
+          : pct>=70 ? "Bon niveau sur cet examen blanc."
+          : pct>=50 ? "Examen blanc à consolider."
+          : "Revois les fiches et retente un examen blanc.";
+        $("finalMsg").textContent = `Examen blanc · ${pct}% — ${msg}${resteTxt}`;
+      } else {
+        if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+        else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
+        else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
+        else msg = "📚 Reprends les fiches et recommence.";
+        $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+      }
       $("reviewWrongBtn").style.display = data.pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
       hideExamRecap();
     }
@@ -2978,6 +3027,20 @@ function toOpenQuestion(q){
 
 function isMathOpenFormat(){
   return $("mathFormatSelect")?.value === "ouvert";
+}
+function isMathMixteFormat(){
+  return $("mathFormatSelect")?.value === "mixte";
+}
+function applyMathFormats(arr){
+  if(isMathOpenFormat()) return arr.map(toOpenQuestion);
+  if(isMathMixteFormat()){
+    const n = arr.length;
+    const qcmN = Math.max(1, Math.round(n * 0.25));
+    const indices = shuffle([...Array(n).keys()]);
+    const keepQcm = new Set(indices.slice(0, Math.min(qcmN, n)));
+    return arr.map((q,i)=> keepQcm.has(i) ? resetQuestionState(q) : toOpenQuestion(q));
+  }
+  return arr.map(resetQuestionState);
 }
 
 function erreursPool(){
@@ -3295,6 +3358,92 @@ function clearExamTimer(){
   examTimeoutTimer = null;
 }
 
+function isBlancMode(){ return playMode === "examen-blanc"; }
+
+function loadBlancHistory(){
+  const raw = loadJson(BLANC_HISTORY_KEY, []);
+  return Array.isArray(raw) ? raw.map(String) : [];
+}
+function saveBlancHistory(ids){
+  saveJson(BLANC_HISTORY_KEY, ids.slice(-BLANC_HISTORY_KEEP));
+}
+function rememberBlancExam(poolArr){
+  const ids = poolArr.map(q=>q._bankId).filter(id=>id != null).map(String);
+  saveBlancHistory([...loadBlancHistory(), ...ids]);
+}
+
+function pickBlancQuestions(candidates, n=BLANC_SIZE){
+  const arr = candidates.filter(q=>!isInputQuestion(q));
+  if(!arr.length) return [];
+  const recent = new Set(loadBlancHistory());
+  const fresh = shuffle(arr.filter(q=>!recent.has(String(q._bankId))));
+  const reused = shuffle(arr.filter(q=>recent.has(String(q._bankId))));
+  const picked = [...fresh, ...reused].slice(0, Math.min(n, arr.length));
+  // Équilibre léger par catégorie sur le tirage final
+  const byCat = {};
+  picked.forEach(q=>{ (byCat[q.c] ||= []).push(q); });
+  const balanced = [];
+  const cats = shuffle(Object.keys(byCat));
+  let guard = 0;
+  while(balanced.length < picked.length && guard < picked.length * 3){
+    guard++;
+    for(const c of cats){
+      if(byCat[c].length) balanced.push(byCat[c].pop());
+      if(balanced.length >= picked.length) break;
+    }
+  }
+  return shuffle(balanced).map(resetQuestionState);
+}
+
+function formatBlancClock(ms){
+  const sec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+
+function clearBlancTimer(){
+  clearInterval(blancTimerInterval);
+  blancTimerInterval = null;
+}
+
+function setBlancUI(active){
+  if(examMode) return;
+  $("examTimerWrap").classList.toggle("hide", !active);
+  $("examTimerChip").classList.toggle("hide", !active);
+  if(active){
+    $("examTimerWrap").classList.remove("urgent");
+    $("examTimerChip").classList.remove("urgent");
+  }
+}
+
+function tickBlancTimer(){
+  if(!isBlancMode() || currentScreen() !== "quiz") return;
+  const left = blancDeadline - Date.now();
+  const total = BLANC_MINUTES * 60 * 1000;
+  const pct = Math.max(0, Math.min(100, (left / total) * 100));
+  $("examTimerText").textContent = formatBlancClock(left);
+  $("examTimerBar").style.width = `${pct}%`;
+  const urgent = left <= 5 * 60 * 1000;
+  $("examTimerWrap").classList.toggle("urgent", urgent);
+  $("examTimerChip").classList.toggle("urgent", urgent);
+  if(left <= 0){
+    clearBlancTimer();
+    finish();
+  }
+}
+
+function startBlancTimer(){
+  clearBlancTimer();
+  if(!isBlancMode()) return;
+  if(!blancDeadline || blancDeadline <= Date.now()){
+    blancDeadline = Date.now() + BLANC_MINUTES * 60 * 1000;
+  }
+  setBlancUI(true);
+  tickBlancTimer();
+  blancTimerInterval = setInterval(tickBlancTimer, 250);
+}
+
 function pickExamQuestions(candidates, n=EXAM_SIZE){
   const arr = candidates.filter(q=>!isInputQuestion(q));
   if(!arr.length) return [];
@@ -3394,15 +3543,13 @@ function buildMathPool(opts={}){
   const battle = !!opts.battle;
   let arr = filterMathQuestions(questionsForMode("math"));
   arr = pickMathVariants(arr);
-  if(isMathOpenFormat()) arr = arr.map(toOpenQuestion);
-  else arr = arr.map(resetQuestionState);
-  arr = arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
   if($("mathShuffleChk").checked || battle) shuffle(arr);
   if(!battle){
     const n = parseInt($("mathCountSelect").value,10);
     if(n>0) arr = arr.slice(0,n);
   }
-  return arr;
+  arr = applyMathFormats(arr);
+  return arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
 }
 
 function isBattleRoyale(){ return playMode === "math-br"; }
@@ -3517,13 +3664,34 @@ function startPlay(mode, opts={}){
     }
     pool = picked;
     idx = 0;
+    clearBlancTimer();
+    setBlancUI(false);
     setExamUI(true);
     $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">0</b> / ${picked.length * EXAM_MAX_PTS}`;
     launchQuiz();
     return;
   }
 
+  if(mode === "examen-blanc"){
+    const picked = pickBlancQuestions(baseQcmPool(), BLANC_SIZE);
+    if(!picked.length){
+      alert("Pas assez de questions QCM pour lancer un examen blanc.");
+      return;
+    }
+    pool = picked;
+    idx = 0;
+    setExamUI(false);
+    rememberBlancExam(picked);
+    blancDeadline = Date.now() + BLANC_MINUTES * 60 * 1000;
+    launchQuiz();
+    startBlancTimer();
+    return;
+  }
+
   setExamUI(false);
+  clearBlancTimer();
+  setBlancUI(false);
+  blancDeadline = 0;
   if(mode === "math" || mode === "math-br"){
     pool = buildMathPool({ battle: mode === "math-br" });
     if(!pool.length){
@@ -3881,6 +4049,8 @@ function finish(){
   }
   clearTimeout(autoTimer);
   clearExamTimer();
+  clearBlancTimer();
+  setBlancUI(false);
   closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.remove("hide");
@@ -3905,13 +4075,20 @@ function finish(){
     $("finalScore").textContent = `${correct} / ${pool.length}`;
     $("finalBar").style.width = `${pct}%`;
     let msg;
-    if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
+    if(isBlancMode()){
+      msg = pct>=85 ? "Excellent examen blanc."
+        : pct>=70 ? "Bon niveau sur cet examen blanc."
+        : pct>=50 ? "Examen blanc à consolider."
+        : "Revois les fiches et retente un examen blanc.";
+    } else if(pct>=85) msg = "🌟 Excellent ! Prêt pour la sélection.";
     else if(pct>=70) msg = "👍 Bon niveau, encore quelques révisions.";
     else if(pct>=50) msg = "✍️ À consolider : revois tes erreurs.";
     else msg = "📚 Reprends les fiches et recommence.";
     const reste = pool.length - answered;
     const resteTxt = reste>0 ? ` · ${reste} question(s) non répondue(s)` : "";
-    $("finalMsg").textContent = `${pct}% — ${msg}${resteTxt}`;
+    $("finalMsg").textContent = isBlancMode()
+      ? `Examen blanc · ${pct}% — ${msg}${resteTxt}`
+      : `${pct}% — ${msg}${resteTxt}`;
     $("reviewWrongBtn").style.display = pool.some(q=>isQuestionAnswered(q) && !isQuestionCorrect(q)) ? "" : "none";
     hideExamRecap();
   }
@@ -3934,6 +4111,8 @@ function reviewWrong(){
 function home(){
   clearTimeout(autoTimer);
   clearExamTimer();
+  clearBlancTimer();
+  setBlancUI(false);
   examMode = false;
   setExamUI(false);
   closeNav();
@@ -4308,6 +4487,7 @@ $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
 $("quitBtn").onclick = ()=>{
   if(examMode && !confirm("Abandonner l'examen en cours ?")) return;
+  if(isBlancMode() && currentScreen()==="quiz" && !confirm("Abandonner l'examen blanc en cours ?")) return;
   home();
 };
 $("finishBtn").onclick = finish;
@@ -4345,6 +4525,7 @@ document.addEventListener("keydown", e=>{
 wireSyncUI();
 initStart();
 initSync();
+switchStartTab("math");
 window.addEventListener("pagehide", saveSession);
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="hidden") saveSession();
