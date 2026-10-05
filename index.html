@@ -486,25 +486,6 @@
           </div>
         </article>
 
-        <article class="mode-card" id="modeCardExamenBlanc">
-          <div class="mode-card-head">
-            <div class="mode-icon">📝</div>
-            <div>
-              <h3>Examen blanc</h3>
-              <p class="mode-desc">30 questions · 30 minutes · navigation libre · questions variées à chaque tirage.</p>
-            </div>
-          </div>
-          <div class="mode-meta">QCM chronométré global</div>
-          <div class="mode-progress hide" id="examen-blancProgress">
-            <small id="examen-blancProgressLabel">—</small>
-            <div class="progress"><i id="examen-blancProgressBar"></i></div>
-          </div>
-          <div class="mode-actions">
-            <button type="button" class="mode-resume hide" data-mode="examen-blanc">Reprendre</button>
-            <button type="button" class="primary mode-start" data-mode="examen-blanc">Commencer</button>
-          </div>
-        </article>
-
         <article class="mode-card" id="modeCardErreurs">
           <div class="mode-card-head">
             <div class="mode-icon">🎯</div>
@@ -641,10 +622,12 @@
       <div style="text-align:center; margin-top:12px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
         <button type="button" class="hide" id="resumeMathBtn">Reprendre</button>
         <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
+        <button type="button" id="startMathBlancBtn" style="padding:12px 22px; font-size:15px;">Examen blanc 📝</button>
         <button type="button" id="startMathBrBtn" style="padding:12px 22px; font-size:15px;">Battle Royal ⚔</button>
       </div>
       <p id="mathResumeHint" class="hide" style="color:var(--muted); font-size:13px; text-align:center; margin-top:10px;"></p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:12px; line-height:1.5;">
+        <b>Examen blanc</b> : 30 problèmes maths · 30 min · format choisi ci-dessus · tirage varié à chaque fois.<br>
         <b>Battle Royal</b> : toutes les questions. Bonne réponse → éliminée. Échec → 6 autres réponses avant de la retenter.
       </p>
       <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:8px;">
@@ -1750,7 +1733,7 @@ const BLANC_HISTORY_KEY = "qcm-pilote-cadet-af-blanc-history-v1";
 const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br"];
 const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal" };
 const BR_COOLDOWN = 6;
-const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", "examen-blanc":"modeCardExamenBlanc", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
+const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
 const HIDDEN_KEY = "qcm-pilote-cadet-af-hidden-v1";
@@ -2747,7 +2730,7 @@ function saveSession(){
     screen: currentScreen(),
     blancDeadline: isBlancMode() ? blancDeadline : undefined,
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
-    mathPrefs: (playMode === "math" || playMode === "math-br") ? {
+    mathPrefs: (playMode === "math" || playMode === "math-br" || playMode === "examen-blanc") ? {
       format:$("mathFormatSelect").value,
       source:$("mathSourceSelect").value,
       count:$("mathCountSelect").value,
@@ -2816,10 +2799,6 @@ function updateModeCards(){
   const examStart = document.querySelector('.mode-start[data-mode="examen"]');
   if(examStart) examStart.disabled = examAvail < 1;
   updateModeCardProgress("examen", peekSession("examen"));
-
-  const blancStart = document.querySelector('.mode-start[data-mode="examen-blanc"]');
-  if(blancStart) blancStart.disabled = examAvail < 1;
-  updateModeCardProgress("examen-blanc", peekSession("examen-blanc"));
 
   const erreurs = erreursPool();
   $("modeCardErreurs").classList.toggle("hide", !erreurs.length);
@@ -3097,7 +3076,7 @@ function updateMathTab(){
   const filtered = filterMathQuestions(questionsForMode("math"));
   $("mathTotalCount").textContent = groupByMathStem(filtered).size;
   if($("mathMarkedCount")) $("mathMarkedCount").textContent = String(mathMarkedCount());
-  const data = peekSession("math") || peekSession("math-br");
+  const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   const resumeBtn = $("resumeMathBtn");
   const hint = $("mathResumeHint");
   if(data){
@@ -3105,9 +3084,13 @@ function updateMathTab(){
     const cleared = data.pool.filter(q=>q._brCleared).length;
     resumeBtn.classList.remove("hide");
     hint.classList.remove("hide");
-    hint.textContent = data.playMode === "math-br"
-      ? `Battle Royal en cours : ${cleared} éliminée(s) · ${data.pool.length - cleared} restante(s)`
-      : `Partie en cours : ${answered}/${data.pool.length} répondues`;
+    if(data.playMode === "math-br"){
+      hint.textContent = `Battle Royal en cours : ${cleared} éliminée(s) · ${data.pool.length - cleared} restante(s)`;
+    } else if(data.playMode === "examen-blanc"){
+      hint.textContent = `Examen blanc en cours : ${answered}/${data.pool.length} répondues`;
+    } else {
+      hint.textContent = `Partie en cours : ${answered}/${data.pool.length} répondues`;
+    }
   } else {
     resumeBtn.classList.add("hide");
     hint.classList.add("hide");
@@ -3372,27 +3355,17 @@ function rememberBlancExam(poolArr){
   saveBlancHistory([...loadBlancHistory(), ...ids]);
 }
 
-function pickBlancQuestions(candidates, n=BLANC_SIZE){
-  const arr = candidates.filter(q=>!isInputQuestion(q));
+function pickBlancQuestions(n=BLANC_SIZE){
+  let arr = filterMathQuestions(questionsForMode("math"));
+  arr = pickMathVariants(arr);
   if(!arr.length) return [];
   const recent = new Set(loadBlancHistory());
   const fresh = shuffle(arr.filter(q=>!recent.has(String(q._bankId))));
   const reused = shuffle(arr.filter(q=>recent.has(String(q._bankId))));
-  const picked = [...fresh, ...reused].slice(0, Math.min(n, arr.length));
-  // Équilibre léger par catégorie sur le tirage final
-  const byCat = {};
-  picked.forEach(q=>{ (byCat[q.c] ||= []).push(q); });
-  const balanced = [];
-  const cats = shuffle(Object.keys(byCat));
-  let guard = 0;
-  while(balanced.length < picked.length && guard < picked.length * 3){
-    guard++;
-    for(const c of cats){
-      if(byCat[c].length) balanced.push(byCat[c].pop());
-      if(balanced.length >= picked.length) break;
-    }
-  }
-  return shuffle(balanced).map(resetQuestionState);
+  arr = [...fresh, ...reused].slice(0, Math.min(n, arr.length));
+  shuffle(arr);
+  arr = applyMathFormats(arr);
+  return arr.map((q,i)=>({...q, _id:i, _brCleared:false, _brCooldown:0}));
 }
 
 function formatBlancClock(ms){
@@ -3673,9 +3646,11 @@ function startPlay(mode, opts={}){
   }
 
   if(mode === "examen-blanc"){
-    const picked = pickBlancQuestions(baseQcmPool(), BLANC_SIZE);
+    const picked = pickBlancQuestions(BLANC_SIZE);
     if(!picked.length){
-      alert("Pas assez de questions QCM pour lancer un examen blanc.");
+      alert($("mathMarkedOnlyChk")?.checked
+        ? "Aucune question marquée avec ces filtres."
+        : "Aucune question mathématique avec ces filtres.");
       return;
     }
     pool = picked;
@@ -3736,9 +3711,10 @@ function startPlay(mode, opts={}){
 
 function startMath(){ startPlay("math", { resume:false }); }
 function startMathBattleRoyale(){ startPlay("math-br", { resume:false }); }
+function startMathBlanc(){ startPlay("examen-blanc", { resume:false }); }
 
 function toggleTemplateSaveButtons(){
-  const show = playMode !== "math" && playMode !== "math-br" && pool.length > 0;
+  const show = playMode !== "math" && playMode !== "math-br" && playMode !== "examen-blanc" && pool.length > 0;
   $("savePoolTemplateBtn")?.classList.toggle("hide", !show);
   $("saveResultTemplateBtn")?.classList.toggle("hide", !show);
 }
@@ -3773,7 +3749,7 @@ function render(){
   }
   prepare(q);
   const locked = q._chosen!=null || !!q._brCleared;
-  $("qCat").textContent = ((playMode === "math" || playMode === "math-br") && isInputQuestion(q))
+  $("qCat").textContent = ((playMode === "math" || playMode === "math-br" || playMode === "examen-blanc") && isInputQuestion(q))
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
   if(examMode){
@@ -3784,6 +3760,10 @@ function render(){
     $("liveScore").textContent = brClearedCount();
     $("qNum").textContent = `BR · ${brRemaining()} rest. · Q${idx+1}/${pool.length}`;
     $("bar").style.width = `${(brClearedCount()/Math.max(1,pool.length))*100}%`;
+  } else if(isBlancMode()){
+    $("liveScore").textContent = nCorrect();
+    $("qNum").textContent = `Blanc · Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
   } else {
     $("liveScore").textContent = nCorrect();
     $("qNum").textContent = `Q${idx+1}/${pool.length}`;
@@ -3816,7 +3796,7 @@ function render(){
 
   const markBtn = $("markMathBtn");
   if(markBtn){
-    const mathPlay = playMode === "math" || playMode === "math-br";
+    const mathPlay = playMode === "math" || playMode === "math-br" || playMode === "examen-blanc";
     markBtn.classList.toggle("hide", !mathPlay || q._bankId == null);
     if(mathPlay && q._bankId != null){
       markBtn.textContent = isMathMarked(q._bankId) ? "★ Marquée" : "☆ Marquer";
@@ -4179,7 +4159,7 @@ function applyEditToPool(id, refreshed){
       _examTimedOut: q._examTimedOut,
       _openFromQcm: q._openFromQcm,
       // En mode ouvert maths, conserve la forme saisie libre
-      ...(q._openFromQcm || (playMode === "math" && isMathOpenFormat())
+      ...(q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc") && isMathOpenFormat())
         ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
         : {})
     };
@@ -4471,9 +4451,10 @@ function addQuestionFromForm(){
 }
 
 $("startMathBtn").onclick = startMath;
+$("startMathBlancBtn").onclick = startMathBlanc;
 $("startMathBrBtn").onclick = startMathBattleRoyale;
 $("resumeMathBtn").onclick = ()=>{
-  const data = peekSession("math") || peekSession("math-br");
+  const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   startPlay(data?.playMode || "math", { resume:true });
 };
 $("markMathBtn").onclick = ()=>{
