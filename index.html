@@ -139,6 +139,11 @@
   .progress > i { display:block; height:100%; width:0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .3s; }
 
   .question { font-size: clamp(17px, 2.4vw, 20px); font-weight: 600; margin: 6px 0 16px; }
+  .question-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .question-text { display: block; }
   .num { color: var(--muted); font-weight: 600; margin-right: 6px; }
   .q-media { margin: 0 0 16px; text-align: center; }
   .q-img {
@@ -259,9 +264,9 @@
   .flag-dot.flag-green { background:#1faf6c; }
   .flag-dot.flag-blue { background:#3b82f6; }
   .q-flag {
-    display:inline-flex; align-items:center; gap:6px; margin-left:8px; vertical-align:middle;
+    display: inline-flex; align-items: center; gap: 6px;
   }
-  .q-flag .flag-dot { width:12px; height:12px; border-radius:50%; border:1px solid rgba(0,0,0,.35); display:inline-block; }
+  .q-flag .flag-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.35); display: inline-block; }
   .flag-btns { display:inline-flex; gap:4px; align-items:center; }
   .flag-btns.hide { display:none !important; }
   .flag-btns button {
@@ -783,7 +788,13 @@
         <div class="exam-timer-bar"><i id="examTimerBar"></i></div>
       </div>
       <div class="progress"><i id="bar"></i></div>
-      <div class="question"><span class="num" id="qNum"></span><span id="qFlag" class="q-flag hide"></span><span id="qText"></span></div>
+      <div class="question">
+        <div class="question-meta">
+          <span class="num" id="qNum"></span>
+          <span id="qFlag" class="q-flag hide" aria-hidden="true"></span>
+        </div>
+        <span id="qText" class="question-text"></span>
+      </div>
       <div class="q-media hide" id="qMedia"><img class="q-img" id="qImg" alt="" loading="lazy" /></div>
       <div class="choices" id="choices"></div>
       <button type="button" id="dontKnowBtn" class="dont-know-btn">Je ne sais pas</button>
