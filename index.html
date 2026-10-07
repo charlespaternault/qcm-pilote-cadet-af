@@ -184,6 +184,15 @@
   .input-answer input[type=text]:focus { outline: none; border-color: var(--accent); }
   .input-answer.correct { border-color: var(--good); background: var(--good-bg); }
   .input-answer.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .input-format-hint {
+    width: 100%; margin: 0;
+    font-size: 13px; color: var(--muted); line-height: 1.4;
+  }
+  .input-format-hint b { color: var(--accent2); font-weight: 700; }
+  .chip.tone-good { border-color: var(--good); color: var(--good); background: var(--good-bg); }
+  .chip.tone-warn { border-color: #e09a3e; color: #f0b35a; background: #3a2a14; }
+  .chip.tone-bad { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
+  #solveTimerChip b { font-variant-numeric: tabular-nums; }
   .exam-timer-wrap.urgent .exam-timer-bar i { background: var(--bad); }
   #examTimerChip.hide, #examScoreChip.hide, #examTimerWrap.hide { display: none !important; }
   .quiz-main.exam-mode .nav-left button:not(#quitBtn),
@@ -726,6 +735,7 @@
         <span class="chip hide" id="brChip">BR : <b id="brLiveStat">—</b></span>
         <span class="chip hide" id="examScoreChip">Points : <b id="examLiveScore">0</b> / 105</span>
         <span class="chip hide" id="examTimerChip"><b id="examTimerText">8.0</b> s</span>
+        <span class="chip" id="solveTimerChip">⏱ <b id="solveTimerText">0:00</b></span>
       </div>
       <div class="exam-timer-wrap hide" id="examTimerWrap">
         <div class="exam-timer-bar"><i id="examTimerBar"></i></div>
@@ -1712,6 +1722,7 @@ let examTimeoutTimer = null;
 let examQuestionStart = 0;
 let blancDeadline = 0;
 let blancTimerInterval = null;
+let solveTimerInterval = null;
 let playMode = "tout";
 let quizMode = "tout";
 const EXAM_SIZE = 35;
@@ -2717,6 +2728,7 @@ function poolSnapshot(){
     _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
     _inputVal:q._inputVal, _inputOk:q._inputOk, _dontKnow:q._dontKnow,
     _brCleared:q._brCleared, _brCooldown:q._brCooldown,
+    _solveMs:q._solveMs, _solveStartedAt:q._solveStartedAt,
     _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
   }));
 }
@@ -2855,7 +2867,7 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _openFromQcm:!!q._openFromQcm, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _openFromQcm:!!q._openFromQcm, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _solveMs:q._solveMs??null, _solveStartedAt:q._solveStartedAt??null, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
@@ -2944,6 +2956,79 @@ function isInputQuestion(q){ return q.t === "input" || (!q.o?.length && q.ans !=
 function acceptedAnswers(q){
   const a = q.ans;
   return Array.isArray(a) ? a : (a != null ? [String(a)] : []);
+}
+
+function primaryAcceptedAnswer(q){
+  const list = acceptedAnswers(q).map(s=>String(s).trim()).filter(Boolean);
+  if(!list.length) return "";
+  const withUnit = list.find(a=>{
+    const m = a.match(/-?\d+(?:[.,]\d+)?/);
+    if(!m) return /[€%°²³a-zA-ZÀ-ÿ]/.test(a);
+    const after = a.slice(a.indexOf(m[0]) + m[0].length);
+    return /[€%°²³a-zA-ZÀ-ÿ]/.test(after);
+  });
+  return withUnit || list.reduce((best,a)=> a.length > best.length ? a : best, list[0]);
+}
+
+/** Indice d'unité / décimales dérivé des réponses de la banque. */
+function answerFormatHint(q){
+  const raw = primaryAcceptedAnswer(q);
+  if(!raw) return null;
+  const s = raw.trim();
+
+  if(/\d+\s*h\s*\d+/i.test(s)){
+    return {
+      unit: "horaire",
+      decimals: null,
+      placeholder: "ex. 16h19",
+      html: `Format : <b>horaire (XhYY)</b>`
+    };
+  }
+  if(/^-?\d+\s*\/\s*-?\d+\s*$/.test(s) || /^-?\d+\s*\/\s*-?\d+\s+[a-zA-ZÀ-ÿ%]/.test(s)){
+    const unit = s.replace(/^-?\d+\s*\/\s*-?\d+\s*/, "").trim();
+    return {
+      unit: unit || "fraction",
+      decimals: null,
+      placeholder: unit ? `ex. a/b ${unit}` : "ex. 1/42",
+      html: unit
+        ? `Format : <b>fraction</b> · Unité : <b>${escapeHtml(unit)}</b>`
+        : `Format : <b>fraction</b>`
+    };
+  }
+
+  const numMatch = s.match(/-?\d+[.,]\d+|-?\d+/);
+  if(!numMatch){
+    return {
+      unit: s,
+      decimals: null,
+      placeholder: "Ta réponse…",
+      html: `Réponse attendue de type : <b>${escapeHtml(s)}</b>`
+    };
+  }
+
+  const frac = numMatch[0].split(/[.,]/)[1];
+  const decimals = frac ? frac.length : 0;
+  let unit = s.slice(s.indexOf(numMatch[0]) + numMatch[0].length).trim()
+    .replace(/^[:=\s≈~\-–—]+/, "").trim();
+  if(unit.length > 36) unit = unit.slice(0, 36).trim() + "…";
+
+  const decLabel = decimals === 0 ? "0 (entier)" : String(decimals);
+  const unitLabel = unit || "aucune (nombre seul)";
+  const phNum = decimals > 0 ? `0,${"0".repeat(decimals)}` : "0";
+  return {
+    unit: unit || null,
+    decimals,
+    placeholder: unit ? `ex. ${phNum} ${unit}` : `ex. ${phNum}`,
+    html: `Unité : <b>${escapeHtml(unitLabel)}</b> · Décimales : <b>${decLabel}</b>`
+  };
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
 }
 
 function normalizeAns(s){
@@ -3235,7 +3320,7 @@ function updateHiddenBadge(){
 }
 
 function resetQuestionState(q){
-  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _brCleared:false, _brCooldown:0, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
+  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _brCleared:false, _brCooldown:0, _solveMs:null, _solveStartedAt:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
 }
 
 function isExamActive(){ return examMode; }
@@ -3596,12 +3681,15 @@ function goToNextBattleQuestion(){
     q._dontKnow = null;
     q._order = null;
     q._reviewMeta = null;
+    q._solveMs = null;
+    q._solveStartedAt = null;
   }
   render();
   saveSession();
 }
 function finishBattleRoyale(){
   clearTimeout(autoTimer);
+  clearSolveTimer();
   closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.remove("hide");
@@ -3737,6 +3825,59 @@ function prepare(q){
   q._correctIdx = q._order.findIndex(o=>o.correct);
 }
 
+function formatSolveClock(ms){
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+function solveTone(ms){
+  if(ms < 60000) return "good";
+  if(ms < 120000) return "warn";
+  return "bad";
+}
+function clearSolveTimer(){
+  clearInterval(solveTimerInterval);
+  solveTimerInterval = null;
+}
+function paintSolveChip(ms){
+  const chip = $("solveTimerChip");
+  if(!chip) return;
+  chip.classList.remove("hide", "tone-good", "tone-warn", "tone-bad");
+  chip.classList.add("tone-" + solveTone(ms));
+  $("solveTimerText").textContent = formatSolveClock(ms);
+}
+function freezeSolveTime(q){
+  if(!q || q._solveMs != null) return q?._solveMs;
+  const start = q._solveStartedAt || Date.now();
+  q._solveMs = Math.max(0, Date.now() - start);
+  return q._solveMs;
+}
+function syncSolveTimer(q, locked){
+  clearSolveTimer();
+  const chip = $("solveTimerChip");
+  if(!chip) return;
+  if(examMode || !q){
+    chip.classList.add("hide");
+    return;
+  }
+  if(locked){
+    const ms = q._solveMs != null ? q._solveMs : freezeSolveTime(q);
+    paintSolveChip(ms ?? 0);
+    return;
+  }
+  if(!q._solveStartedAt) q._solveStartedAt = Date.now();
+  const tick = ()=>{
+    if(pool[idx] !== q || q._chosen != null || q._brCleared){
+      clearSolveTimer();
+      return;
+    }
+    paintSolveChip(Date.now() - q._solveStartedAt);
+  };
+  tick();
+  solveTimerInterval = setInterval(tick, 250);
+}
+
 function render(){
   const q = pool[idx];
   if(isBattleRoyale() && q && !q._brCleared && !(q._brCooldown > 0) && q._chosen != null && !isQuestionCorrect(q)){
@@ -3746,6 +3887,8 @@ function render(){
     q._dontKnow = null;
     q._order = null;
     q._reviewMeta = null;
+    q._solveMs = null;
+    q._solveStartedAt = null;
   }
   prepare(q);
   const locked = q._chosen!=null || !!q._brCleared;
@@ -3807,10 +3950,17 @@ function render(){
   if(isInputQuestion(q)){
     const wrap = document.createElement("div");
     wrap.className = "input-answer" + (locked ? " locked " + (q._inputOk ? "correct" : "wrong") : "");
+    const hint = answerFormatHint(q);
+    if(hint){
+      const hintEl = document.createElement("p");
+      hintEl.className = "input-format-hint";
+      hintEl.innerHTML = hint.html;
+      wrap.appendChild(hintEl);
+    }
     const inp = document.createElement("input");
     inp.type = "text";
     inp.id = "answerInput";
-    inp.placeholder = "Ta réponse…";
+    inp.placeholder = hint?.placeholder || "Ta réponse…";
     inp.autocomplete = "off";
     if(locked){
       inp.value = q._inputVal || "";
@@ -3881,6 +4031,7 @@ function render(){
   }
   updateGrid();
   updateBrHud();
+  syncSolveTimer(q, locked);
   saveSession();
   if(examMode && !locked) startExamTimer();
 }
@@ -3906,6 +4057,7 @@ function choose(i){
   if(q._chosen!=null || q._brCleared) return;
   clearTimeout(autoTimer);
   const elapsed = examMode ? Math.min((performance.now() - examQuestionStart) / 1000, examTimeForQuestion(q)) : null;
+  freezeSolveTime(q);
   q._chosen = i;
   q._dontKnow = false;
   const correct = i === q._correctIdx;
@@ -3930,6 +4082,7 @@ function markDontKnow(){
   const q = pool[idx];
   if(!q || q._chosen != null || q._brCleared) return;
   clearTimeout(autoTimer);
+  freezeSolveTime(q);
   q._dontKnow = true;
   q._chosen = -1;
   if(isInputQuestion(q)){
@@ -3947,6 +4100,7 @@ function submitInput(val){
   const q = pool[idx];
   if(q._chosen!=null || q._brCleared) return;
   clearTimeout(autoTimer);
+  freezeSolveTime(q);
   q._dontKnow = false;
   q._inputVal = val.trim();
   q._inputOk = answersMatch(val, q);
@@ -4030,6 +4184,7 @@ function finish(){
   clearTimeout(autoTimer);
   clearExamTimer();
   clearBlancTimer();
+  clearSolveTimer();
   setBlancUI(false);
   closeNav();
   $("quiz").classList.add("hide");
@@ -4092,6 +4247,7 @@ function home(){
   clearTimeout(autoTimer);
   clearExamTimer();
   clearBlancTimer();
+  clearSolveTimer();
   setBlancUI(false);
   examMode = false;
   setExamUI(false);
