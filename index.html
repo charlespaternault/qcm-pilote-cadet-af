@@ -144,7 +144,7 @@
     margin-bottom: 8px;
   }
   .question-text { display: block; }
-  .num { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .num { color: var(--muted); font-weight: 600; }
   .q-media { margin: 0 0 16px; text-align: center; }
   .q-img {
     display: block; max-width: min(100%, 520px); width: auto; height: auto;
@@ -1781,7 +1781,10 @@ let examTimeoutTimer = null;
 let examQuestionStart = 0;
 let blancDeadline = 0;
 let blancTimerInterval = null;
+let blancPausedAt = 0;
 let solveTimerInterval = null;
+let solveRunningSince = 0;
+let examPausedElapsed = 0;
 let playMode = "tout";
 let quizMode = "tout";
 const EXAM_SIZE = 35;
@@ -2825,7 +2828,7 @@ function poolSnapshot(){
     _chosen:q._chosen, _order:q._order, _correctIdx:q._correctIdx,
     _inputVal:q._inputVal, _inputOk:q._inputOk, _dontKnow:q._dontKnow,
     _brCleared:q._brCleared, _brCooldown:q._brCooldown,
-    _solveMs:q._solveMs, _solveStartedAt:q._solveStartedAt,
+    _solveMs:q._solveMs, _solveAccumMs:q._solveAccumMs,
     _examPoints:q._examPoints, _examTimeSec:q._examTimeSec, _examTimedOut:q._examTimedOut
   }));
 }
@@ -2964,7 +2967,7 @@ function applySessionData(data){
   }
   pool = data.pool.map(q=>{
     const base = q._bankId != null ? bankQuestion(q._bankId) : q;
-    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _openFromQcm:!!q._openFromQcm, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _solveMs:q._solveMs??null, _solveStartedAt:q._solveStartedAt??null, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
+    return { ...base, ...q, _order:q._order||null, _correctIdx:q._correctIdx||0, _chosen:q._chosen??null, _inputVal:q._inputVal??null, _inputOk:q._inputOk??null, _dontKnow:!!q._dontKnow, _openFromQcm:!!q._openFromQcm, _brCleared:!!q._brCleared, _brCooldown:q._brCooldown||0, _solveMs:q._solveMs??null, _solveAccumMs:q._solveAccumMs??null, _examPoints:q._examPoints??null, _examTimeSec:q._examTimeSec??null, _examTimedOut:q._examTimedOut??null };
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
@@ -3417,7 +3420,7 @@ function updateHiddenBadge(){
 }
 
 function resetQuestionState(q){
-  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _brCleared:false, _brCooldown:0, _solveMs:null, _solveStartedAt:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
+  return { ...q, _order:null, _correctIdx:0, _chosen:null, _inputVal:null, _inputOk:null, _dontKnow:null, _brCleared:false, _brCooldown:0, _solveMs:null, _solveAccumMs:null, _examPoints:null, _examTimeSec:null, _examTimedOut:null };
 }
 
 function isExamActive(){ return examMode; }
@@ -3560,6 +3563,7 @@ function formatBlancClock(ms){
 function clearBlancTimer(){
   clearInterval(blancTimerInterval);
   blancTimerInterval = null;
+  blancPausedAt = 0;
 }
 
 function setBlancUI(active){
@@ -3573,7 +3577,9 @@ function setBlancUI(active){
 }
 
 function tickBlancTimer(){
+  if(document.visibilityState !== "visible") return;
   if(!isBlancMode() || currentScreen() !== "quiz") return;
+  if(blancPausedAt) return;
   const left = blancDeadline - Date.now();
   const total = BLANC_MINUTES * 60 * 1000;
   const pct = Math.max(0, Math.min(100, (left / total) * 100));
@@ -3591,12 +3597,29 @@ function tickBlancTimer(){
 function startBlancTimer(){
   clearBlancTimer();
   if(!isBlancMode()) return;
+  blancPausedAt = 0;
   if(!blancDeadline || blancDeadline <= Date.now()){
     blancDeadline = Date.now() + BLANC_MINUTES * 60 * 1000;
   }
   setBlancUI(true);
   tickBlancTimer();
-  blancTimerInterval = setInterval(tickBlancTimer, 250);
+  if(document.visibilityState === "visible"){
+    blancTimerInterval = setInterval(tickBlancTimer, 250);
+  }
+}
+
+function pauseBlancTimer(){
+  if(!isBlancMode() || blancPausedAt || !blancDeadline) return;
+  blancPausedAt = Date.now();
+  clearInterval(blancTimerInterval);
+  blancTimerInterval = null;
+}
+
+function resumeBlancTimer(){
+  if(!blancPausedAt) return;
+  blancDeadline += Date.now() - blancPausedAt;
+  blancPausedAt = 0;
+  if(isBlancMode() && currentScreen() === "quiz") startBlancTimer();
 }
 
 function pickExamQuestions(candidates, n=EXAM_SIZE){
@@ -3652,10 +3675,14 @@ function setExamUI(active){
 function startExamTimer(){
   clearExamTimer();
   const q = pool[idx];
-  if(!examMode || q._chosen != null) return;
+  if(!examMode || !q || q._chosen != null) return;
+  if(document.visibilityState !== "visible") return;
   const limit = examTimeForQuestion(q);
-  examQuestionStart = performance.now();
+  const already = Math.min(Math.max(0, examPausedElapsed), limit - 0.05);
+  examPausedElapsed = 0;
+  examQuestionStart = performance.now() - already * 1000;
   const tick = ()=>{
+    if(document.visibilityState !== "visible") return;
     const elapsed = (performance.now() - examQuestionStart) / 1000;
     const left = Math.max(0, limit - elapsed);
     const pct = (left / limit) * 100;
@@ -3667,7 +3694,16 @@ function startExamTimer(){
   };
   tick();
   examTimerInterval = setInterval(tick, 50);
-  examTimeoutTimer = setTimeout(()=>examTimeout(), limit * 1000 + 20);
+  const leftMs = Math.max(0, (limit - already) * 1000);
+  examTimeoutTimer = setTimeout(()=>examTimeout(), leftMs + 20);
+}
+
+function pauseExamTimer(){
+  if(!examMode || examTimerInterval == null && examTimeoutTimer == null && !examQuestionStart) return;
+  if(examQuestionStart){
+    examPausedElapsed = Math.max(examPausedElapsed, (performance.now() - examQuestionStart) / 1000);
+  }
+  clearExamTimer();
 }
 
 function finalizeExamAnswer(q, timeSec){
@@ -3852,7 +3888,7 @@ function goToNextBattleQuestion(){
     q._order = null;
     q._reviewMeta = null;
     q._solveMs = null;
-    q._solveStartedAt = null;
+    q._solveAccumMs = null;
   }
   render();
   saveSession();
@@ -4032,10 +4068,30 @@ function paintSolveChip(ms){
   chip.classList.add("tone-" + solveTone(ms));
   $("solveTimerText").textContent = formatSolveClock(ms);
 }
+function getSolveElapsed(q){
+  if(!q) return 0;
+  if(q._solveMs != null) return q._solveMs;
+  let ms = q._solveAccumMs || 0;
+  if(solveRunningSince && document.visibilityState === "visible"){
+    ms += Date.now() - solveRunningSince;
+  }
+  return Math.max(0, ms);
+}
+function pauseSolveClock(){
+  const q = pool[idx];
+  if(q && solveRunningSince && q._solveMs == null){
+    q._solveAccumMs = (q._solveAccumMs || 0) + (Date.now() - solveRunningSince);
+  }
+  solveRunningSince = 0;
+  clearSolveTimer();
+}
 function freezeSolveTime(q){
   if(!q || q._solveMs != null) return q?._solveMs;
-  const start = q._solveStartedAt || Date.now();
-  q._solveMs = Math.max(0, Date.now() - start);
+  if(solveRunningSince){
+    q._solveAccumMs = (q._solveAccumMs || 0) + (Date.now() - solveRunningSince);
+    solveRunningSince = 0;
+  }
+  q._solveMs = q._solveAccumMs || 0;
   return q._solveMs;
 }
 function syncSolveTimer(q, locked){
@@ -4044,23 +4100,43 @@ function syncSolveTimer(q, locked){
   if(!chip) return;
   if(examMode || !q){
     chip.classList.add("hide");
+    solveRunningSince = 0;
     return;
   }
   if(locked){
-    const ms = q._solveMs != null ? q._solveMs : freezeSolveTime(q);
-    paintSolveChip(ms ?? 0);
+    solveRunningSince = 0;
+    paintSolveChip(getSolveElapsed(q));
     return;
   }
-  if(!q._solveStartedAt) q._solveStartedAt = Date.now();
+  if(document.visibilityState !== "visible"){
+    paintSolveChip(q._solveAccumMs || 0);
+    return;
+  }
+  if(!solveRunningSince) solveRunningSince = Date.now();
   const tick = ()=>{
+    if(document.visibilityState !== "visible") return;
     if(pool[idx] !== q || q._chosen != null || q._brCleared){
       clearSolveTimer();
       return;
     }
-    paintSolveChip(Date.now() - q._solveStartedAt);
+    paintSolveChip(getSolveElapsed(q));
   };
   tick();
   solveTimerInterval = setInterval(tick, 250);
+}
+
+function pauseAllCountdowns(){
+  pauseSolveClock();
+  pauseBlancTimer();
+  pauseExamTimer();
+}
+function resumeAllCountdowns(){
+  resumeBlancTimer();
+  if(currentScreen() !== "quiz" || !pool[idx]) return;
+  const q = pool[idx];
+  const locked = q._chosen != null || !!q._brCleared;
+  if(examMode && !locked) startExamTimer();
+  else syncSolveTimer(q, locked);
 }
 
 function render(){
@@ -4073,10 +4149,11 @@ function render(){
     q._order = null;
     q._reviewMeta = null;
     q._solveMs = null;
-    q._solveStartedAt = null;
+    q._solveAccumMs = null;
   }
   prepare(q);
   const locked = q._chosen!=null || !!q._brCleared;
+  solveRunningSince = 0;
   $("qCat").textContent = (isMathPlayMode() && isInputQuestion(q))
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
@@ -4890,8 +4967,12 @@ initSync();
 switchStartTab("math");
 window.addEventListener("pagehide", saveSession);
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState==="hidden") saveSession();
+  if(document.visibilityState==="hidden"){
+    pauseAllCountdowns();
+    saveSession();
+  }
   if(document.visibilityState==="visible"){
+    resumeAllCountdowns();
     const meta = loadSyncMeta();
     if(meta.pat && meta.gistId) syncPull({ quiet:true });
   }
