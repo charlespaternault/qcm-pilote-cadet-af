@@ -1793,6 +1793,7 @@ const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "mat
 const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal", "math-maitriser":"À maîtriser" };
 const BR_COOLDOWN = 6;
 const MATH_MAITRISER_MODE = "math-maitriser";
+const MATH_MAITRISER_SEED_KEY = "qcm-pilote-cadet-af-maitriser-blue-seed-v1";
 const MATH_MAITRISER_THEMES = [
   { key:"prevol", label:"Visite prévol", test:q=>/visite prévol|prévol/i.test(q.q) },
   { key:"rial", label:"Rials / shekels / francs", preferQcm:true, test:q=>/rial|shekel|franc\(s\) suisse|yen\(s\)|dinar/i.test(q.q) },
@@ -3209,6 +3210,7 @@ function questionsForMode(mode){
 
 function initStart(){
   migrateLegacySession();
+  seedMaitriserBlueFlags();
   loadFiltresPrefsToUI();
   rebuildFiltresSelects();
   updateModeCards();
@@ -3721,6 +3723,26 @@ function collectMaitriserQuestions(){
     });
   });
   return { questions: picked, themeCounts };
+}
+
+/** Pré-marque en bleu (À maîtriser) les questions de la série, une fois. Conserve rouge/vert existants. */
+function seedMaitriserBlueFlags(){
+  try{
+    if(localStorage.getItem(MATH_MAITRISER_SEED_KEY) === "1") return;
+  }catch(_){}
+  const data = loadMathMarked();
+  let changed = false;
+  collectMaitriserQuestions().questions.forEach(q=>{
+    const key = String(q._bankId);
+    const cur = normalizeMathFlag(data[key]);
+    if(cur === "red" || cur === "green") return;
+    if(data[key] !== "blue"){
+      data[key] = "blue";
+      changed = true;
+    }
+  });
+  if(changed) saveMathMarked(data);
+  try{ localStorage.setItem(MATH_MAITRISER_SEED_KEY, "1"); }catch(_){}
 }
 
 function buildMaitriserPool(){
