@@ -248,7 +248,33 @@
   .cell:hover { border-color:var(--accent); }
   .cell.correct { background:var(--good); border-color:var(--good); color:#fff; }
   .cell.wrong { background:var(--bad); border-color:var(--bad); color:#fff; }
+  .cell.answered { background:#2a3a55; border-color:var(--accent); color:#fff; }
   .cell.current { outline:3px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+  .cell { position: relative; }
+  .cell .flag-dot {
+    position:absolute; top:3px; right:3px; width:8px; height:8px;
+    border-radius:50%; border:1px solid rgba(0,0,0,.35); pointer-events:none;
+  }
+  .flag-dot.flag-red { background:#e5484d; }
+  .flag-dot.flag-green { background:#1faf6c; }
+  .flag-dot.flag-blue { background:#3b82f6; }
+  .q-flag {
+    display:inline-flex; align-items:center; gap:6px; margin-left:8px; vertical-align:middle;
+  }
+  .q-flag .flag-dot { width:12px; height:12px; border-radius:50%; border:1px solid rgba(0,0,0,.35); display:inline-block; }
+  .flag-btns { display:inline-flex; gap:4px; align-items:center; }
+  .flag-btns.hide { display:none !important; }
+  .flag-btns button {
+    width:28px; height:28px; padding:0; border-radius:999px;
+    display:grid; place-items:center; font-size:0;
+  }
+  .flag-btns button .flag-dot { width:14px; height:14px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.35); }
+  .flag-btns button.is-on { outline:2px solid #fff; outline-offset:1px; }
+  .choice.picked { border-color:var(--accent); background:#1a2740; }
+  .legend .lg-ans { background:#2a3a55; border-color:var(--accent); }
+  .legend .lg-red { background:#e5484d; border-color:#e5484d; }
+  .legend .lg-green { background:#1faf6c; border-color:#1faf6c; }
+  .legend .lg-blue { background:#3b82f6; border-color:#3b82f6; }
   .legend { display:flex; flex-wrap:wrap; gap:10px 14px; font-size:11px; color:var(--muted); }
   .legend i { display:inline-block; width:12px; height:12px; border-radius:4px; margin-right:5px; vertical-align:-1px; border:1px solid var(--line); }
   .legend .lg-ok { background:var(--good); border-color:var(--good); }
@@ -626,7 +652,7 @@
           <option value="40">40 questions</option>
         </select>
         <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathShuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
-        <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathMarkedOnlyChk" style="accent-color:var(--accent)"> Uniquement questions marquées (<b id="mathMarkedCount">0</b>)</label>
+        <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathMarkedOnlyChk" style="accent-color:var(--accent)"> Uniquement marquées <span style="display:inline-flex;gap:3px;vertical-align:middle"><i class="flag-dot flag-red" style="width:8px;height:8px;border-radius:50%;display:inline-block"></i><i class="flag-dot flag-green" style="width:8px;height:8px;border-radius:50%;display:inline-block"></i><i class="flag-dot flag-blue" style="width:8px;height:8px;border-radius:50%;display:inline-block"></i></span> (<b id="mathMarkedCount">0</b>)</label>
       </div>
       <div class="templates-block" style="margin-top:14px;">
         <h4>Séries préétablies</h4>
@@ -757,7 +783,7 @@
         <div class="exam-timer-bar"><i id="examTimerBar"></i></div>
       </div>
       <div class="progress"><i id="bar"></i></div>
-      <div class="question"><span class="num" id="qNum"></span><span id="qText"></span></div>
+      <div class="question"><span class="num" id="qNum"></span><span id="qFlag" class="q-flag hide"></span><span id="qText"></span></div>
       <div class="q-media hide" id="qMedia"><img class="q-img" id="qImg" alt="" loading="lazy" /></div>
       <div class="choices" id="choices"></div>
       <button type="button" id="dontKnowBtn" class="dont-know-btn">Je ne sais pas</button>
@@ -767,7 +793,11 @@
         <div class="nav-left">
           <button id="prevBtn">← Précédent</button>
           <button id="editBtn">✎ Modifier</button>
-          <button type="button" id="markMathBtn" class="hide">☆ Marquer</button>
+          <span class="flag-btns hide" id="mathFlagBtns" title="Marquage : rouge / vert / bleu (À maîtriser)">
+            <button type="button" data-flag="red" aria-label="Marquer rouge"><i class="flag-dot flag-red"></i></button>
+            <button type="button" data-flag="green" aria-label="Marquer vert"><i class="flag-dot flag-green"></i></button>
+            <button type="button" data-flag="blue" aria-label="Marquer bleu À maîtriser"><i class="flag-dot flag-blue"></i></button>
+          </span>
           <button type="button" id="savePoolTemplateBtn">Enregistrer la liste</button>
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
@@ -782,10 +812,12 @@
       <button class="navgrid-close" id="navClose">✕ Fermer</button>
       <h3>Progression <span id="navStats">0/0</span></h3>
       <div class="grid" id="gridCells"></div>
-      <div class="legend">
-        <span><i class="lg-ok"></i>Correct</span>
-        <span><i class="lg-ko"></i>Faux</span>
-        <span><i class="lg-cur"></i>Question en cours</span>
+      <div class="legend" id="navLegend">
+        <span data-leg="ok"><i class="lg-ok"></i>Correct</span>
+        <span data-leg="ko"><i class="lg-ko"></i>Faux</span>
+        <span data-leg="ans" class="hide"><i class="lg-ans"></i>Répondu</span>
+        <span data-leg="cur"><i class="lg-cur"></i>En cours</span>
+        <span data-leg="flags"><i class="lg-red"></i><i class="lg-green"></i><i class="lg-blue"></i>Marquage</span>
       </div>
       <button class="primary" id="finishBtn">Voir le résultat ✓</button>
     </aside>
@@ -2393,17 +2425,33 @@ function isHiddenId(id){ return !!loadHiddenMap()[id]; }
 
 function loadMathMarked(){ return loadJson(MATH_MARKED_KEY, {}); }
 function saveMathMarked(data){ saveJson(MATH_MARKED_KEY, data); }
-function isMathMarked(id){ return !!loadMathMarked()[String(id)]; }
-function toggleMathMarked(id){
-  if(id == null) return false;
+function normalizeMathFlag(v){
+  if(v === "red" || v === "green" || v === "blue") return v;
+  if(v === true || v === 1 || v === "1" || v === "true") return "blue"; // legacy ★ → bleu À maîtriser
+  return null;
+}
+function getMathFlag(id){
+  if(id == null) return null;
+  return normalizeMathFlag(loadMathMarked()[String(id)]);
+}
+function isMathMarked(id){ return !!getMathFlag(id); }
+function setMathFlag(id, color){
+  if(id == null) return null;
   const key = String(id);
   const data = loadMathMarked();
-  if(data[key]) delete data[key];
-  else data[key] = true;
+  const next = normalizeMathFlag(color);
+  if(!next || data[key] === next){
+    delete data[key];
+    saveMathMarked(data);
+    return null;
+  }
+  data[key] = next;
   saveMathMarked(data);
-  return !!data[key];
+  return next;
 }
-function mathMarkedCount(){ return Object.keys(loadMathMarked()).length; }
+function mathMarkedCount(){
+  return Object.keys(loadMathMarked()).filter(k=>normalizeMathFlag(loadMathMarked()[k])).length;
+}
 
 function makeUserUid(){
   return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -2908,9 +2956,7 @@ function applySessionData(data){
   });
   idx = Math.max(0, Math.min(pool.length-1, data.idx||0));
   setExamUI(examMode);
-  if(examMode){
-    $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">${examTotalScore().toFixed(1)}</b> / ${examMaxScore()}`;
-  }
+  if(examMode) updateExamProgressChip();
   blancDeadline = isBlancMode() ? (data.blancDeadline || 0) : 0;
   if(isBlancMode() && data.screen === "quiz") startBlancTimer();
   else {
@@ -3566,6 +3612,15 @@ function pickExamQuestions(candidates, n=EXAM_SIZE){
   return shuffle(picked).slice(0, n).map(resetQuestionState);
 }
 
+function examAnsweredCount(){
+  return pool.filter(q=>q._chosen != null || q._examPoints != null || q._examTimedOut).length;
+}
+function updateExamProgressChip(){
+  const chip = $("examScoreChip");
+  if(!chip || !examMode) return;
+  chip.innerHTML = `Répondues : <b id="examLiveScore">${examAnsweredCount()}</b> / ${pool.length}`;
+}
+
 function setExamUI(active){
   examMode = active;
   $("quiz").classList.toggle("exam-mode", active);
@@ -3574,6 +3629,7 @@ function setExamUI(active){
   $("examTimerChip").classList.toggle("hide", !active);
   $("examScoreChip").classList.toggle("hide", !active);
   $("scoreChip").classList.toggle("hide", active);
+  if(active) updateExamProgressChip();
   if(!active){
     $("navToggle").style.display = "";
     $("navGrid").style.display = "";
@@ -3607,8 +3663,7 @@ function finalizeExamAnswer(q, timeSec){
   if(isQuestionCorrect(q)) q._examPoints = examPointsForAnswer(true, timeSec, limit);
   else q._examPoints = EXAM_WRONG_PTS;
   clearExamTimer();
-  const live = $("examLiveScore");
-  if(live) live.textContent = examTotalScore().toFixed(1);
+  updateExamProgressChip();
   saveSession();
   examAdvance();
 }
@@ -3621,7 +3676,7 @@ function examTimeout(){
   q._examTimeSec = limit;
   q._examPoints = 0;
   clearExamTimer();
-  $("examLiveScore").textContent = examTotalScore().toFixed(1);
+  updateExamProgressChip();
   saveSession();
   examAdvance();
 }
@@ -3810,7 +3865,7 @@ function startPlay(mode, opts={}){
     clearBlancTimer();
     setBlancUI(false);
     setExamUI(true);
-    $("examScoreChip").innerHTML = `Points : <b id="examLiveScore">0</b> / ${picked.length * EXAM_MAX_PTS}`;
+    updateExamProgressChip();
     launchQuiz();
     return;
   }
@@ -3993,9 +4048,9 @@ function render(){
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
   if(examMode){
-    $("liveScore").textContent = examTotalScore().toFixed(1);
+    $("liveScore").textContent = examAnsweredCount();
     $("qNum").textContent = `Examen · Q${idx+1}/${pool.length}`;
-    $("bar").style.width = `${((idx + (locked ? 1 : 0)) / pool.length) * 100}%`;
+    $("bar").style.width = `${(examAnsweredCount() / pool.length) * 100}%`;
   } else if(isBattleRoyale()){
     $("liveScore").textContent = brClearedCount();
     $("qNum").textContent = `BR · ${brRemaining()} rest. · Q${idx+1}/${pool.length}`;
@@ -4038,12 +4093,24 @@ function render(){
     $("nextBtn").textContent = (idx===pool.length-1) ? "Fin" : "Suivant →";
   }
 
-  const markBtn = $("markMathBtn");
-  if(markBtn){
-    const mathPlay = isMathPlayMode();
-    markBtn.classList.toggle("hide", !mathPlay || q._bankId == null);
-    if(mathPlay && q._bankId != null){
-      markBtn.textContent = isMathMarked(q._bankId) ? "★ Marquée" : "☆ Marquer";
+  const markBtns = $("mathFlagBtns");
+  if(markBtns){
+    const mathPlay = isMathPlayMode() && !examMode;
+    markBtns.classList.toggle("hide", !mathPlay || q._bankId == null);
+    const curFlag = mathPlay && q._bankId != null ? getMathFlag(q._bankId) : null;
+    markBtns.querySelectorAll("button[data-flag]").forEach(btn=>{
+      btn.classList.toggle("is-on", btn.dataset.flag === curFlag);
+    });
+  }
+  const qFlag = $("qFlag");
+  if(qFlag){
+    const flag = (!examMode && q._bankId != null) ? getMathFlag(q._bankId) : null;
+    if(flag){
+      qFlag.classList.remove("hide");
+      qFlag.innerHTML = `<i class="flag-dot flag-${flag}" title="${flag === "blue" ? "À maîtriser" : flag === "green" ? "Vert" : "Rouge"}"></i>`;
+    } else {
+      qFlag.classList.add("hide");
+      qFlag.innerHTML = "";
     }
   }
 
@@ -4091,7 +4158,9 @@ function render(){
       b.innerHTML = `<span class="key">${keys[i]}</span><span>${item.opt}</span>`;
       if(locked){
         b.classList.add("locked");
-        if(!examMode){
+        if(examMode){
+          if(q._chosen >= 0 && i === q._chosen) b.classList.add("picked");
+        } else {
           if(i===q._correctIdx) b.classList.add("correct");
           else if(q._chosen >= 0 && i===q._chosen) b.classList.add("wrong");
         }
@@ -4233,10 +4302,9 @@ function updateGrid(){
   const cells = $("gridCells").children;
   pool.forEach((q,i)=>{
     const c = cells[i]; if(!c) return;
-    c.classList.remove("correct","wrong","current");
+    c.classList.remove("correct","wrong","answered","current");
     if(examMode){
-      if(q._examPoints > 0) c.classList.add("correct");
-      else if(q._examPoints === EXAM_WRONG_PTS) c.classList.add("wrong");
+      if(q._chosen != null || q._examPoints != null || q._examTimedOut) c.classList.add("answered");
     } else if(isBattleRoyale()){
       if(q._brCleared) c.classList.add("correct");
       else if(q._brCooldown > 0) c.classList.add("wrong");
@@ -4245,12 +4313,30 @@ function updateGrid(){
       c.classList.add(isQuestionCorrect(q) ? "correct" : "wrong");
     }
     if(i===idx) c.classList.add("current");
+    // Pastille de marquage (hors examen)
+    c.querySelectorAll(".flag-dot").forEach(n=>n.remove());
+    if(!examMode && q._bankId != null){
+      const flag = getMathFlag(q._bankId);
+      if(flag){
+        const dot = document.createElement("i");
+        dot.className = `flag-dot flag-${flag}`;
+        c.appendChild(dot);
+      }
+    }
   });
-  const stat = examMode ? `${idx+1}/${pool.length}`
+  const answeredExam = examMode ? pool.filter(q=>q._chosen != null || q._examPoints != null || q._examTimedOut).length : 0;
+  const stat = examMode ? `${answeredExam}/${pool.length} rép.`
     : isBattleRoyale() ? `${brClearedCount()}/${pool.length} élim.`
     : `${nAnswered()}/${pool.length}`;
   $("navStats").textContent = stat;
   $("toggleStat").textContent = stat;
+  const legend = $("navLegend");
+  if(legend){
+    legend.querySelector('[data-leg="ok"]')?.classList.toggle("hide", examMode);
+    legend.querySelector('[data-leg="ko"]')?.classList.toggle("hide", examMode);
+    legend.querySelector('[data-leg="ans"]')?.classList.toggle("hide", !examMode);
+    legend.querySelector('[data-leg="flags"]')?.classList.toggle("hide", examMode);
+  }
 }
 
 function gotoQ(i){
@@ -4716,13 +4802,16 @@ $("resumeMathBtn").onclick = ()=>{
   const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   startPlay(data?.playMode || "math", { resume:true });
 };
-$("markMathBtn").onclick = ()=>{
-  const q = pool[idx];
-  if(!q || q._bankId == null) return;
-  const on = toggleMathMarked(q._bankId);
-  $("markMathBtn").textContent = on ? "★ Marquée" : "☆ Marquer";
-  updateMathTab();
-};
+$("mathFlagBtns")?.querySelectorAll("button[data-flag]").forEach(btn=>{
+  btn.onclick = ()=>{
+    if(examMode) return;
+    const q = pool[idx];
+    if(!q || q._bankId == null) return;
+    setMathFlag(q._bankId, btn.dataset.flag);
+    render();
+    updateMathTab();
+  };
+});
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
 $("quitBtn").onclick = ()=>{
