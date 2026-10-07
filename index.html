@@ -628,6 +628,22 @@
         <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathShuffleChk" checked style="accent-color:var(--accent)"> Mélanger</label>
         <label class="chip" style="cursor:pointer"><input type="checkbox" id="mathMarkedOnlyChk" style="accent-color:var(--accent)"> Uniquement questions marquées (<b id="mathMarkedCount">0</b>)</label>
       </div>
+      <div class="templates-block" style="margin-top:14px;">
+        <h4>Séries préétablies</h4>
+        <div class="templates-list">
+          <article class="template-card" id="maitriserCard">
+            <div class="template-info">
+              <h5>À maîtriser</h5>
+              <p id="maitriserMeta">Thèmes classiques (prévol, devises, remises, ouvriers…)</p>
+            </div>
+            <div class="mode-actions">
+              <button type="button" class="hide" id="resumeMaitriserBtn">Reprendre</button>
+              <button type="button" class="primary" id="startMaitriserBtn">Lancer</button>
+            </div>
+          </article>
+        </div>
+        <p style="margin:8px 0 0; font-size:12px; color:var(--muted);">Indépendante de la partie / Battle Royal / examen blanc en cours.</p>
+      </div>
       <div style="text-align:center; margin-top:12px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
         <button type="button" class="hide" id="resumeMathBtn">Reprendre</button>
         <button class="primary" id="startMathBtn" style="padding:12px 30px; font-size:16px;">Nouvelle partie ▶</button>
@@ -1741,9 +1757,30 @@ const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
 const TEMPLATES_KEY = "qcm-pilote-cadet-af-templates-v1";
 const MATH_MARKED_KEY = "qcm-pilote-cadet-af-math-marked-v1";
 const BLANC_HISTORY_KEY = "qcm-pilote-cadet-af-blanc-history-v1";
-const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br"];
-const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal" };
+const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br", "math-maitriser"];
+const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal", "math-maitriser":"À maîtriser" };
 const BR_COOLDOWN = 6;
+const MATH_MAITRISER_MODE = "math-maitriser";
+const MATH_MAITRISER_THEMES = [
+  { key:"prevol", label:"Visite prévol", test:q=>/visite prévol|prévol/i.test(q.q) },
+  { key:"rial", label:"Rials / shekels / francs", preferQcm:true, test:q=>/rial|shekel|franc\(s\) suisse|yen\(s\)|dinar/i.test(q.q) },
+  { key:"reduc", label:"Réductions / hausses de prix", test:q=>
+      (/(remise|réduction|soldé|soldes)/i.test(q.q)
+        || /article a vu son prix|objet est normalement vendu|objet est vendu avec|prix d'un produit est d'abord|En 19\d\d le prix/i.test(q.q))
+      && !/salarié|stagiaires/i.test(q.q) },
+  { key:"ouvriers", label:"Ouvriers", test:q=>/ouvrier/i.test(q.q) },
+  { key:"place", label:"Argent placé", preferQcm:true, test:q=>/plaçant|somme placée|placé à taux|compte à .*par an/i.test(q.q) },
+  { key:"trains", label:"Trains", test:q=>/2 trains partent|trains partent de 2 gares/i.test(q.q) },
+  { key:"champ", label:"Champ carré", test:q=>/champ carré/i.test(q.q) },
+  { key:"temp", label:"Température", test:q=>/température évolue/i.test(q.q) },
+  { key:"pieces", label:"Pièces et billets", preferQcm:true, test:q=>/pièces de \d+ et|Combien de pièces ai-je/i.test(q.q) },
+  { key:"plante", label:"Plante qui double", test:q=>/plante double/i.test(q.q) },
+  { key:"decalage", label:"Avion / décalage horaire", test:q=>/avion part/i.test(q.q) && /locale/i.test(q.q) && /ville A/i.test(q.q) },
+  { key:"age", label:"Différence d'âge", test:q=>/différence d'âge|ans de différence d'âge/i.test(q.q) },
+  { key:"helice", label:"Avaries hélice", test:q=>/hélices? d'un pétrolier|avaries subies par les hélices/i.test(q.q) },
+  { key:"camion", label:"Camion Saint-Yan", test:q=>/St Yan|Saint[- ]?Yan/i.test(q.q) },
+  { key:"avion10", label:"Avion +% successifs (Orly)", test:q=>/parti d'Orly/i.test(q.q) && /plus longue pendant/i.test(q.q) }
+];
 const MODE_CARD_IDS = { tout:"modeCardTout", examen:"modeCardExamen", erreurs:"modeCardErreurs", filtres:"modeCardFiltres" };
 const REVIEW_KEY = "qcm-pilote-cadet-af-review-v1";
 const EDITS_KEY = "qcm-pilote-cadet-af-edits-v1";
@@ -2742,7 +2779,7 @@ function saveSession(){
     screen: currentScreen(),
     blancDeadline: isBlancMode() ? blancDeadline : undefined,
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
-    mathPrefs: (playMode === "math" || playMode === "math-br" || playMode === "examen-blanc") ? {
+    mathPrefs: (playMode === "math" || playMode === "math-br" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) ? {
       format:$("mathFormatSelect").value,
       source:$("mathSourceSelect").value,
       count:$("mathCountSelect").value,
@@ -3161,6 +3198,7 @@ function updateMathTab(){
   const filtered = filterMathQuestions(questionsForMode("math"));
   $("mathTotalCount").textContent = groupByMathStem(filtered).size;
   if($("mathMarkedCount")) $("mathMarkedCount").textContent = String(mathMarkedCount());
+  updateMaitriserCard();
   const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   const resumeBtn = $("resumeMathBtn");
   const hint = $("mathResumeHint");
@@ -3610,6 +3648,50 @@ function buildMathPool(opts={}){
   return arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
 }
 
+function collectMaitriserQuestions(){
+  const all = questionsForMode("math");
+  const picked = [];
+  const used = new Set();
+  const themeCounts = {};
+  MATH_MAITRISER_THEMES.forEach(theme=>{
+    let hits = all.filter(q=>theme.test(q) && !used.has(String(q._bankId)));
+    if(theme.preferQcm){
+      const qcm = hits.filter(q=>Array.isArray(q.o) && q.o.length && q.t !== "input");
+      if(qcm.length) hits = qcm;
+    }
+    themeCounts[theme.key] = hits.length;
+    hits.forEach(q=>{
+      used.add(String(q._bankId));
+      picked.push({ ...q, _maitriserTheme: theme.key });
+    });
+  });
+  return { questions: picked, themeCounts };
+}
+
+function buildMaitriserPool(){
+  let arr = collectMaitriserQuestions().questions;
+  if($("mathShuffleChk")?.checked) shuffle(arr);
+  arr = applyMathFormats(arr);
+  return arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
+}
+
+function updateMaitriserCard(){
+  const meta = $("maitriserMeta");
+  const resumeBtn = $("resumeMaitriserBtn");
+  if(!meta) return;
+  const { questions } = collectMaitriserQuestions();
+  const data = peekSession(MATH_MAITRISER_MODE);
+  meta.textContent = data
+    ? `${questions.length} problèmes · ${data.pool.filter(isQuestionAnswered).length}/${data.pool.length} en cours`
+    : `${questions.length} problèmes · thèmes classiques à retenir`;
+  if(resumeBtn) resumeBtn.classList.toggle("hide", !data);
+}
+
+function isMaitriserMode(){ return playMode === MATH_MAITRISER_MODE; }
+function isMathPlayMode(){
+  return playMode === "math" || playMode === "math-br" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE;
+}
+
 function isBattleRoyale(){ return playMode === "math-br"; }
 
 function brRemaining(){ return pool.filter(q=>!q._brCleared).length; }
@@ -3751,6 +3833,20 @@ function startPlay(mode, opts={}){
     return;
   }
 
+  if(mode === MATH_MAITRISER_MODE){
+    pool = buildMaitriserPool();
+    if(!pool.length){
+      alert("Aucune question trouvée pour la série « À maîtriser ».");
+      return;
+    }
+    setExamUI(false);
+    clearBlancTimer();
+    setBlancUI(false);
+    blancDeadline = 0;
+    launchQuiz();
+    return;
+  }
+
   setExamUI(false);
   clearBlancTimer();
   setBlancUI(false);
@@ -3800,9 +3896,10 @@ function startPlay(mode, opts={}){
 function startMath(){ startPlay("math", { resume:false }); }
 function startMathBattleRoyale(){ startPlay("math-br", { resume:false }); }
 function startMathBlanc(){ startPlay("examen-blanc", { resume:false }); }
+function startMathMaitriser(){ startPlay(MATH_MAITRISER_MODE, { resume:false }); }
 
 function toggleTemplateSaveButtons(){
-  const show = playMode !== "math" && playMode !== "math-br" && playMode !== "examen-blanc" && pool.length > 0;
+  const show = playMode !== "math" && playMode !== "math-br" && playMode !== "examen-blanc" && playMode !== MATH_MAITRISER_MODE && pool.length > 0;
   $("savePoolTemplateBtn")?.classList.toggle("hide", !show);
   $("saveResultTemplateBtn")?.classList.toggle("hide", !show);
 }
@@ -3892,7 +3989,7 @@ function render(){
   }
   prepare(q);
   const locked = q._chosen!=null || !!q._brCleared;
-  $("qCat").textContent = ((playMode === "math" || playMode === "math-br" || playMode === "examen-blanc") && isInputQuestion(q))
+  $("qCat").textContent = (isMathPlayMode() && isInputQuestion(q))
     ? `${q.c} · saisie libre`
     : `${q.c} · ${sourceLabel(q._src)}`;
   if(examMode){
@@ -3906,6 +4003,10 @@ function render(){
   } else if(isBlancMode()){
     $("liveScore").textContent = nCorrect();
     $("qNum").textContent = `Blanc · Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
+  } else if(isMaitriserMode()){
+    $("liveScore").textContent = nCorrect();
+    $("qNum").textContent = `À maîtriser · Q${idx+1}/${pool.length}`;
     $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
   } else {
     $("liveScore").textContent = nCorrect();
@@ -3939,7 +4040,7 @@ function render(){
 
   const markBtn = $("markMathBtn");
   if(markBtn){
-    const mathPlay = playMode === "math" || playMode === "math-br" || playMode === "examen-blanc";
+    const mathPlay = isMathPlayMode();
     markBtn.classList.toggle("hide", !mathPlay || q._bankId == null);
     if(mathPlay && q._bankId != null){
       markBtn.textContent = isMathMarked(q._bankId) ? "★ Marquée" : "☆ Marquer";
@@ -4315,7 +4416,7 @@ function applyEditToPool(id, refreshed){
       _examTimedOut: q._examTimedOut,
       _openFromQcm: q._openFromQcm,
       // En mode ouvert maths, conserve la forme saisie libre
-      ...(q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc") && isMathOpenFormat())
+      ...(q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) && isMathOpenFormat())
         ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
         : {})
     };
@@ -4609,6 +4710,8 @@ function addQuestionFromForm(){
 $("startMathBtn").onclick = startMath;
 $("startMathBlancBtn").onclick = startMathBlanc;
 $("startMathBrBtn").onclick = startMathBattleRoyale;
+$("startMaitriserBtn").onclick = startMathMaitriser;
+$("resumeMaitriserBtn").onclick = ()=>startPlay(MATH_MAITRISER_MODE, { resume:true });
 $("resumeMathBtn").onclick = ()=>{
   const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   startPlay(data?.playMode || "math", { resume:true });
