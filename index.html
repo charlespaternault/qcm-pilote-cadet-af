@@ -893,6 +893,9 @@
     <label class="chip" style="cursor:pointer; display:inline-flex; margin-bottom:4px;">
       <input type="checkbox" id="editHide" style="accent-color:var(--accent); margin-right:8px;"> Cacher cette question du QCM
     </label>
+    <label class="chip hide" id="editMarkCorrectWrap" style="cursor:pointer; display:inline-flex; margin-bottom:4px;">
+      <input type="checkbox" id="editMarkCorrect" style="accent-color:var(--good); margin-right:8px;"> Marquer la question comme bonne
+    </label>
     <div class="modal-actions">
       <button type="button" id="editResetBtn">Réinitialiser</button>
       <button type="button" id="editCancelBtn">Annuler</button>
@@ -4570,6 +4573,13 @@ function openEditModal(bankId){
   $("editImg").value = q.img || "";
   $("editHide").checked = !!q._hidden;
 
+  const mathEdit = isMathQuestion(q);
+  const markWrap = $("editMarkCorrectWrap");
+  if(markWrap){
+    markWrap.classList.toggle("hide", !mathEdit || currentScreen() !== "quiz");
+    if($("editMarkCorrect")) $("editMarkCorrect").checked = false;
+  }
+
   const inputMode = isInputQuestion(q);
   $("editOptionsBlock").classList.toggle("hide", inputMode);
   $("editAnsBlock").classList.toggle("hide", !inputMode);
@@ -4595,6 +4605,37 @@ function openEditCurrent(){ if(pool[idx]?._bankId != null) openEditModal(pool[id
 function closeEditModal(){
   editingBankId = null;
   $("editModal").classList.remove("open");
+}
+
+function markPoolQuestionAsCorrect(id){
+  let touched = null;
+  pool = pool.map(q=>{
+    if(q._bankId !== id) return q;
+    const next = { ...q };
+    if(isInputQuestion(next)){
+      prepare(next);
+      next._dontKnow = false;
+      next._chosen = 0;
+      next._inputOk = true;
+      if(!String(next._inputVal || "").trim()){
+        next._inputVal = acceptedAnswers(next)[0] || "OK";
+      }
+    } else {
+      prepare(next);
+      next._dontKnow = false;
+      next._chosen = next._correctIdx;
+    }
+    if(next._solveMs == null) freezeSolveTime(next);
+    next._reviewMeta = { mastered: true };
+    if(isBattleRoyale()){
+      next._brCleared = true;
+      next._brCooldown = 0;
+    }
+    touched = next;
+    return next;
+  });
+  if(touched) recordReviewAnswer(touched, true);
+  return !!touched;
 }
 
 function applyEditToPool(id, refreshed){
@@ -4630,6 +4671,7 @@ function saveQuestionEdit(){
   const annexe = $("editAnnexe").value.trim();
   const img = $("editImg").value.trim();
   const hidden = $("editHide").checked;
+  const markCorrect = !$("editMarkCorrectWrap")?.classList.contains("hide") && !!$("editMarkCorrect")?.checked;
 
   if(!qText){ alert("Remplis l'énoncé."); return; }
 
@@ -4662,6 +4704,7 @@ function saveQuestionEdit(){
     saveHiddenMap(hiddenMap);
     const refreshed = bankQuestion(id);
     applyEditToPool(id, refreshed);
+    if(markCorrect && currentScreen()==="quiz") markPoolQuestionAsCorrect(id);
     if(refreshed?._hidden && currentScreen()==="quiz"){
       pool = pool.filter(q=>q._bankId!==id);
       if(!pool.length){ home(); clearSession(playMode); }
@@ -4698,6 +4741,7 @@ function saveQuestionEdit(){
 
   const refreshed = bankQuestion(id);
   applyEditToPool(id, refreshed);
+  if(markCorrect && currentScreen()==="quiz") markPoolQuestionAsCorrect(id);
   if(refreshed._hidden && currentScreen()==="quiz"){
     pool = pool.filter(q=>q._bankId!==id);
     if(!pool.length){ home(); clearSession(playMode); }
