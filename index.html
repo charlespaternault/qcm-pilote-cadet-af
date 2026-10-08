@@ -893,9 +893,10 @@
     <label class="chip" style="cursor:pointer; display:inline-flex; margin-bottom:4px;">
       <input type="checkbox" id="editHide" style="accent-color:var(--accent); margin-right:8px;"> Cacher cette question du QCM
     </label>
-    <label class="chip hide" id="editMarkCorrectWrap" style="cursor:pointer; display:inline-flex; margin-bottom:4px;">
-      <input type="checkbox" id="editMarkCorrect" style="accent-color:var(--good); margin-right:8px;"> Marquer la question comme bonne
-    </label>
+    <div class="form-field hide" id="editMarkCorrectWrap" style="margin-top:10px;">
+      <button type="button" id="editMarkCorrectBtn" class="primary" style="width:100%;">✓ Marquer comme bonne réponse</button>
+      <small style="color:var(--muted); font-size:12px; display:block; margin-top:6px;">Compte cette question comme réussie dans la série en cours (sans changer la banque).</small>
+    </div>
     <div class="modal-actions">
       <button type="button" id="editResetBtn">Réinitialiser</button>
       <button type="button" id="editCancelBtn">Annuler</button>
@@ -904,7 +905,7 @@
   </div>
 </div>
 
-<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.</footer>
+<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.<br>Mise à jour : <b id="appUpdatedAt">8 oct. 2026 · 17:55</b></footer>
 
 <script>
 /* ===========================================================
@@ -3196,16 +3197,26 @@ function isMathOpenFormat(){
 function isMathMixteFormat(){
   return $("mathFormatSelect")?.value === "mixte";
 }
+function isPiecesQuestion(q){
+  return /pièces de \d+ et|Combien de pièces ai-je de chaque/i.test(q?.q || "");
+}
+function forceQcmIfPieces(q){
+  if(!isPiecesQuestion(q)) return q;
+  const { t, ans, _openFromQcm, ...rest } = q;
+  return resetQuestionState({ ...rest });
+}
 function applyMathFormats(arr){
-  if(isMathOpenFormat()) return arr.map(toOpenQuestion);
+  if(isMathOpenFormat()){
+    return arr.map(q=> isPiecesQuestion(q) ? forceQcmIfPieces(q) : toOpenQuestion(q));
+  }
   if(isMathMixteFormat()){
     const n = arr.length;
     const qcmN = Math.max(1, Math.round(n * 0.25));
     const indices = shuffle([...Array(n).keys()]);
     const keepQcm = new Set(indices.slice(0, Math.min(qcmN, n)));
-    return arr.map((q,i)=> keepQcm.has(i) ? resetQuestionState(q) : toOpenQuestion(q));
+    return arr.map((q,i)=> (keepQcm.has(i) || isPiecesQuestion(q)) ? forceQcmIfPieces(q) : toOpenQuestion(q));
   }
-  return arr.map(resetQuestionState);
+  return arr.map(q=> isPiecesQuestion(q) ? forceQcmIfPieces(q) : resetQuestionState(q));
 }
 
 function erreursPool(){
@@ -4574,13 +4585,15 @@ function openEditModal(bankId){
   $("editHide").checked = !!q._hidden;
 
   const mathEdit = isMathQuestion(q);
+  const inPool = pool.some(p=>p._bankId === bankId);
   const markWrap = $("editMarkCorrectWrap");
   if(markWrap){
-    markWrap.classList.toggle("hide", !mathEdit || currentScreen() !== "quiz");
-    if($("editMarkCorrect")) $("editMarkCorrect").checked = false;
+    // Visible dès qu'on édite un problème maths présent dans la série en cours
+    markWrap.classList.toggle("hide", !(mathEdit && inPool && !examMode));
   }
 
-  const inputMode = isInputQuestion(q);
+  // Pour les exercices « pièces », toujours afficher/éditer en QCM
+  const inputMode = isInputQuestion(q) && !isPiecesQuestion(q);
   $("editOptionsBlock").classList.toggle("hide", inputMode);
   $("editAnsBlock").classList.toggle("hide", !inputMode);
 
@@ -4652,10 +4665,12 @@ function applyEditToPool(id, refreshed){
       _examTimeSec: q._examTimeSec,
       _examTimedOut: q._examTimedOut,
       _openFromQcm: q._openFromQcm,
-      // En mode ouvert maths, conserve la forme saisie libre
-      ...(q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) && isMathOpenFormat())
-        ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
-        : {})
+      // En mode ouvert maths, conserve la forme saisie libre — sauf exercices « pièces » (toujours QCM)
+      ...(isPiecesQuestion(q) || isPiecesQuestion(refreshed)
+        ? { t: undefined, ans: undefined, _openFromQcm: false, o: refreshed.o || q.o, a: refreshed.a ?? q.a }
+        : (q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) && isMathOpenFormat())
+          ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
+          : {}))
     };
   });
 }
@@ -4671,7 +4686,6 @@ function saveQuestionEdit(){
   const annexe = $("editAnnexe").value.trim();
   const img = $("editImg").value.trim();
   const hidden = $("editHide").checked;
-  const markCorrect = !$("editMarkCorrectWrap")?.classList.contains("hide") && !!$("editMarkCorrect")?.checked;
 
   if(!qText){ alert("Remplis l'énoncé."); return; }
 
@@ -4704,7 +4718,6 @@ function saveQuestionEdit(){
     saveHiddenMap(hiddenMap);
     const refreshed = bankQuestion(id);
     applyEditToPool(id, refreshed);
-    if(markCorrect && currentScreen()==="quiz") markPoolQuestionAsCorrect(id);
     if(refreshed?._hidden && currentScreen()==="quiz"){
       pool = pool.filter(q=>q._bankId!==id);
       if(!pool.length){ home(); clearSession(playMode); }
@@ -4741,7 +4754,6 @@ function saveQuestionEdit(){
 
   const refreshed = bankQuestion(id);
   applyEditToPool(id, refreshed);
-  if(markCorrect && currentScreen()==="quiz") markPoolQuestionAsCorrect(id);
   if(refreshed._hidden && currentScreen()==="quiz"){
     pool = pool.filter(q=>q._bankId!==id);
     if(!pool.length){ home(); clearSession(playMode); }
@@ -4988,6 +5000,17 @@ $("chatgptBtn").onclick = askChatGPT;
 $("editSaveBtn").onclick = saveQuestionEdit;
 $("editCancelBtn").onclick = closeEditModal;
 $("editResetBtn").onclick = resetQuestionEdit;
+$("editMarkCorrectBtn").onclick = ()=>{
+  if(editingBankId == null || examMode) return;
+  if(!markPoolQuestionAsCorrect(editingBankId)){
+    alert("Question absente de la série en cours.");
+    return;
+  }
+  closeEditModal();
+  updateBrHud();
+  if(currentScreen()==="quiz"){ buildGrid(); render(); }
+  saveSession();
+};
 $("editModal").onclick = e=>{ if(e.target===$("editModal")) closeEditModal(); };
 $("addShortcutBtn").onclick = addShortcut;
 $("addQuestionBtn").onclick = addQuestionFromForm;
