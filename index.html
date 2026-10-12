@@ -661,19 +661,39 @@
       </div>
       <div class="templates-block" style="margin-top:14px;">
         <h4>Séries préétablies</h4>
-        <div class="templates-list">
-          <article class="template-card" id="maitriserCard">
+        <div class="templates-list" id="flagSeriesList">
+          <article class="template-card" data-flag-series="red">
             <div class="template-info">
-              <h5>À maîtriser</h5>
-              <p id="maitriserMeta">Thèmes classiques (prévol, devises, remises, ouvriers…)</p>
+              <h5><i class="flag-dot flag-red" style="width:10px;height:10px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Rouge</h5>
+              <p id="flagSeriesMeta-red">0 problème</p>
             </div>
             <div class="mode-actions">
-              <button type="button" class="hide" id="resumeMaitriserBtn">Reprendre</button>
-              <button type="button" class="primary" id="startMaitriserBtn">Lancer</button>
+              <button type="button" class="hide" id="resumeFlag-red">Reprendre</button>
+              <button type="button" class="primary" id="startFlag-red">Lancer</button>
+            </div>
+          </article>
+          <article class="template-card" data-flag-series="green">
+            <div class="template-info">
+              <h5><i class="flag-dot flag-green" style="width:10px;height:10px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Vert</h5>
+              <p id="flagSeriesMeta-green">0 problème</p>
+            </div>
+            <div class="mode-actions">
+              <button type="button" class="hide" id="resumeFlag-green">Reprendre</button>
+              <button type="button" class="primary" id="startFlag-green">Lancer</button>
+            </div>
+          </article>
+          <article class="template-card" data-flag-series="blue">
+            <div class="template-info">
+              <h5><i class="flag-dot flag-blue" style="width:10px;height:10px;border-radius:50%;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Bleu · À maîtriser</h5>
+              <p id="flagSeriesMeta-blue">0 problème</p>
+            </div>
+            <div class="mode-actions">
+              <button type="button" class="hide" id="resumeFlag-blue">Reprendre</button>
+              <button type="button" class="primary" id="startFlag-blue">Lancer</button>
             </div>
           </article>
         </div>
-        <p style="margin:8px 0 0; font-size:12px; color:var(--muted);">Indépendante de la partie / Battle Royal / examen blanc en cours.</p>
+        <p style="margin:8px 0 0; font-size:12px; color:var(--muted);">Listes dynamiques : chaque marquage rouge / vert / bleu ajoute la question à sa série. Indépendantes de la partie en cours.</p>
       </div>
       <div style="text-align:center; margin-top:12px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
         <button type="button" class="hide" id="resumeMathBtn">Reprendre</button>
@@ -905,7 +925,7 @@
   </div>
 </div>
 
-<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.<br>Mise à jour : <b id="appUpdatedAt">8 oct. 2026 · 17:55</b></footer>
+<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.<br>Mise à jour : <b id="appUpdatedAt">12 oct. 2026 · 16:35</b></footer>
 
 <script>
 /* ===========================================================
@@ -1807,10 +1827,19 @@ const FILTRES_PREFS_KEY = "qcm-pilote-cadet-af-filtres-prefs-v1";
 const TEMPLATES_KEY = "qcm-pilote-cadet-af-templates-v1";
 const MATH_MARKED_KEY = "qcm-pilote-cadet-af-math-marked-v1";
 const BLANC_HISTORY_KEY = "qcm-pilote-cadet-af-blanc-history-v1";
-const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br", "math-maitriser"];
-const MODE_LABELS = { tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres", math:"Maths", "math-br":"Battle Royal", "math-maitriser":"À maîtriser" };
+const PLAY_MODES = ["tout", "examen", "examen-blanc", "erreurs", "filtres", "math", "math-br", "math-maitriser", "math-flag-red", "math-flag-green", "math-flag-blue"];
+const MODE_LABELS = {
+  tout:"Tout", examen:"Examen", "examen-blanc":"Examen blanc", erreurs:"Erreurs", filtres:"Filtres",
+  math:"Maths", "math-br":"Battle Royal", "math-maitriser":"À maîtriser",
+  "math-flag-red":"Rouge", "math-flag-green":"Vert", "math-flag-blue":"Bleu"
+};
 const BR_COOLDOWN = 6;
-const MATH_MAITRISER_MODE = "math-maitriser";
+const MATH_MAITRISER_MODE = "math-maitriser"; // legacy alias → bleu
+const MATH_FLAG_SERIES = [
+  { color:"red", mode:"math-flag-red", title:"Rouge", empty:"Aucune question marquée rouge." },
+  { color:"green", mode:"math-flag-green", title:"Vert", empty:"Aucune question marquée verte." },
+  { color:"blue", mode:"math-flag-blue", title:"Bleu · À maîtriser", empty:"Aucune question marquée bleue." }
+];
 const MATH_MAITRISER_SEED_KEY = "qcm-pilote-cadet-af-maitriser-blue-seed-v1";
 const MATH_MAITRISER_THEMES = [
   { key:"prevol", label:"Visite prévol", test:q=>/visite prévol|prévol/i.test(q.q) },
@@ -2846,7 +2875,7 @@ function saveSession(){
     screen: currentScreen(),
     blancDeadline: isBlancMode() ? blancDeadline : undefined,
     filtres: playMode === "filtres" ? loadFiltresPrefs() : undefined,
-    mathPrefs: (playMode === "math" || playMode === "math-br" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) ? {
+    mathPrefs: (isMathPlayMode() || playMode === MATH_MAITRISER_MODE) ? {
       format:$("mathFormatSelect").value,
       source:$("mathSourceSelect").value,
       count:$("mathCountSelect").value,
@@ -3806,28 +3835,60 @@ function seedMaitriserBlueFlags(){
   try{ localStorage.setItem(MATH_MAITRISER_SEED_KEY, "1"); }catch(_){}
 }
 
-function buildMaitriserPool(){
-  let arr = collectMaitriserQuestions().questions;
+function collectFlagQuestions(color){
+  const flag = normalizeMathFlag(color);
+  if(!flag) return [];
+  return questionsForMode("math").filter(q=>getMathFlag(q._bankId) === flag);
+}
+
+function buildFlagPool(color){
+  let arr = collectFlagQuestions(color);
   if($("mathShuffleChk")?.checked) shuffle(arr);
   arr = applyMathFormats(arr);
-  return arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0}));
+  return arr.map((q,i)=>({...q,_id:i, _brCleared:false, _brCooldown:0, _flagSeries:color}));
+}
+
+function flagModeForColor(color){
+  return MATH_FLAG_SERIES.find(s=>s.color === color)?.mode || null;
+}
+function flagColorFromMode(mode){
+  if(mode === MATH_MAITRISER_MODE) return "blue";
+  return MATH_FLAG_SERIES.find(s=>s.mode === mode)?.color || null;
+}
+function isFlagSeriesMode(mode=playMode){
+  return !!flagColorFromMode(mode);
+}
+
+function updateFlagSeriesCards(){
+  MATH_FLAG_SERIES.forEach(({ color, mode, title })=>{
+    const meta = $(`flagSeriesMeta-${color}`);
+    const resumeBtn = $(`resumeFlag-${color}`);
+    const startBtn = $(`startFlag-${color}`);
+    const n = collectFlagQuestions(color).length;
+    const data = peekSession(mode) || (color === "blue" ? peekSession(MATH_MAITRISER_MODE) : null);
+    if(meta){
+      meta.textContent = data
+        ? `${n} problème${n>1?"s":""} · ${data.pool.filter(isQuestionAnswered).length}/${data.pool.length} en cours`
+        : `${n} problème${n>1?"s":""} · marquage ${title.split("·")[0].trim().toLowerCase()}`;
+    }
+    if(resumeBtn) resumeBtn.classList.toggle("hide", !data);
+    if(startBtn) startBtn.disabled = n < 1;
+  });
+}
+
+function buildMaitriserPool(){
+  // legacy : même contenu que la série bleue dynamique
+  return buildFlagPool("blue");
 }
 
 function updateMaitriserCard(){
-  const meta = $("maitriserMeta");
-  const resumeBtn = $("resumeMaitriserBtn");
-  if(!meta) return;
-  const { questions } = collectMaitriserQuestions();
-  const data = peekSession(MATH_MAITRISER_MODE);
-  meta.textContent = data
-    ? `${questions.length} problèmes · ${data.pool.filter(isQuestionAnswered).length}/${data.pool.length} en cours`
-    : `${questions.length} problèmes · thèmes classiques à retenir`;
-  if(resumeBtn) resumeBtn.classList.toggle("hide", !data);
+  updateFlagSeriesCards();
 }
 
-function isMaitriserMode(){ return playMode === MATH_MAITRISER_MODE; }
+function isMaitriserMode(){ return playMode === MATH_MAITRISER_MODE || playMode === "math-flag-blue"; }
 function isMathPlayMode(){
-  return playMode === "math" || playMode === "math-br" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE;
+  return playMode === "math" || playMode === "math-br" || playMode === "examen-blanc"
+    || isFlagSeriesMode(playMode);
 }
 
 function isBattleRoyale(){ return playMode === "math-br"; }
@@ -3971,12 +4032,17 @@ function startPlay(mode, opts={}){
     return;
   }
 
-  if(mode === MATH_MAITRISER_MODE){
-    pool = buildMaitriserPool();
+  if(isFlagSeriesMode(mode) || mode === MATH_MAITRISER_MODE){
+    const color = flagColorFromMode(mode) || "blue";
+    const series = MATH_FLAG_SERIES.find(s=>s.color === color);
+    pool = buildFlagPool(color);
     if(!pool.length){
-      alert("Aucune question trouvée pour la série « À maîtriser ».");
+      alert(series?.empty || "Aucune question pour cette série.");
       return;
     }
+    // Normalise le mode legacy vers math-flag-blue
+    playMode = flagModeForColor(color) || mode;
+    quizMode = playMode;
     setExamUI(false);
     clearBlancTimer();
     setBlancUI(false);
@@ -4034,10 +4100,15 @@ function startPlay(mode, opts={}){
 function startMath(){ startPlay("math", { resume:false }); }
 function startMathBattleRoyale(){ startPlay("math-br", { resume:false }); }
 function startMathBlanc(){ startPlay("examen-blanc", { resume:false }); }
-function startMathMaitriser(){ startPlay(MATH_MAITRISER_MODE, { resume:false }); }
+function startFlagSeries(color){
+  const mode = flagModeForColor(color);
+  if(!mode) return;
+  startPlay(mode, { resume:false });
+}
+function startMathMaitriser(){ startFlagSeries("blue"); }
 
 function toggleTemplateSaveButtons(){
-  const show = playMode !== "math" && playMode !== "math-br" && playMode !== "examen-blanc" && playMode !== MATH_MAITRISER_MODE && pool.length > 0;
+  const show = !isMathPlayMode() && pool.length > 0;
   $("savePoolTemplateBtn")?.classList.toggle("hide", !show);
   $("saveResultTemplateBtn")?.classList.toggle("hide", !show);
 }
@@ -4182,6 +4253,12 @@ function render(){
   } else if(isBlancMode()){
     $("liveScore").textContent = nCorrect();
     $("qNum").textContent = `Blanc · Q${idx+1}/${pool.length}`;
+    $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
+  } else if(isFlagSeriesMode()){
+    const color = flagColorFromMode(playMode);
+    const label = color === "red" ? "Rouge" : color === "green" ? "Vert" : "Bleu";
+    $("liveScore").textContent = nCorrect();
+    $("qNum").textContent = `${label} · Q${idx+1}/${pool.length}`;
     $("bar").style.width = `${(nAnswered()/pool.length)*100}%`;
   } else if(isMaitriserMode()){
     $("liveScore").textContent = nCorrect();
@@ -4668,7 +4745,7 @@ function applyEditToPool(id, refreshed){
       // En mode ouvert maths, conserve la forme saisie libre — sauf exercices « pièces » (toujours QCM)
       ...(isPiecesQuestion(q) || isPiecesQuestion(refreshed)
         ? { t: undefined, ans: undefined, _openFromQcm: false, o: refreshed.o || q.o, a: refreshed.a ?? q.a }
-        : (q._openFromQcm || ((playMode === "math" || playMode === "examen-blanc" || playMode === MATH_MAITRISER_MODE) && isMathOpenFormat())
+        : (q._openFromQcm || (isMathPlayMode() && !isBattleRoyale() && isMathOpenFormat())
           ? { t: "input", ans: refreshed.ans || q.ans || acceptedAnswers(refreshed) }
           : {}))
     };
@@ -4962,8 +5039,13 @@ function addQuestionFromForm(){
 $("startMathBtn").onclick = startMath;
 $("startMathBlancBtn").onclick = startMathBlanc;
 $("startMathBrBtn").onclick = startMathBattleRoyale;
-$("startMaitriserBtn").onclick = startMathMaitriser;
-$("resumeMaitriserBtn").onclick = ()=>startPlay(MATH_MAITRISER_MODE, { resume:true });
+MATH_FLAG_SERIES.forEach(({ color, mode })=>{
+  $(`startFlag-${color}`)?.addEventListener("click", ()=>startFlagSeries(color));
+  $(`resumeFlag-${color}`)?.addEventListener("click", ()=>{
+    const data = peekSession(mode) || (color === "blue" ? peekSession(MATH_MAITRISER_MODE) : null);
+    startPlay(data?.playMode || mode, { resume:true });
+  });
+});
 $("resumeMathBtn").onclick = ()=>{
   const data = peekSession("math") || peekSession("examen-blanc") || peekSession("math-br");
   startPlay(data?.playMode || "math", { resume:true });
