@@ -201,8 +201,30 @@
   .exam-timer-wrap.urgent .exam-timer-bar i { background: var(--bad); }
   #examTimerChip.hide, #examScoreChip.hide, #examTimerWrap.hide { display: none !important; }
   .quiz-main.exam-mode .nav-left button:not(#quitBtn),
-  .quiz-main.exam-mode .nav-right button:not(#quitBtn),
+  .quiz-main.exam-mode .nav-right button:not(#quitBtn):not(#pauseBtn),
   .quiz-main.exam-mode #dontKnowBtn { display: none !important; }
+  body.quiz-paused #quiz {
+    filter: blur(16px);
+    pointer-events: none;
+    user-select: none;
+  }
+  body.quiz-paused #navToggle { filter: blur(16px); pointer-events: none; }
+  .pause-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: rgba(6, 10, 18, 0.45);
+  }
+  .pause-overlay.hide { display: none !important; }
+  .pause-card {
+    text-align: center; max-width: 360px; width: 100%;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 28px 24px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  }
+  .pause-card h2 { margin: 0 0 8px; font-size: 22px; }
+  .pause-card p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .pause-card button { width: 100%; padding: 12px 16px; font-size: 16px; }
   .quiz-layout.exam-mode .navgrid { display: none !important; }
   .quiz-layout.exam-mode ~ .navToggle { display: none !important; }
   .choice.locked { cursor: default; }
@@ -833,6 +855,7 @@
           <button type="button" id="chatgptBtn" class="chatgpt-btn">💬 ChatGPT</button>
         </div>
         <div class="nav-right">
+          <button type="button" id="pauseBtn">⏸ Pause</button>
           <button id="quitBtn">✕ Quitter</button>
           <button class="primary" id="nextBtn">Suivant →</button>
         </div>
@@ -856,6 +879,14 @@
 
   <button class="navToggle" id="navToggle">Questions<b id="toggleStat">0/0</b></button>
   <div class="scrim" id="scrim"></div>
+
+  <div id="pauseOverlay" class="pause-overlay hide" aria-hidden="true">
+    <div class="pause-card">
+      <h2>Pause</h2>
+      <p>Chronos en pause.<br>L’énoncé est flouté pour éviter de tricher.</p>
+      <button type="button" class="primary" id="resumePauseBtn">Reprendre ▶</button>
+    </div>
+  </div>
 
   <!-- RESULT SCREEN -->
   <div id="result" class="panel result hide">
@@ -925,7 +956,7 @@
   </div>
 </div>
 
-<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.<br>Mise à jour : <b id="appUpdatedAt">12 oct. 2026 · 16:35</b></footer>
+<footer>Fiche de révision interactive — sources : retours de candidats. Vérifiez toujours les chiffres officiels (effectifs, flotte…) qui évoluent.<br>Mise à jour : <b id="appUpdatedAt">12 oct. 2026 · 17:26</b></footer>
 
 <script>
 /* ===========================================================
@@ -1809,6 +1840,7 @@ let blancPausedAt = 0;
 let solveTimerInterval = null;
 let solveRunningSince = 0;
 let examPausedElapsed = 0;
+let quizPaused = false;
 let playMode = "tout";
 let quizMode = "tout";
 const EXAM_SIZE = 35;
@@ -3971,6 +4003,7 @@ function goToNextBattleQuestion(){
 function finishBattleRoyale(){
   clearTimeout(autoTimer);
   clearSolveTimer();
+  setQuizPaused(false);
   closeNav();
   $("quiz").classList.add("hide");
   $("result").classList.remove("hide");
@@ -4115,6 +4148,7 @@ function toggleTemplateSaveButtons(){
 
 function launchQuiz(){
   idx=0;
+  setQuizPaused(false);
   if(!examMode) setExamUI(false);
   $("start").classList.add("hide");
   $("result").classList.add("hide");
@@ -4193,13 +4227,13 @@ function syncSolveTimer(q, locked){
     paintSolveChip(getSolveElapsed(q));
     return;
   }
-  if(document.visibilityState !== "visible"){
+  if(quizPaused || document.visibilityState !== "visible"){
     paintSolveChip(q._solveAccumMs || 0);
     return;
   }
   if(!solveRunningSince) solveRunningSince = Date.now();
   const tick = ()=>{
-    if(document.visibilityState !== "visible") return;
+    if(quizPaused || document.visibilityState !== "visible") return;
     if(pool[idx] !== q || q._chosen != null || q._brCleared){
       clearSolveTimer();
       return;
@@ -4216,12 +4250,36 @@ function pauseAllCountdowns(){
   pauseExamTimer();
 }
 function resumeAllCountdowns(){
+  if(quizPaused) return;
+  if(document.visibilityState !== "visible") return;
   resumeBlancTimer();
   if(currentScreen() !== "quiz" || !pool[idx]) return;
   const q = pool[idx];
   const locked = q._chosen != null || !!q._brCleared;
   if(examMode && !locked) startExamTimer();
   else syncSolveTimer(q, locked);
+}
+
+function setQuizPaused(on){
+  quizPaused = !!on;
+  document.body.classList.toggle("quiz-paused", quizPaused);
+  const overlay = $("pauseOverlay");
+  if(overlay){
+    overlay.classList.toggle("hide", !quizPaused);
+    overlay.setAttribute("aria-hidden", quizPaused ? "false" : "true");
+  }
+  const btn = $("pauseBtn");
+  if(btn) btn.textContent = quizPaused ? "▶ Reprendre" : "⏸ Pause";
+  if(quizPaused){
+    closeNav();
+    pauseAllCountdowns();
+  } else if(document.visibilityState === "visible"){
+    resumeAllCountdowns();
+  }
+}
+function toggleQuizPause(){
+  if(currentScreen() !== "quiz") return;
+  setQuizPaused(!quizPaused);
 }
 
 function render(){
@@ -4573,6 +4631,7 @@ function finish(){
   clearExamTimer();
   clearBlancTimer();
   clearSolveTimer();
+  setQuizPaused(false);
   setBlancUI(false);
   closeNav();
   $("quiz").classList.add("hide");
@@ -4636,6 +4695,7 @@ function home(){
   clearExamTimer();
   clearBlancTimer();
   clearSolveTimer();
+  setQuizPaused(false);
   setBlancUI(false);
   examMode = false;
   setExamUI(false);
@@ -5062,7 +5122,10 @@ $("mathFlagBtns")?.querySelectorAll("button[data-flag]").forEach(btn=>{
 });
 $("nextBtn").onclick = next;
 $("prevBtn").onclick = prev;
+$("pauseBtn").onclick = toggleQuizPause;
+$("resumePauseBtn").onclick = ()=>setQuizPaused(false);
 $("quitBtn").onclick = ()=>{
+  if(quizPaused) setQuizPaused(false);
   if(examMode && !confirm("Abandonner l'examen en cours ?")) return;
   if(isBlancMode() && currentScreen()==="quiz" && !confirm("Abandonner l'examen blanc en cours ?")) return;
   home();
@@ -5121,10 +5184,13 @@ document.addEventListener("visibilitychange", ()=>{
     saveSession();
   }
   if(document.visibilityState==="visible"){
-    resumeAllCountdowns();
+    if(!quizPaused) resumeAllCountdowns();
     const meta = loadSyncMeta();
     if(meta.pat && meta.gistId) syncPull({ quiet:true });
   }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape" && quizPaused){ e.preventDefault(); setQuizPaused(false); }
 });
 </script>
 </body>
